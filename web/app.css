@@ -153,19 +153,24 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
 /* Abfahrten-Vorschau */
 .dep {
   display: grid;
-  grid-template-columns: 4.2em auto 1fr auto;
-  gap: 8px;
+  grid-template-columns: 3.2em auto minmax(0, 1fr) auto;
+  gap: 10px;
   align-items: center;
-  padding: 6px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--line);
 }
 .dep:last-child { border-bottom: none; }
-.dep-min { font-weight: 600; text-align: right; white-space: nowrap; }
+.dep-time { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;
+  font-variant-numeric: tabular-nums; }
+.dep-plan { font-weight: 600; }
+.dep-late { color: var(--error); font-weight: 600; font-size: 0.9rem; }
+.dep-early { color: var(--ok); font-weight: 600; font-size: 0.9rem; }
+.dep-mid { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
 .dep-to { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dep-info { color: var(--muted); font-size: 0.85rem; white-space: nowrap; text-align: right; }
-.dep-late { color: var(--error); font-weight: 600; }
-.dep.cancelled .dep-to, .dep.cancelled .dep-min { text-decoration: line-through; color: var(--muted); }
-.dep.cancelled .dep-info { color: var(--error); }
+.dep-track { color: var(--muted); font-size: 0.8rem; }
+.dep-min { font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dep.cancelled .dep-plan, .dep.cancelled .dep-to { text-decoration: line-through; color: var(--muted); }
+.dep.cancelled .dep-min { color: var(--error); }
 
 .badge {
   display: inline-block;

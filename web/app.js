@@ -348,16 +348,21 @@ async function loadBoard() {
       continue;
     }
     for (const r of stop.rows) {
-      const when = r.cancelled ? r.time : r.minutes <= 0 ? 'jetzt' : r.minutes < 60 ? `${r.minutes} min` : r.time;
-      const info = [];
-      if (r.cancelled) info.push('fällt aus');
-      else if (r.realtime && r.delay > 0) info.push(h('span', { class: 'dep-late' }, `+${r.delay}`));
-      if (r.track) info.push(` Gl. ${r.track}`);
-      box.append(h('div', { class: `dep${r.cancelled ? ' cancelled' : ''}`, title: r.realtime ? 'mit Echtzeitdaten' : 'laut Fahrplan' },
-        h('span', { class: 'dep-min' }, when),
+      // Links Planzeit, darunter bei Abweichung die echte Zeit; rechts die Minuten bis zur Abfahrt
+      const changed = r.realtime && !r.cancelled && r.time !== r.scheduled;
+      const time = h('span', { class: 'dep-time' },
+        h('span', { class: 'dep-plan' }, r.scheduled),
+        changed ? h('span', { class: r.delay > 0 ? 'dep-late' : 'dep-early' }, r.time) : null);
+      const mins = r.cancelled ? 'fällt aus'
+        : r.minutes <= 0 ? 'jetzt'
+          : r.minutes < 60 ? `${r.minutes} min` : `${Math.floor(r.minutes / 60)} h ${r.minutes % 60} min`;
+      box.append(h('div', { class: `dep${r.cancelled ? ' cancelled' : ''}`, title: r.realtime ? 'mit Echtzeitdaten' : 'laut Fahrplan (keine Echtzeitdaten)' },
+        time,
         badge(r.line, r.mode, r.color, r.text_color),
-        h('span', { class: 'dep-to' }, r.to),
-        h('span', { class: 'dep-info' }, info)));
+        h('span', { class: 'dep-mid' },
+          h('span', { class: 'dep-to' }, r.to),
+          r.track ? h('span', { class: 'dep-track' }, `Gl. ${r.track}`) : null),
+        h('span', { class: 'dep-min' }, mins)));
     }
   }
 }
