@@ -10,6 +10,9 @@
 //   GET  /api/update             Update-Zustand, Angebot, Fortschritt, Ergebnis des letzten Updates
 //   POST /api/update/check       Nach Update suchen (202, 409 wenn beschäftigt)
 //   POST /api/update/install     Angebotenes Update installieren (202, 409)
+//   GET  /api/departures         Abfahrten je Haltestelle, aufbereitet, mit Zustand und Datenalter
+//   GET  /api/stops?q=…          Haltestellensuche (asynchron: state pending → done/error, erneut abfragen)
+//   GET  /api/directions?stop=…  Linien/Richtungen einer Haltestelle für die Auswahl (asynchron, &more=1)
 #include "web_server.h"
 
 #include <ArduinoJson.h>
@@ -24,6 +27,7 @@
 #include "../generated/web_assets.h"
 #include "../log/app_log.h"
 #include "../ota/ota.h"
+#include "../provider/departure_service.h"
 #include "../system/status.h"
 #include "../system/system.h"
 
@@ -152,6 +156,26 @@ void registerRoutes() {
     doc["ok"] = ok;
     if (!ok) doc["message"] = "Kein Update verfügbar oder es läuft bereits eines.";
     sendJson(req, ok ? 202 : 409, doc);
+  });
+
+  sServer.on("/api/departures", HTTP_GET, [](AsyncWebServerRequest *req) {
+    JsonDocument doc;
+    departures::buildBoard(doc.to<JsonObject>(), 8);
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/stops", HTTP_GET, [](AsyncWebServerRequest *req) {
+    const AsyncWebParameter *q = req->getParam("q");
+    JsonDocument doc;
+    departures::lookupStops(q ? q->value().c_str() : "", doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/directions", HTTP_GET, [](AsyncWebServerRequest *req) {
+    const AsyncWebParameter *stop = req->getParam("stop");
+    JsonDocument doc;
+    departures::lookupDirections(stop ? stop->value().c_str() : "", req->hasParam("more"), doc.to<JsonObject>());
+    sendJson(req, 200, doc);
   });
 
   sServer.onNotFound([](AsyncWebServerRequest *req) {

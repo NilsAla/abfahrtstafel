@@ -2,6 +2,7 @@
 #include <board_status.h>
 #include <departure_board.h>
 #include <motis_parser.h>
+#include <motis_urls.h>
 #include <stop_config.h>
 #include <string.h>
 #include <unity.h>
@@ -452,6 +453,22 @@ static void test_poll_schedule(void) {
   TEST_ASSERT_TRUE(wrap.due(59000));
 }
 
+// --- URLs ------------------------------------------------------------------
+
+static void test_urls(void) {
+  TEST_ASSERT_EQUAL_STRING("Emsdetten%20Bahnhof", urlEncode("Emsdetten Bahnhof").c_str());
+  TEST_ASSERT_EQUAL_STRING("L%C3%BCbeck%2C%20ZOB", urlEncode("Lübeck, ZOB").c_str());
+  TEST_ASSERT_EQUAL_STRING("a-b_c.d~e", urlEncode("a-b_c.d~e").c_str());
+  TEST_ASSERT_EQUAL_STRING(
+      "https://api.transitous.org/api/v6/stoptimes?stopId=de-DELFI_de%3A05566%3A13729_G&n=20",
+      stopTimesUrl("de-DELFI_de:05566:13729_G", 20).c_str());
+  TEST_ASSERT_EQUAL_STRING(
+      "https://api.transitous.org/api/v6/stoptimes?stopId=x&n=100&pageCursor=LATER%7C1793019900",
+      stopTimesUrl("x", 100, "LATER|1793019900").c_str());
+  TEST_ASSERT_EQUAL_STRING("https://api.transitous.org/api/v1/geocode?text=Emsdetten%20Bahnhof&type=STOP&language=de&numResults=8",
+                           geocodeUrl("Emsdetten Bahnhof", 8).c_str());
+}
+
 int main(int, char **) {
   UNITY_BEGIN();
   RUN_TEST(test_iso_time);
@@ -472,5 +489,6 @@ int main(int, char **) {
   RUN_TEST(test_stops_size_limit);
   RUN_TEST(test_status);
   RUN_TEST(test_poll_schedule);
+  RUN_TEST(test_urls);
   return UNITY_END();
 }

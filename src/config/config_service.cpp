@@ -2,6 +2,7 @@
 
 #include <Preferences.h>
 
+#include <atomic>
 #include <mutex>
 
 #include "../log/app_log.h"
@@ -40,6 +41,7 @@ class NvsStore : public abf::KvStore {
 std::mutex sMutex;
 abf::Config sConfig;
 std::string sBootHostname;
+std::atomic<uint32_t> sRevision{0};
 
 const char *outcomeText(abf::MigrationOutcome o) {
   switch (o) {
@@ -82,6 +84,8 @@ abf::Config get() {
   return sConfig;
 }
 
+uint32_t revision() { return sRevision; }
+
 UpdateResult applyJson(JsonObjectConst in) {
   UpdateResult r;
   std::lock_guard<std::mutex> lock(sMutex);
@@ -106,6 +110,7 @@ UpdateResult applyJson(JsonObjectConst in) {
   }
 
   sConfig = next;
+  ++sRevision;
   r.ok = true;
   r.cfg = next;
   r.restartRequired = next.hostname != sBootHostname;
