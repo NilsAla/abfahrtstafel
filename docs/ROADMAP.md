@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: 2026-10-26
+Stand: 2026-10-26 (M1 Phase A)
 
 Reihenfolge ist Absicht: Update-Mechanismus kommt vor allen Features. Sobald M2 auf echter Hardware steht,
 kann alles Weitere remote ausgeliefert werden – auch nachdem das Gerät bei der Endnutzerin hängt.
@@ -41,14 +41,17 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Testbild stimmt, Orientierung bekannt
 
 ## M1 – WLAN-Setup und Web-UI
-- [ ] [A] Captive Portal beim Erststart (WiFiManager), AP `Abfahrtstafel-XXXX`; danach ESPAsyncWebServer (ESP32Async-Fork)
-- [ ] [A] mDNS `abfahrt.local`, NTP mit Europe/Berlin
-- [ ] [A] Web-UI ohne Framework, beim Build gzip-komprimiert eingebettet; Seiten: Status, Einstellungen, Update
-- [ ] [A] `/api/status` (Version, Uptime, RSSI, Heap/PSRAM, Reset-Grund, letzter API-Abruf), `/api/config`
-- [ ] [A] `/api/log`: Ringpuffer im RAM für Remote-Debugging ohne Serial
-- [ ] [A] Konfiguration in NVS mit Schema-Version und Migration
-- [ ] [A] Factory Reset per BOOT (GPIO0, 10 s), Task-Watchdog
-- [ ] [B] Portal-Flow, mDNS, Taster am Gerät
+- [x] [A] Captive Portal beim Erststart (WiFiManager, nicht blockierend), AP `Abfahrtstafel-XXXX`; danach ESPAsyncWebServer
+  (ESP32Async-Fork). Ablauf als Statemachine `lib/wifisup` inkl. Fallback-Portal nach 3 min ohne Verbindung
+- [x] [A] mDNS `abfahrt.local` (Hostname einstellbar), NTP mit Europe/Berlin
+- [x] [A] Web-UI ohne Framework, beim Build gzip-komprimiert eingebettet (`scripts/embed_web.py`, ETag);
+  Seiten: Status, Einstellungen, Update (Platzhalter bis M2), Protokoll
+- [x] [A] `/api/status` (Version, Uptime, RSSI, Heap/PSRAM, Reset-Grund, letzter API-Abruf), `/api/config` (GET/POST)
+- [x] [A] `/api/log?since=N`: Ringpuffer (32 KB PSRAM) für Remote-Debugging ohne Serial
+- [x] [A] Konfiguration in NVS mit Schema-Version und Migration (`lib/config`, rollback-sicher)
+- [x] [A] Factory Reset per BOOT (GPIO0, 10 s), Task-Watchdog (30 s)
+- [ ] [A] WiFiManager-Portal auf Deutsch (eigene Strings via `WM_STRINGS_FILE`), Hinweis zur Bedienung im Portal
+- [ ] [B] Portal-Flow, mDNS, Taster am Gerät (siehe „Offen am Board“)
 - Done (A): baut, Config-/Migrationstests grün, Release `v0.1.0`
 - Done (B): Gerät nach Factory Reset ohne Serial einrichtbar
 
@@ -106,3 +109,23 @@ Phase B hakt ab oder notiert den Befund.
   PSRAM ≈ 8 MB gesamt, danach alle 10 s eine Heap-Zeile. Fehlerbilder: PSRAM 0 → `memory_type`/`qio_opi` prüfen;
   kein Serial → `ARDUINO_USB_CDC_ON_BOOT` in `platformio.ini`. Code: `src/main.cpp`.
 - [ ] **CS-Pin klären (M0.5):** CS 0 vs. 42 und möglicher Konflikt mit BOOT/GPIO0. Code: `src/board/`.
+- [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
+  Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
+  Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
+  `mDNS: http://abfahrt.local`. Code: `src/net/portal.cpp`, `src/net/network.cpp`.
+- [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
+  WiFiManager-Problem: Port wird beim Schließen evtl. nicht freigegeben → dann bindet ESPAsyncWebServer nicht.
+  Fehlerbild: Web-UI erst nach Neustart erreichbar. Code: `web::begin()` in `src/web/web_server.cpp`.
+- [ ] **Web-UI und API (M1):** Alle vier Reiter laden, Einstellungen speichern (Wert bleibt nach Neustart), ungültiger
+  Gerätename zeigt Feldfehler, Namensänderung → Hinweis + Neustart → neuer Name per mDNS erreichbar.
+  Zweiter Seitenaufruf liefert 304 (ETag). `curl -s abfahrt.local/api/status | jq` plausibel (PSRAM ≈ 8 MB).
+- [ ] **Router weg / Fallback (M1):** Router ausschalten → Log `online → connecting`, nach 3 min `fallback`, Portal-WLAN
+  sichtbar; nach 5 min ohne Client zurück zu `connecting`. Router wieder an → `online` ohne Neustart.
+  Code: `lib/wifisup`, Timing in `WifiSupervisor::Timing`.
+- [ ] **Factory Reset (M1):** BOOT 10 s halten → Log `Werksreset`, Neustart, Portal-WLAN erscheint, Einstellungen auf
+  Standard. Kurz drücken (< 10 s) löst nichts aus. Zur Laufzeit (nicht beim Einschalten) drücken, sonst Download-Modus.
+  Code: `src/system/system.cpp`, Pin in `src/board/board.h`.
+- [ ] **Watchdog (M1):** Testweise `delay(40000)` in `loop()` → Neustart, Reset-Grund „Task-Watchdog“ in `/api/status`.
+  Danach wieder entfernen. Code: `sys::watchdogBegin()`.
+- [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
+  (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.

@@ -4,7 +4,7 @@ Kleine, eigenständige Abfahrtsanzeige für Bus und Bahn im Haltestellen-Look.
 Läuft komplett auf dem Gerät – kein Server, kein Home Assistant, keine App. Eingerichtet wird
 über eine Weboberfläche im Heimnetz, Updates gibt es per Knopfdruck.
 
-> Status: in Entwicklung (Meilenstein M0). Fortschritt: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+> Status: in Entwicklung (Meilenstein M1). Fortschritt: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
 ## Hardware
 - [Waveshare ESP32-S3-LCD-3.16](https://www.waveshare.com/wiki/ESP32-S3-LCD-3.16)
@@ -23,6 +23,13 @@ Die fertige Firmware liegt unter [Releases](https://github.com/NilsAla/abfahrtst
 - `manifest.json` – Versionsinfo und Prüfsumme für den Update-Mechanismus
 
 Später gibt es eine eigene Flash-Seite, die alles mit einem Klick erledigt.
+
+## Einrichtung
+1. Gerät mit Strom verbinden. Beim ersten Start erscheint das WLAN **Abfahrtstafel-XXXX**.
+2. Mit dem Handy verbinden, die Einrichtungsseite öffnet sich automatisch. Heim-WLAN auswählen, Passwort eingeben.
+3. Danach ist die Tafel im Heimnetz unter **http://abfahrt.local** erreichbar.
+
+Zurücksetzen auf Werkseinstellungen: BOOT-Taster im laufenden Betrieb 10 Sekunden gedrückt halten.
 
 ## Selbst bauen
 Voraussetzung: [PlatformIO](https://platformio.org/)
