@@ -4,6 +4,7 @@
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include <esp_mac.h>
+#include <esp_sntp.h>
 #include <time.h>
 #include <time_berlin.h>
 
@@ -22,7 +23,8 @@ std::atomic<abf::WifiState> sState{abf::WifiState::Connecting};
 std::string sHostname;
 std::string sApName;
 bool sMdnsStarted = false;
-std::atomic<bool> sTimeSynced{false};
+std::atomic<bool> sTimeSynced{false};   // Uhrzeit plausibel (NTP oder über Software-Reset erhalten)
+std::atomic<bool> sNtpEvent{false};
 
 void startMdns() {
   if (sMdnsStarted) return;
@@ -73,6 +75,7 @@ void begin(const std::string &hostname) {
   sApName = abf::apName(mac);
 
   configTzTime(abf::kTzBerlin, "de.pool.ntp.org", "pool.ntp.org", "time.cloudflare.com");
+  esp_sntp_set_time_sync_notification_cb([](struct timeval *) { sNtpEvent = true; });
 
   portal::configure(sHostname);
   const bool creds = portal::hasSavedCredentials();
@@ -99,14 +102,21 @@ void loop() {
     sState = sSup.state();
   }
 
-  if (!sTimeSynced && abf::isTimePlausible(time(nullptr))) {
+  // Die RTC läuft über einen Software-Reset weiter → Zeit kann schon vor dem ersten NTP-Sync gültig sein
+  const bool ntp = sNtpEvent.exchange(false);
+  if (ntp || (!sTimeSynced && abf::isTimePlausible(time(nullptr)))) {
+    const bool first = !sTimeSynced;
     sTimeSynced = true;
     const time_t now = time(nullptr);
     struct tm tm;
     localtime_r(&now, &tm);
     char buf[32];
     strftime(buf, sizeof(buf), "%d.%m.%Y %H:%M:%S %Z", &tm);
-    LOGI("time", "Uhrzeit per NTP gestellt: %s", buf);
+    if (ntp) {
+      LOGI("time", "Uhrzeit per NTP synchronisiert: %s", buf);
+    } else if (first) {
+      LOGI("time", "Uhrzeit aus RTC übernommen (NTP folgt): %s", buf);
+    }
   }
 }
 
