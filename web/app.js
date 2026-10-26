@@ -154,6 +154,9 @@ async function loadUpdate() {
   }
 
   let text = u.state === 'error' ? u.error : (UPDATE_STATE[u.state] ?? u.state);
+  if (u.skipped && u.state === 'up_to_date') {
+    text = `Version ${u.skipped} wird nicht angeboten, weil sie auf diesem Gerät nicht funktioniert hat. Es gibt noch keine neuere.`;
+  }
   if (u.selftest_running) text = 'Neue Firmware wird geprüft (Selbsttest) …';
   setText('up-state', text);
 

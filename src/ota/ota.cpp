@@ -38,6 +38,7 @@ constexpr uint32_t kFirstAutoCheckMs = 2 * 60 * 1000;  // nach dem Verbinden
 constexpr uint32_t kAutoCheckEveryMs = 24 * 60 * 60 * 1000;
 constexpr const char *kNvsNamespace = "ota";
 constexpr const char *kNvsPendingTo = "pendingTo";  // Version, auf die zuletzt aktualisiert wurde
+constexpr const char *kNvsBlocked = "blocked";      // zurückgerollte Version, nie wieder anbieten
 
 #ifdef FW_SELFTEST_FAIL
 constexpr bool kForceSelfTestFail = true;
@@ -102,6 +103,8 @@ void runCheck() {
   sFlow.checkSucceeded(m);
   if (sFlow.state() == abf::UpdateState::Available) {
     LOGI("ota", "Update verfügbar: %s → %s", FW_VERSION, m.version.c_str());
+  } else if (sFlow.skippedBlocked()) {
+    LOGI("ota", "Neueste Version %s wurde zurückgerollt und wird nicht angeboten", m.version.c_str());
   } else {
     LOGI("ota", "Firmware aktuell (neueste: %s)", m.version.c_str());
   }
@@ -242,15 +245,20 @@ void readLastUpdate() {
   Preferences prefs;
   if (!prefs.begin(kNvsNamespace, true)) return;  // Namespace existiert noch nicht
   const String pendingTo = prefs.getString(kNvsPendingTo, "");
+  const String blocked = prefs.getString(kNvsBlocked, "");
   prefs.end();
+  if (!blocked.isEmpty()) sFlow.blockVersion(blocked.c_str());
   if (pendingTo.isEmpty()) return;
   sLastVersion = pendingTo;
   if (pendingTo != FW_VERSION) {
     // Neue Firmware ist durchgefallen, Bootloader hat die alte gestartet
     sLastResult = "rolled_back";
-    LOGW("ota", "Update auf %s fehlgeschlagen, %s läuft weiter (Rollback)", pendingTo.c_str(), FW_VERSION);
+    LOGW("ota", "Update auf %s fehlgeschlagen, %s läuft weiter (Rollback) – wird nicht erneut angeboten",
+         pendingTo.c_str(), FW_VERSION);
+    sFlow.blockVersion(pendingTo.c_str());
     if (prefs.begin(kNvsNamespace, false)) {
       prefs.remove(kNvsPendingTo);
+      prefs.putString(kNvsBlocked, pendingTo);
       prefs.end();
     }
   }
@@ -362,6 +370,7 @@ void buildStatus(JsonObject out) {
     last["result"] = sLastResult;
     last["version"] = sLastVersion;
   }
+  if (sFlow.skippedBlocked()) out["skipped"] = sFlow.blockedVersion();
   out["selftest_running"] = sSelfTest.active();
   out["auto_check"] = config::get().updateCheck;
 }
