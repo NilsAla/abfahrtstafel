@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abfahrtstafel</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header>
+  <h1>Abfahrtstafel</h1>
+  <nav>
+    <a href="#status" data-tab="status">Status</a>
+    <a href="#einstellungen" data-tab="einstellungen">Einstellungen</a>
+    <a href="#update" data-tab="update">Update</a>
+    <a href="#protokoll" data-tab="protokoll">Protokoll</a>
+  </nav>
+</header>
+
+<main>
+  <div id="offline" class="banner error" hidden>Die Abfahrtstafel antwortet gerade nicht. Neuer Versuch läuft …</div>
+
+  <section id="tab-status" hidden>
+    <h2>Status</h2>
+    <dl class="facts">
+      <dt>WLAN</dt><dd id="st-wifi">–</dd>
+      <dt>Uhrzeit</dt><dd id="st-time">–</dd>
+      <dt>Adresse</dt><dd id="st-addr">–</dd>
+      <dt>Firmware</dt><dd id="st-version">–</dd>
+      <dt>Läuft seit</dt><dd id="st-uptime">–</dd>
+      <dt>Letzter Neustart</dt><dd id="st-reset">–</dd>
+      <dt>Abfahrtsdaten</dt><dd id="st-fetch">–</dd>
+    </dl>
+    <details>
+      <summary>Technische Details</summary>
+      <dl class="facts small">
+        <dt>Arbeitsspeicher</dt><dd id="st-heap">–</dd>
+        <dt>PSRAM</dt><dd id="st-psram">–</dd>
+        <dt>Partition</dt><dd id="st-part">–</dd>
+        <dt>MAC</dt><dd id="st-mac">–</dd>
+      </dl>
+    </details>
+  </section>
+
+  <section id="tab-einstellungen" hidden>
+    <h2>Einstellungen</h2>
+    <form id="cfg" novalidate>
+      <fieldset>
+        <legend>Anzeige</legend>
+        <label for="brightness">Helligkeit <output id="brightness-out"></output></label>
+        <input type="range" id="brightness" name="brightness" min="5" max="100" step="5">
+        <p class="err" data-for="brightness"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Nachtmodus</legend>
+        <label class="check"><input type="checkbox" id="night_enabled" name="night_enabled"> Nachts dunkler schalten</label>
+        <p class="err" data-for="night_enabled"></p>
+        <div class="row">
+          <div>
+            <label for="night_start">Von</label>
+            <input type="time" id="night_start" name="night_start" step="60">
+            <p class="err" data-for="night_start"></p>
+          </div>
+          <div>
+            <label for="night_end">Bis</label>
+            <input type="time" id="night_end" name="night_end" step="60">
+            <p class="err" data-for="night_end"></p>
+          </div>
+        </div>
+        <label for="night_brightness">Helligkeit nachts <output id="night_brightness-out"></output></label>
+        <input type="range" id="night_brightness" name="night_brightness" min="0" max="100" step="5">
+        <p class="err" data-for="night_brightness"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Gerät</legend>
+        <label for="hostname">Gerätename im Netzwerk</label>
+        <input type="text" id="hostname" name="hostname" maxlength="32" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <p class="hint">Erreichbar unter <code>http://<span id="hostname-preview"></span>.local</code></p>
+        <p class="err" data-for="hostname"></p>
+        <label class="check"><input type="checkbox" id="update_check" name="update_check"> Täglich nach Updates suchen (nur Hinweis, installiert nichts)</label>
+        <p class="err" data-for="update_check"></p>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="primary">Speichern</button>
+        <span id="cfg-msg" role="status"></span>
+      </div>
+    </form>
+    <div id="restart-box" class="banner info" hidden>
+      Der neue Gerätename gilt nach einem Neustart.
+      <button type="button" id="restart-btn">Jetzt neu starten</button>
+    </div>
+  </section>
+
+  <section id="tab-update" hidden>
+    <h2>Update</h2>
+    <p>Installierte Version: <strong id="up-version">–</strong></p>
+    <p class="hint">Die Update-Funktion per Knopfdruck folgt mit einer der nächsten Versionen.</p>
+  </section>
+
+  <section id="tab-protokoll" hidden>
+    <h2>Protokoll</h2>
+    <p class="hint">Hilft bei der Fehlersuche. Wird beim Neustart geleert.</p>
+    <div class="actions">
+      <label class="check"><input type="checkbox" id="log-follow" checked> Automatisch mitlaufen</label>
+      <button type="button" id="log-copy">Kopieren</button>
+    </div>
+    <pre id="log"></pre>
+  </section>
+</main>
+
+<footer>
+  Abfahrtsdaten: <a href="https://transitous.org/" target="_blank" rel="noopener">Transitous</a>
+  (<a href="https://transitous.org/sources/" target="_blank" rel="noopener">Datenquellen</a>) ·
+  Kartendaten © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende ·
+  <a href="https://github.com/NilsAla/abfahrtstafel" target="_blank" rel="noopener">Quellcode</a>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
