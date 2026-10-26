@@ -6,6 +6,12 @@ Läuft komplett auf dem Gerät – kein Server, kein Home Assistant, keine App. 
 
 > Status: in Entwicklung (Meilenstein M3). Fortschritt: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 
+## Vorschau
+
+![Entwurf der Anzeige: Abfahrten am Bahnhof Emsdetten](docs/mockups/Main.png)
+
+Entwurf, noch nicht umgesetzt – weitere Mockups (Display-Zustände, Web-UI) in [`docs/mockups/`](docs/mockups/README.md).
+
 ## Hardware
 - [Waveshare ESP32-S3-LCD-3.16](https://www.waveshare.com/wiki/ESP32-S3-LCD-3.16)
   (ESP32-S3, 16 MB Flash, 8 MB PSRAM, 3,16" IPS 320×820)
