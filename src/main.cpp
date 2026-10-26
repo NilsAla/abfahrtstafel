@@ -1,6 +1,7 @@
 // Abfahrtstafel – Einstiegspunkt
 // M1: Logging, Konfiguration, WLAN-Einrichtung, Web-UI, Watchdog, Factory Reset.
 // M2: Firmware-Update per Knopfdruck, Selbsttest und Rollback.
+// M3: Abfahrten von Transitous, Haltestellen mit Richtungsfilter.
 
 #include <Arduino.h>
 #include <esp_ota_ops.h>
@@ -10,8 +11,10 @@
 #include "log/app_log.h"
 #include "net/network.h"
 #include "ota/ota.h"
+#include "provider/departure_service.h"
 #include "system/system.h"
 #include "version.h"
+#include "web/web_server.h"
 
 namespace {
 
@@ -55,12 +58,14 @@ void setup() {
   config::begin();
   net::begin(config::get().hostname);
   ota::begin();
+  departures::begin();
 }
 
 void loop() {
   sys::watchdogFeed();
   sys::loop();
   net::loop();
+  web::loop();
   ota::loop();
   heartbeat();
   delay(10);

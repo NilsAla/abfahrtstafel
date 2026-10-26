@@ -21,7 +21,9 @@
   <div id="offline" class="banner error" hidden>Die Abfahrtstafel antwortet gerade nicht. Neuer Versuch läuft …</div>
 
   <section id="tab-status" hidden>
-    <h2>Status</h2>
+    <h2>Abfahrten</h2>
+    <div id="board"><p class="hint">Wird geladen …</p></div>
+    <h2 class="spaced">Status</h2>
     <dl class="facts">
       <dt>WLAN</dt><dd id="st-wifi">–</dd>
       <dt>Uhrzeit</dt><dd id="st-time">–</dd>
@@ -46,6 +48,13 @@
   <section id="tab-einstellungen" hidden>
     <h2>Einstellungen</h2>
     <form id="cfg" novalidate>
+      <fieldset>
+        <legend>Haltestellen</legend>
+        <div id="stops"></div>
+        <button type="button" id="stop-add">+ Haltestelle hinzufügen</button>
+        <p class="err" data-for="stops"></p>
+      </fieldset>
+
       <fieldset>
         <legend>Anzeige</legend>
         <label for="brightness">Helligkeit <output id="brightness-out"></output></label>

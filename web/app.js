@@ -90,6 +90,7 @@ function showTab() {
 // --- Status ----------------------------------------------------------------
 
 async function loadStatus() {
+  loadBoard();
   let s;
   try {
     s = await (await api('/api/status')).json();
@@ -107,7 +108,7 @@ async function loadStatus() {
   setText('up-version', s.version);
   setText('st-uptime', duration(s.uptime_s));
   setText('st-reset', s.reset_reason);
-  setText('st-fetch', s.last_fetch ? s.last_fetch : 'noch keine (Haltestellen folgen in einer späteren Version)');
+  setText('st-fetch', s.last_fetch ? s.last_fetch.replace('T', ' ').slice(0, 19) : 'noch keine');
   setText('st-heap', `${kb(s.heap.free)} frei, min. ${kb(s.heap.min_free)}, größter Block ${kb(s.heap.largest_block)}`);
   setText('st-psram', s.psram.total ? `${kb(s.psram.free)} frei von ${kb(s.psram.total)}` : 'nicht erkannt');
   setText('st-part', s.partition);
@@ -153,6 +154,9 @@ async function loadUpdate() {
   }
 
   let text = u.state === 'error' ? u.error : (UPDATE_STATE[u.state] ?? u.state);
+  if (u.skipped && u.state === 'up_to_date') {
+    text = `Version ${u.skipped} wird nicht angeboten, weil sie auf diesem Gerät nicht funktioniert hat. Es gibt noch keine neuere.`;
+  }
   if (u.selftest_running) text = 'Neue Firmware wird geprüft (Selbsttest) …';
   setText('up-state', text);
 
@@ -198,6 +202,7 @@ const form = $('cfg');
 
 function fillForm(cfg) {
   current = cfg;
+  setStops(cfg.stops || []);
   for (const [key, value] of Object.entries(cfg)) {
     const el = form.elements[key];
     if (!el) continue;
@@ -245,6 +250,7 @@ form.addEventListener('submit', async (ev) => {
     else if (el.type === 'range') body[key] = Number(el.value);
     else body[key] = el.value;
   }
+  body.stops = collectStops();
   const button = form.querySelector('button[type="submit"]');
   button.disabled = true;
   setText('cfg-msg', 'Wird gespeichert …');
@@ -282,6 +288,262 @@ $('restart-btn').addEventListener('click', async () => {
   const host = form.elements.hostname.value.trim().toLowerCase();
   $('restart-box').textContent = `Startet neu … Die Seite ist gleich unter http://${host}.local erreichbar.`;
   setTimeout(() => { location.href = `http://${host}.local/#einstellungen`; }, 10000);
+});
+
+// --- Abfahrten (Vorschau) --------------------------------------------------
+
+const MODE_LABEL = { train: 'Zug', subway: 'U-Bahn', tram: 'Straßenbahn', bus: 'Bus', ferry: 'Fähre', other: 'Sonstige' };
+const MODES = Object.keys(MODE_LABEL);
+
+// Kleiner DOM-Baukasten: h('div', {class: 'x', onclick: fn}, kind1, 'Text', …)
+function h(tag, attrs = {}, ...children) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else if (k === 'class') el.className = v;
+    else if (k === 'style') el.setAttribute('style', v);
+    else if (k in el && typeof v !== 'string') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of children.flat()) {
+    if (c === null || c === undefined || c === false) continue;
+    el.append(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+
+function badge(line, mode, color, textColor) {
+  const style = color ? `background:${color};color:${textColor || '#fff'}` : null;
+  return h('span', { class: `badge ${mode || ''}`, style }, line || '?');
+}
+
+function ageText(seconds) {
+  const m = Math.round(seconds / 60);
+  return m < 1 ? 'gerade eben' : m < 60 ? `vor ${m} min` : `vor ${Math.floor(m / 60)} Std ${m % 60} min`;
+}
+
+async function loadBoard() {
+  let b;
+  try {
+    b = await (await api('/api/departures')).json();
+  } catch (e) {
+    return;
+  }
+  const box = $('board');
+  box.replaceChildren();
+  if (b.status !== 'ok') {
+    box.append(h('p', { class: 'hint' }, b.text,
+      b.status === 'no_stops' ? ' Im Reiter „Einstellungen“ eine Haltestelle hinzufügen.' : ''));
+    return;
+  }
+  for (const stop of b.stops) {
+    box.append(h('h3', {}, stop.name));
+    if (stop.stale) {
+      box.append(h('p', { class: 'hint' }, `Stand: ${ageText(stop.age_s)}`,
+        stop.offline ? ' (keine WLAN-Verbindung)' : ' (Fahrplandaten nicht erreichbar)'));
+    }
+    if (!stop.rows.length) {
+      box.append(h('p', { class: 'hint' }, stop.text));
+      continue;
+    }
+    for (const r of stop.rows) {
+      const when = r.cancelled ? r.time : r.minutes <= 0 ? 'jetzt' : r.minutes < 60 ? `${r.minutes} min` : r.time;
+      const info = [];
+      if (r.cancelled) info.push('fällt aus');
+      else if (r.realtime && r.delay > 0) info.push(h('span', { class: 'dep-late' }, `+${r.delay}`));
+      if (r.track) info.push(` Gl. ${r.track}`);
+      box.append(h('div', { class: `dep${r.cancelled ? ' cancelled' : ''}`, title: r.realtime ? 'mit Echtzeitdaten' : 'laut Fahrplan' },
+        h('span', { class: 'dep-min' }, when),
+        badge(r.line, r.mode, r.color, r.text_color),
+        h('span', { class: 'dep-to' }, r.to),
+        h('span', { class: 'dep-info' }, info)));
+    }
+  }
+}
+
+// --- Haltestellen (Einstellungen) ------------------------------------------
+
+let stops = [];
+
+function setStops(list) {
+  stops = list.map((s) => ({ ...s, ui: { dirs: null, search: null } }));
+  renderStops();
+}
+
+function collectStops() {
+  return stops.filter((s) => s.id).map((s) => ({
+    id: s.id, name: s.name, town: s.town || '', filter: s.filter, modes: s.modes,
+    select: s.select, walk: Number(s.walk) || 0,
+  }));
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Asynchrone Abfragen des Geräts: so lange wiederholen, bis das Ergebnis da ist
+async function poll(url, firstUrl = url) {
+  let next = firstUrl;
+  for (let i = 0; i < 60; i++) {
+    const r = await (await api(next)).json();
+    if (r.state !== 'pending') return r;
+    next = url;
+    await sleep(750);
+  }
+  return { state: 'error', message: 'Keine Antwort von den Fahrplandaten. Bitte später erneut versuchen.' };
+}
+
+function sameSel(a, b) {
+  return a.route === b.route && (a.dir ?? null) === (b.dir ?? null);
+}
+
+function isSelected(stop, opt) {
+  return stop.select.some((s) => sameSel(s, opt));
+}
+
+function toggleSel(stop, opt, on) {
+  stop.select = stop.select.filter((s) => !sameSel(s, opt));
+  if (on) stop.select.push({ route: opt.route, dir: opt.dir ?? null, line: opt.line, to: opt.to });
+}
+
+async function searchStop(stop) {
+  const q = (stop.ui.query || '').trim();
+  stop.ui.search = { state: 'pending' };
+  renderStops();
+  try {
+    stop.ui.search = await poll(`/api/stops?q=${encodeURIComponent(q)}`);
+  } catch (e) {
+    stop.ui.search = { state: 'error', message: 'Gerät nicht erreichbar.' };
+  }
+  renderStops();
+}
+
+async function loadDirections(stop, more = false) {
+  const base = `/api/directions?stop=${encodeURIComponent(stop.id)}`;
+  stop.ui.dirs = { ...(stop.ui.dirs || {}), state: 'pending' };
+  renderStops();
+  try {
+    stop.ui.dirs = await poll(base, more ? `${base}&more=1` : base);
+  } catch (e) {
+    stop.ui.dirs = { state: 'error', message: 'Gerät nicht erreichbar.' };
+  }
+  renderStops();
+}
+
+function renderSearch(stop) {
+  const ui = stop.ui;
+  const input = h('input', {
+    type: 'text', placeholder: 'z. B. Emsdetten Bahnhof', value: ui.query || '', autocomplete: 'off',
+    oninput: (e) => { ui.query = e.target.value; },
+    onkeydown: (e) => { if (e.key === 'Enter') { e.preventDefault(); searchStop(stop); } },
+  });
+  const parts = [h('div', { class: 'search-row' }, input, h('button', { type: 'button', onclick: () => searchStop(stop) }, 'Suchen'))];
+  const res = ui.search;
+  if (res?.state === 'pending') parts.push(h('p', { class: 'hint' }, 'Suche läuft …'));
+  if (res?.state === 'error') parts.push(h('p', { class: 'err' }, res.message));
+  if (res?.state === 'done') {
+    if (!res.results.length) parts.push(h('p', { class: 'hint' }, 'Nichts gefunden. Anders schreiben, z. B. mit Ort.'));
+    parts.push(h('ul', { class: 'results' }, res.results.map((m) => h('li', {},
+      h('button', { type: 'button', onclick: () => {
+        Object.assign(stop, { id: m.id, name: m.name, town: m.town, filter: 'all', modes: [...MODES], select: [], walk: 0 });
+        stop.ui = { dirs: null, search: null };
+        renderStops();
+      } }, m.name, h('small', {}, [m.town, m.region, m.country].filter(Boolean).join(' · ')))))));
+  }
+  return parts;
+}
+
+function renderDirections(stop) {
+  const d = stop.ui.dirs;
+  const parts = [];
+  if (!d || d.state === 'idle') {
+    parts.push(h('button', { type: 'button', onclick: () => loadDirections(stop) }, 'Linien und Richtungen laden'));
+  }
+  if (d?.state === 'pending') parts.push(h('p', { class: 'hint' }, 'Fahrplan wird geladen …'));
+  if (d?.state === 'error') {
+    parts.push(h('p', { class: 'err' }, d.message), h('button', { type: 'button', onclick: () => loadDirections(stop) }, 'Erneut versuchen'));
+  }
+
+  const known = [];
+  if (d?.state === 'done') {
+    parts.push(h('p', { class: 'hint' }, `Gefunden in den nächsten ${d.departures} Abfahrten${d.until ? ` (bis ${d.until} Uhr)` : ''}. `
+      + 'Neue Linien bleiben ausgeblendet, bis du sie hier auswählst.'));
+    for (const g of d.groups) {
+      known.push(...g.options);
+      const on = g.options.filter((o) => isSelected(stop, o)).length;
+      const groupBox = h('input', { type: 'checkbox', checked: on === g.options.length,
+        onchange: (e) => { for (const o of g.options) toggleSel(stop, o, e.target.checked); renderStops(); } });
+      groupBox.indeterminate = on > 0 && on < g.options.length;
+      const lines = [...new Set(g.options.map((o) => o.line))];
+      const row = h('div', { class: 'dir-group' },
+        h('label', { class: 'check' }, groupBox, 'Richtung ', h('strong', {}, g.to),
+          lines.map((l) => badge(l, g.options.find((o) => o.line === l).mode))));
+      if (g.options.length > 1) {
+        row.append(h('details', { open: on > 0 && on < g.options.length },
+          h('summary', {}, 'einzelne Linien wählen'),
+          g.options.map((o) => h('label', { class: 'check' },
+            h('input', { type: 'checkbox', checked: isSelected(stop, o), onchange: (e) => { toggleSel(stop, o, e.target.checked); renderStops(); } }),
+            badge(o.line, o.mode), ` → ${o.to} (${o.count}×)`))));
+      }
+      parts.push(row);
+    }
+    if (d.can_more) {
+      parts.push(h('button', { type: 'button', class: 'link-btn', onclick: () => loadDirections(stop, true) },
+        'Weiter in die Zukunft suchen (seltene Linien, Nachtbusse)'));
+    }
+  }
+
+  // Gespeicherte Auswahl, die gerade nicht im geladenen Fahrplan vorkommt
+  const missing = stop.select.filter((s) => !known.some((o) => sameSel(o, s)));
+  if (missing.length) {
+    parts.push(h('p', { class: 'hint' }, d?.state === 'done' ? 'Ausgewählt, aber gerade nicht im Fahrplan:' : 'Ausgewählt:'));
+    for (const s of missing) {
+      parts.push(h('label', { class: 'check' },
+        h('input', { type: 'checkbox', checked: true, onchange: (e) => { toggleSel(stop, s, e.target.checked); renderStops(); } }),
+        badge(s.line), ` → ${s.to}`));
+    }
+  }
+  return parts;
+}
+
+function renderStops() {
+  const box = $('stops');
+  box.replaceChildren();
+  stops.forEach((stop, i) => {
+    const remove = h('button', { type: 'button', class: 'link-btn', onclick: () => { stops.splice(i, 1); renderStops(); } }, 'Entfernen');
+    if (!stop.id) {
+      box.append(h('div', { class: 'stop-card' }, h('div', { class: 'stop-head' }, h('strong', {}, 'Neue Haltestelle'), remove), renderSearch(stop)));
+      return;
+    }
+    const name = `filter-${i}`;
+    const radio = (value, label) => h('label', {},
+      h('input', { type: 'radio', name, value, checked: stop.filter === value, onchange: () => {
+        stop.filter = value;
+        if (value === 'selected' && !stop.ui.dirs) loadDirections(stop);
+        renderStops();
+      } }), label);
+    const card = h('div', { class: 'stop-card' },
+      h('div', { class: 'stop-head' }, h('strong', {}, stop.name), h('span', { class: 'hint' }, stop.town || ''), remove),
+      h('div', { class: 'radio-row' }, radio('all', 'Alle Abfahrten'), radio('selected', 'Nur bestimmte Richtungen')));
+    if (stop.filter === 'all') {
+      card.append(h('div', { class: 'modes' }, MODES.map((m) => h('label', {},
+        h('input', { type: 'checkbox', checked: stop.modes.includes(m), onchange: (e) => {
+          stop.modes = e.target.checked ? [...stop.modes, m] : stop.modes.filter((x) => x !== m);
+        } }), MODE_LABEL[m]))));
+    } else {
+      card.append(...renderDirections(stop));
+    }
+    card.append(h('div', { class: 'walk-row' },
+      h('label', { for: `walk-${i}` }, 'Fußweg zur Haltestelle'),
+      h('input', { id: `walk-${i}`, type: 'number', min: 0, max: 30, value: stop.walk || 0,
+        oninput: (e) => { stop.walk = e.target.value; } }), 'Minuten'));
+    box.append(card);
+  });
+  $('stop-add').hidden = stops.length >= 2;
+}
+
+$('stop-add').addEventListener('click', () => {
+  stops.push({ id: '', name: '', town: '', filter: 'all', modes: [...MODES], select: [], walk: 0, ui: { query: '', search: null, dirs: null } });
+  renderStops();
 });
 
 // --- Protokoll -------------------------------------------------------------

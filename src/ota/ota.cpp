@@ -4,8 +4,6 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <WiFi.h>
-#include <esp_crt_bundle.h>
-#include <esp_http_client.h>
 #include <esp_ota_ops.h>
 #include <manifest.h>
 #include <mbedtls/sha256.h>
@@ -16,6 +14,7 @@
 
 #include "../config/config_service.h"
 #include "../log/app_log.h"
+#include "../net/https_client.h"
 #include "../net/network.h"
 #include "../system/system.h"
 #include "../version.h"
@@ -33,13 +32,13 @@ constexpr const char *kManifestUrl =
     "https://github.com/NilsAla/abfahrtstafel/releases/latest/download/manifest.json";
 constexpr size_t kManifestMax = 4096;
 constexpr size_t kChunk = 4096;
-constexpr int kMaxRedirects = 5;
 constexpr uint32_t kSelfTestTimeoutMs = 5 * 60 * 1000;
 constexpr uint32_t kSelfTestFailTimeoutMs = 30 * 1000;  // Test-Build FW_SELFTEST_FAIL
 constexpr uint32_t kFirstAutoCheckMs = 2 * 60 * 1000;  // nach dem Verbinden
 constexpr uint32_t kAutoCheckEveryMs = 24 * 60 * 60 * 1000;
 constexpr const char *kNvsNamespace = "ota";
 constexpr const char *kNvsPendingTo = "pendingTo";  // Version, auf die zuletzt aktualisiert wurde
+constexpr const char *kNvsBlocked = "blocked";      // zurückgerollte Version, nie wieder anbieten
 
 #ifdef FW_SELFTEST_FAIL
 constexpr bool kForceSelfTestFail = true;
@@ -71,55 +70,6 @@ class MbedSha256 : public abf::Sha256 {
   mbedtls_sha256_context ctx_;
 };
 
-struct HttpClient {
-  esp_http_client_handle_t h = nullptr;
-  ~HttpClient() {
-    if (!h) return;
-    esp_http_client_close(h);
-    esp_http_client_cleanup(h);
-  }
-};
-
-bool isRedirect(int status) {
-  return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
-}
-
-// GET mit TLS (CA-Bundle) und Redirects. Liefert offene Verbindung, Body noch ungelesen.
-bool httpOpen(const char *url, HttpClient &http, int64_t &contentLength) {
-  esp_http_client_config_t cfg = {};
-  cfg.url = url;
-  cfg.crt_bundle_attach = esp_crt_bundle_attach;
-  cfg.user_agent = FW_USER_AGENT;
-  cfg.timeout_ms = 15000;
-  cfg.buffer_size = 4096;     // GitHub-Redirect-Header (Location) sind > 512 Byte
-  cfg.buffer_size_tx = 2048;  // lange Redirect-URLs in der Anfragezeile
-  http.h = esp_http_client_init(&cfg);
-  if (!http.h) return false;
-
-  for (int i = 0; i <= kMaxRedirects; ++i) {
-    const esp_err_t err = esp_http_client_open(http.h, 0);
-    if (err != ESP_OK) {
-      LOGW("ota", "Verbindung fehlgeschlagen: %s", esp_err_to_name(err));
-      return false;
-    }
-    contentLength = esp_http_client_fetch_headers(http.h);
-    const int status = esp_http_client_get_status_code(http.h);
-    if (isRedirect(status)) {
-      esp_http_client_flush_response(http.h, nullptr);
-      esp_http_client_set_redirection(http.h);
-      esp_http_client_close(http.h);
-      continue;
-    }
-    if (status != 200) {
-      LOGW("ota", "HTTP %d", status);
-      return false;
-    }
-    return true;
-  }
-  LOGW("ota", "Zu viele Weiterleitungen");
-  return false;
-}
-
 void setResult(abf::UpdateError e) {
   std::lock_guard<std::mutex> lock(sMutex);
   sFlow.fail(e);
@@ -135,30 +85,14 @@ void runCheck() {
   const esp_partition_t *target = esp_ota_get_next_update_partition(nullptr);
   const uint32_t maxSize = target ? target->size : 0;
 
-  HttpClient http;
-  int64_t len = 0;
-  if (!httpOpen(kManifestUrl, http, len)) {
+  https::Body body;
+  if (!https::get(kManifestUrl, kManifestMax, body)) {
     setResult(abf::UpdateError::ManifestDownload);
     return;
   }
-  std::unique_ptr<char[]> buf(new char[kManifestMax]);
-  size_t n = 0;
-  for (;;) {
-    const int r = esp_http_client_read(http.h, buf.get() + n, kManifestMax - n);
-    if (r < 0) {
-      setResult(abf::UpdateError::ManifestDownload);
-      return;
-    }
-    if (r == 0) break;
-    n += r;
-    if (n >= kManifestMax) {
-      setResult(abf::UpdateError::ManifestInvalid);
-      return;
-    }
-  }
 
   abf::Manifest m;
-  const abf::ManifestError err = abf::parseManifest(buf.get(), n, maxSize, m);
+  const abf::ManifestError err = abf::parseManifest(body.data, body.len, maxSize, m);
   if (err != abf::ManifestError::None) {
     LOGW("ota", "Manifest ungültig (%s)", abf::manifestErrorName(err));
     setResult(abf::UpdateError::ManifestInvalid);
@@ -169,6 +103,8 @@ void runCheck() {
   sFlow.checkSucceeded(m);
   if (sFlow.state() == abf::UpdateState::Available) {
     LOGI("ota", "Update verfügbar: %s → %s", FW_VERSION, m.version.c_str());
+  } else if (sFlow.skippedBlocked()) {
+    LOGI("ota", "Neueste Version %s wurde zurückgerollt und wird nicht angeboten", m.version.c_str());
   } else {
     LOGI("ota", "Firmware aktuell (neueste: %s)", m.version.c_str());
   }
@@ -188,9 +124,9 @@ void runInstall() {
     return;
   }
 
-  HttpClient http;
+  https::Connection http;
   int64_t len = 0;
-  if (!httpOpen(m.url.c_str(), http, len)) {
+  if (!https::open(m.url.c_str(), http, len)) {
     setResult(abf::UpdateError::Download);
     return;
   }
@@ -309,15 +245,20 @@ void readLastUpdate() {
   Preferences prefs;
   if (!prefs.begin(kNvsNamespace, true)) return;  // Namespace existiert noch nicht
   const String pendingTo = prefs.getString(kNvsPendingTo, "");
+  const String blocked = prefs.getString(kNvsBlocked, "");
   prefs.end();
+  if (!blocked.isEmpty()) sFlow.blockVersion(blocked.c_str());
   if (pendingTo.isEmpty()) return;
   sLastVersion = pendingTo;
   if (pendingTo != FW_VERSION) {
     // Neue Firmware ist durchgefallen, Bootloader hat die alte gestartet
     sLastResult = "rolled_back";
-    LOGW("ota", "Update auf %s fehlgeschlagen, %s läuft weiter (Rollback)", pendingTo.c_str(), FW_VERSION);
+    LOGW("ota", "Update auf %s fehlgeschlagen, %s läuft weiter (Rollback) – wird nicht erneut angeboten",
+         pendingTo.c_str(), FW_VERSION);
+    sFlow.blockVersion(pendingTo.c_str());
     if (prefs.begin(kNvsNamespace, false)) {
       prefs.remove(kNvsPendingTo);
+      prefs.putString(kNvsBlocked, pendingTo);
       prefs.end();
     }
   }
@@ -429,6 +370,7 @@ void buildStatus(JsonObject out) {
     last["result"] = sLastResult;
     last["version"] = sLastVersion;
   }
+  if (sFlow.skippedBlocked()) out["skipped"] = sFlow.blockedVersion();
   out["selftest_running"] = sSelfTest.active();
   out["auto_check"] = config::get().updateCheck;
 }

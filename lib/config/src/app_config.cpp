@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stop_config.h>
 
 namespace abf {
 
@@ -15,6 +16,7 @@ constexpr const char *kKeyNightStart = "nightStart";
 constexpr const char *kKeyNightEnd = "nightEnd";
 constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
+constexpr const char *kKeyStops = "stops";
 
 // Migrationsschritte: kSteps[n] hebt Schema n auf n+1.
 // Schema 1 ist das erste veröffentlichte, daher noch keine Schritte.
@@ -85,6 +87,12 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readU32(store, kKeyNightBright, cfg.nightBrightness, validNightBrightness, invalid);
   readBool(store, kKeyUpdateCheck, cfg.updateCheck, invalid);
 
+  std::string stops;
+  if (store.getStr(kKeyStops, stops) && !stopsFromString(stops, cfg.stops)) {
+    cfg.stops.clear();
+    ++invalid;
+  }
+
   if (invalidCount) *invalidCount = invalid;
   return cfg;
 }
@@ -97,6 +105,7 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyNightEnd, cfg.nightEnd);
   ok &= store.putU32(kKeyNightBright, cfg.nightBrightness);
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
+  ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
   return ok;
 }
 

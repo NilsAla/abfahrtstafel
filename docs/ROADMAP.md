@@ -67,15 +67,17 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [x] [A] Optional: täglicher Check, nur Hinweis (Einstellung „Täglich nach Updates suchen“)
 - [ ] [B] Update per Knopf, Rollback, Bildverhalten während Flash-Write (Bounce-Buffer / statischer Screen)
 - Done (A): Manifest-/Semver-/Statemachine-Tests grün, Releases `v0.2.0` und `v0.2.1` für den Update-Test
-- Done (B): Update v0.2.0 → v0.2.1 per Knopf; kaputter Build rollt automatisch zurück
+- Done (B): Update v0.2.0 → v0.2.1 per Knopf; kaputter Build rollt automatisch zurück ✅ (2026-10-26, DevKit)
 
 ## M3 – Transitous-Client
-- [ ] [A] Provider-Interface (`src/provider/`) + Transitous-Implementierung, Fallback-Provider vorgesehen
-- [ ] [A] Parser als reine Funktion, Unit-Tests auf echten Antwort-Fixtures (`test/fixtures/`)
-- [ ] [A] Einstellungen: Haltestellensuche (geocode), bis zu 2 Haltestellen, Filter Linie/Richtung/Verkehrsmittel, Fußweg-Offset
-- [ ] [A] Polling ≥ 30 s mit Backoff, Fehlerzustände (kein WLAN, keine Zeit, API down, keine Abfahrten, nur Soll-Daten),
-  letzte Daten mit Datenalter
-- [ ] [A] User-Agent, Attribution in der Web-UI, `/api/departures`, `/api/stops?q=`
+- [x] [A] Provider-Interface (`src/provider/`) + Transitous-Implementierung, Fallback-Provider vorgesehen
+- [x] [A] Parser als reine Funktion, Unit-Tests auf echten Antwort-Fixtures (`test/fixtures/transitous/`)
+- [x] [A] Einstellungen: Haltestellensuche (geocode), bis zu 2 Haltestellen, Filter „alle“ (nach Verkehrsmittel) oder
+  „nur bestimmte Richtungen“ (Linie + GTFS-directionId, nach Ziel gruppiert), Fußweg-Offset
+- [x] [A] Polling 60 s mit Backoff (30 s … 10 min), Fehlerzustände (kein WLAN, keine Zeit, API down, keine Abfahrten),
+  letzte Daten mit Datenalter; Ausfälle zur Planzeit einordnen, Dubletten aus mehreren Feeds entfernen
+- [x] [A] User-Agent, Attribution in der Web-UI, `/api/departures`, `/api/stops?q=`, `/api/directions?stop=`
+- [ ] [A] Zweites Fixture (anderer Tag/Uhrzeit, Bushaltestelle, Lübeck): `directionId` über die Zeit stabil?
 - [ ] [B] 24-h-Dauerlauf ohne Heap-Leck
 - Done (A): Parser-/Filtertests grün, Release `v0.3.0`
 - Done (B): 24 h stabil
@@ -111,6 +113,12 @@ Phase B hakt ab oder notiert den Befund.
   PSRAM ≈ 8 MB gesamt, danach alle 10 s eine Heap-Zeile. Fehlerbilder: PSRAM 0 → `memory_type`/`qio_opi` prüfen;
   kein Serial → `ARDUINO_USB_CDC_ON_BOOT` in `platformio.ini`. Code: `src/main.cpp`.
 - [ ] **CS-Pin klären (M0.5):** CS 0 vs. 42 und möglicher Konflikt mit BOOT/GPIO0. Code: `src/board/`.
+- Befund 2026-10-26 (DevKitC-1 N16R8 statt Waveshare, v0.2.0): Flash/PSRAM ok (8192 KB PSRAM, 229 KB Heap frei),
+  Portal-Einrichtung ok, mDNS ok, NTP ok, automatische Update-Prüfung nach 2 min ok. Gefunden und im Branch behoben:
+  AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar
+  (`AsyncTCP bind error: -8` → Wiederholung alle 2 s). Update 0.2.0 → 0.2.1 per Knopf erfolgreich, Rollback mit
+  Test-Build 0.2.2 erfolgreich (zurück auf 0.2.1, Meldung in der Web-UI). Daraus: zurückgerollte Versionen werden
+  nie wieder angeboten (NVS `ota/blocked`).
 - [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
   Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
@@ -140,5 +148,14 @@ Phase B hakt ab oder notiert den Befund.
   Danach sofort ein reguläres Release (`v0.2.3`) nachschieben, damit `latest` wieder gut ist.
 - [ ] **Stromausfall während Selbsttest (M2):** Direkt nach dem Update-Neustart (vor `Selbsttest bestanden`) Strom ziehen →
   beim nächsten Start läuft die Vorversion (Bootloader setzt ungeprüfte Images auf ABORTED). Dokumentieren, ob gewollt.
+- [ ] **Abfahrten live (M3):** Haltestelle in der Web-UI suchen, auswählen, speichern → Status zeigt nach < 1 min
+  Abfahrten, die mit der DB-App übereinstimmen (Zeit, Verspätung, Gleis). Log `dep` ohne Warnungen.
+  Fehlerbilder: `HTTP 4xx`, `Antwort zu groß`, `Abfahrten nicht lesbar`. Code: `src/provider/`.
+- [ ] **Richtungsauswahl (M3):** „Nur bestimmte Richtungen“ → Gruppen erscheinen nach wenigen Sekunden, Auswahl
+  speichern, Vorschau zeigt nur diese Richtung. „Weiter in die Zukunft suchen“ ergänzt Linien.
+- [ ] **API weg / WLAN weg (M3):** Router aus → Vorschau zeigt weiter Abfahrten mit „Stand: vor N min (keine
+  WLAN-Verbindung)“, vergangene verschwinden. Nach Wiederkehr aktualisiert sich alles ohne Neustart.
+- [ ] **Speicher (M3):** `/api/status` → Heap nach 1 h Betrieb mit 2 Haltestellen stabil (min_free notieren),
+  PSRAM wird genutzt. Task-Stack der Abruf-Task reicht (kein Stack-Overflow im Log).
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.

@@ -12,5 +12,6 @@ Alles hier muss in `env:native` kompilieren und ist dort per Unit-Test abgesiche
 | `holdbutton` | Entprellter Taster mit Halte-Erkennung (Factory Reset) | M1 |
 | `timeutil` | Zeitzone Europe/Berlin, Plausibilität der Systemzeit | M1 |
 | `ota` | SemVer, Manifest-Parser, Update-Statemachine, Download-Prüfung, Selbsttest-Entscheidung | M2 |
+| `transitous` | MOTIS-Parser, URLs, Aufbereitung/Filter, Richtungsgruppen, Haltestellen-JSON, Status/Backoff | M3 |
 
-Geplant: Transitous-Parser/Filter (M3), Helligkeit/Nachtmodus (M4).
+Geplant: Helligkeit/Nachtmodus (M4).

@@ -11,6 +11,7 @@ namespace config {
 void begin();  // Migration + Laden, loggt das Ergebnis
 
 abf::Config get();
+uint32_t revision();  // zählt bei jeder gespeicherten Änderung hoch
 
 struct UpdateResult {
   bool ok = false;

@@ -47,7 +47,8 @@ bool UpdateFlow::startCheck() {
 
 void UpdateFlow::checkSucceeded(const Manifest &m) {
   if (state_ != UpdateState::Checking) return;
-  if (isNewerVersion(m.version, current_)) {
+  skippedBlocked_ = !blocked_.empty() && m.version == blocked_;
+  if (isNewerVersion(m.version, current_) && !skippedBlocked_) {
     offer_ = m;
     hasOffer_ = true;
     state_ = UpdateState::Available;

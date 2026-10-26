@@ -35,6 +35,10 @@ class UpdateFlow {
  public:
   explicit UpdateFlow(std::string currentVersion) : current_(std::move(currentVersion)) {}
 
+  // Version, die schon einmal zurückgerollt wurde: wird nie wieder angeboten
+  void blockVersion(const std::string &version) { blocked_ = version; }
+  const std::string &blockedVersion() const { return blocked_; }
+
   bool startCheck();
   void checkSucceeded(const Manifest &m);
   bool startInstall();
@@ -51,9 +55,12 @@ class UpdateFlow {
   uint32_t bytesWritten() const { return written_; }
   uint8_t percent() const;
   const std::string &currentVersion() const { return current_; }
+  bool skippedBlocked() const { return skippedBlocked_; }  // letzte Prüfung fand nur die gesperrte Version
 
  private:
   std::string current_;
+  std::string blocked_;
+  bool skippedBlocked_ = false;
   UpdateState state_ = UpdateState::Idle;
   UpdateError error_ = UpdateError::None;
   bool hasOffer_ = false;

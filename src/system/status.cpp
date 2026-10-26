@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "../net/network.h"
+#include "../provider/departure_service.h"
 #include "../version.h"
 #include "system.h"
 
@@ -55,7 +56,17 @@ void build(JsonObject out) {
   psram["min_free"] = ESP.getMinFreePsram();
   psram["total"] = ESP.getPsramSize();
 
-  out["last_fetch"] = nullptr;  // ab M3: Zeitpunkt des letzten erfolgreichen Abrufs
+  const int64_t fetched = departures::lastSuccess();
+  if (fetched > 0) {
+    const time_t ft = static_cast<time_t>(fetched);
+    struct tm ftm;
+    localtime_r(&ft, &ftm);
+    char fbuf[32];
+    strftime(fbuf, sizeof(fbuf), "%Y-%m-%dT%H:%M:%S%z", &ftm);
+    out["last_fetch"] = fbuf;
+  } else {
+    out["last_fetch"] = nullptr;
+  }
 }
 
 }  // namespace status

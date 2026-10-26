@@ -10,6 +10,9 @@
 //   GET  /api/update             Update-Zustand, Angebot, Fortschritt, Ergebnis des letzten Updates
 //   POST /api/update/check       Nach Update suchen (202, 409 wenn beschäftigt)
 //   POST /api/update/install     Angebotenes Update installieren (202, 409)
+//   GET  /api/departures         Abfahrten je Haltestelle, aufbereitet, mit Zustand und Datenalter
+//   GET  /api/stops?q=…          Haltestellensuche (asynchron: state pending → done/error, erneut abfragen)
+//   GET  /api/directions?stop=…  Linien/Richtungen einer Haltestelle für die Auswahl (asynchron, &more=1)
 #include "web_server.h"
 
 #include <ArduinoJson.h>
@@ -24,6 +27,7 @@
 #include "../generated/web_assets.h"
 #include "../log/app_log.h"
 #include "../ota/ota.h"
+#include "../provider/departure_service.h"
 #include "../system/status.h"
 #include "../system/system.h"
 
@@ -31,9 +35,14 @@ namespace web {
 
 namespace {
 
+constexpr uint32_t kRetryMs = 2000;
+
 AsyncWebServer sServer(80);
 bool sRoutes = false;
-bool sRunning = false;
+bool sWanted = false;   // begin() aufgerufen, end() noch nicht
+bool sRunning = false;  // lauscht tatsächlich
+uint32_t sLastTry = 0;
+uint32_t sTries = 0;
 
 void sendJson(AsyncWebServerRequest *req, int code, const JsonDocument &doc) {
   String body;
@@ -154,6 +163,26 @@ void registerRoutes() {
     sendJson(req, ok ? 202 : 409, doc);
   });
 
+  sServer.on("/api/departures", HTTP_GET, [](AsyncWebServerRequest *req) {
+    JsonDocument doc;
+    departures::buildBoard(doc.to<JsonObject>(), 8);
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/stops", HTTP_GET, [](AsyncWebServerRequest *req) {
+    const AsyncWebParameter *q = req->getParam("q");
+    JsonDocument doc;
+    departures::lookupStops(q ? q->value().c_str() : "", doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/directions", HTTP_GET, [](AsyncWebServerRequest *req) {
+    const AsyncWebParameter *stop = req->getParam("stop");
+    JsonDocument doc;
+    departures::lookupDirections(stop ? stop->value().c_str() : "", req->hasParam("more"), doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
   sServer.onNotFound([](AsyncWebServerRequest *req) {
     if (req->url().startsWith("/api/")) {
       JsonDocument doc;
@@ -166,24 +195,44 @@ void registerRoutes() {
   });
 }
 
+void tryStart() {
+  sLastTry = millis();
+  ++sTries;
+  sServer.begin();
+  // Am Board gesehen: Direkt nach dem Einrichtungsportal ist Port 80 noch belegt (AsyncTCP: "bind error: -8").
+  // AsyncTCP gibt den Socket dann frei, ein späteres begin() versucht es neu.
+  sRunning = sServer.state() == LISTEN;
+  if (sRunning) {
+    LOGI("web", "Web-UI gestartet (Port 80%s)", sTries > 1 ? ", nach erneutem Versuch" : "");
+  } else if (sTries == 1) {
+    LOGW("web", "Port 80 noch belegt, neuer Versuch alle %lu s", static_cast<unsigned long>(kRetryMs / 1000));
+  }
+}
+
 }  // namespace
 
 void begin() {
-  if (sRunning) return;
+  if (sWanted) return;
   if (!sRoutes) {
     registerRoutes();
     sRoutes = true;
   }
-  sServer.begin();
-  sRunning = true;
-  LOGI("web", "Web-UI gestartet (Port 80)");
+  sWanted = true;
+  sTries = 0;
+  tryStart();
 }
 
 void end() {
+  if (!sWanted) return;
+  sWanted = false;
   if (!sRunning) return;
   sServer.end();
   sRunning = false;
   LOGI("web", "Web-UI gestoppt");
+}
+
+void loop() {
+  if (sWanted && !sRunning && millis() - sLastTry >= kRetryMs) tryStart();
 }
 
 bool running() { return sRunning; }

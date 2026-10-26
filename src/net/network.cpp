@@ -3,6 +3,7 @@
 
 #include <ESPmDNS.h>
 #include <WiFi.h>
+#include <esp_mac.h>
 #include <time.h>
 #include <time_berlin.h>
 
@@ -66,7 +67,9 @@ void begin(const std::string &hostname) {
   WiFi.setAutoReconnect(true);
 
   uint8_t mac[6];
-  WiFi.macAddress(mac);
+  // Aus dem eFuse lesen: WiFi.macAddress() liefert vor dem Start des STA-Interfaces nur Nullen
+  // (am Board gesehen: AP hieß "Abfahrtstafel-0000")
+  esp_read_mac(mac, ESP_MAC_WIFI_STA);
   sApName = abf::apName(mac);
 
   configTzTime(abf::kTzBerlin, "de.pool.ntp.org", "pool.ntp.org", "time.cloudflare.com");

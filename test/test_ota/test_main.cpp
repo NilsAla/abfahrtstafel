@@ -226,6 +226,23 @@ static void test_flow_late_results_ignored(void) {
   ASSERT_ENUM(UpdateState::Idle, f.state());
 }
 
+static void test_flow_blocked_version_not_offered(void) {
+  // 0.2.2 wurde zurückgerollt und ist weiterhin "latest" → nicht erneut anbieten
+  UpdateFlow f("0.2.1");
+  f.blockVersion("0.2.2");
+  f.startCheck();
+  f.checkSucceeded(offer("0.2.2"));
+  ASSERT_ENUM(UpdateState::UpToDate, f.state());
+  TEST_ASSERT_FALSE(f.hasOffer());
+  TEST_ASSERT_TRUE(f.skippedBlocked());
+
+  // Eine neuere Version danach wird wieder angeboten
+  f.startCheck();
+  f.checkSucceeded(offer("0.3.0"));
+  ASSERT_ENUM(UpdateState::Available, f.state());
+  TEST_ASSERT_FALSE(f.skippedBlocked());
+}
+
 static void test_error_texts(void) {
   for (int e = static_cast<int>(UpdateError::NoNetwork); e <= static_cast<int>(UpdateError::ImageInvalid); ++e) {
     TEST_ASSERT_TRUE(strlen(updateErrorText(static_cast<UpdateError>(e))) > 5);
@@ -349,6 +366,7 @@ int main(int, char **) {
   RUN_TEST(test_flow_error_keeps_offer_for_retry);
   RUN_TEST(test_flow_check_error);
   RUN_TEST(test_flow_late_results_ignored);
+  RUN_TEST(test_flow_blocked_version_not_offered);
   RUN_TEST(test_error_texts);
   RUN_TEST(test_verifier_ok_in_chunks);
   RUN_TEST(test_verifier_truncated);

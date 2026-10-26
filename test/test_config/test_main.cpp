@@ -247,6 +247,67 @@ static void test_json_brightness_type_and_range(void) {
   TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
 }
 
+// --- Haltestellen (ab M3) --------------------------------------------------
+
+static void test_stops_persist(void) {
+  MemStore s;
+  Config c;
+  StopConfig stop;
+  stop.id = "de-DELFI_de:05566:13729_G";
+  stop.name = "Emsdetten, Bahnhof";
+  stop.filter = StopFilter::Selected;
+  stop.select.push_back({"de-VBN_34533_2", 0, "RE15", "Münster Hbf"});
+  c.stops.push_back(stop);
+  TEST_ASSERT_TRUE(saveConfig(s, c));
+  TEST_ASSERT_TRUE(s.str["stops"].size() > 10);
+
+  Config l = loadConfig(s);
+  TEST_ASSERT_EQUAL_size_t(1, l.stops.size());
+  TEST_ASSERT_EQUAL_STRING("Emsdetten, Bahnhof", l.stops[0].name.c_str());
+  TEST_ASSERT_EQUAL_STRING("de-VBN_34533_2", l.stops[0].select[0].routeId.c_str());
+}
+
+static void test_stops_missing_or_broken_in_nvs(void) {
+  MemStore s;
+  TEST_ASSERT_EQUAL_size_t(0, loadConfig(s).stops.size());  // Konfiguration aus M1/M2 ohne Key
+  s.str["stops"] = "{kaputt";
+  int invalid = 0;
+  TEST_ASSERT_EQUAL_size_t(0, loadConfig(s, &invalid).stops.size());
+  TEST_ASSERT_EQUAL_INT(1, invalid);
+}
+
+static void test_stops_json_api(void) {
+  Config c;
+  JsonDocument doc;
+  deserializeJson(doc, R"({"stops":[{"id":"a","name":"A","filter":"all","modes":["bus"],"walk":2}]})");
+  std::vector<FieldError> errors;
+  TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_size_t(1, c.stops.size());
+  TEST_ASSERT_EQUAL_UINT8(kModeBus, c.stops[0].modes);
+
+  JsonDocument out;
+  configToJson(c, out.to<JsonObject>());
+  TEST_ASSERT_EQUAL_STRING("A", out["stops"][0]["name"]);
+  TEST_ASSERT_EQUAL_STRING("bus", out["stops"][0]["modes"][0]);
+
+  // Ohne "stops" im Teil-Update bleiben die Haltestellen erhalten
+  JsonDocument partial;
+  deserializeJson(partial, R"({"brightness": 50})");
+  TEST_ASSERT_TRUE(applyConfigJson(partial.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_size_t(1, c.stops.size());
+
+  JsonDocument bad;
+  deserializeJson(bad, R"({"brightness": 60, "stops":[{"id":"a","name":"A","filter":"selected"}]})");
+  TEST_ASSERT_FALSE(applyConfigJson(bad.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_STRING("stops", errors[0].field.c_str());
+  TEST_ASSERT_TRUE(errors[0].message.find("Richtung") != std::string::npos);
+  TEST_ASSERT_EQUAL_UINT32(50, c.brightness);
+
+  JsonDocument notArray;
+  deserializeJson(notArray, R"({"stops": "a"})");
+  TEST_ASSERT_FALSE(applyConfigJson(notArray.as<JsonObjectConst>(), c, errors));
+}
+
 int main(int, char **) {
   UNITY_BEGIN();
   RUN_TEST(test_migrate_fresh_writes_schema);
@@ -263,5 +324,8 @@ int main(int, char **) {
   RUN_TEST(test_json_hostname_normalized);
   RUN_TEST(test_json_errors_are_atomic);
   RUN_TEST(test_json_brightness_type_and_range);
+  RUN_TEST(test_stops_persist);
+  RUN_TEST(test_stops_missing_or_broken_in_nvs);
+  RUN_TEST(test_stops_json_api);
   return UNITY_END();
 }

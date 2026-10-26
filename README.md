@@ -4,7 +4,13 @@ Kleine, eigenständige Abfahrtsanzeige für Bus und Bahn im Haltestellen-Look.
 Läuft komplett auf dem Gerät – kein Server, kein Home Assistant, keine App. Eingerichtet wird
 über eine Weboberfläche im Heimnetz, Updates gibt es per Knopfdruck.
 
-> Status: in Entwicklung (Meilenstein M2). Fortschritt: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+> Status: in Entwicklung (Meilenstein M3). Fortschritt: [`docs/ROADMAP.md`](docs/ROADMAP.md)
+
+## Vorschau
+
+![Entwurf der Anzeige: Abfahrten am Bahnhof Emsdetten](docs/mockups/Main.png)
+
+Entwurf, noch nicht umgesetzt – weitere Mockups (Display-Zustände, Web-UI) in [`docs/mockups/`](docs/mockups/README.md).
 
 ## Hardware
 - [Waveshare ESP32-S3-LCD-3.16](https://www.waveshare.com/wiki/ESP32-S3-LCD-3.16)
