@@ -35,9 +35,14 @@ namespace web {
 
 namespace {
 
+constexpr uint32_t kRetryMs = 2000;
+
 AsyncWebServer sServer(80);
 bool sRoutes = false;
-bool sRunning = false;
+bool sWanted = false;   // begin() aufgerufen, end() noch nicht
+bool sRunning = false;  // lauscht tatsächlich
+uint32_t sLastTry = 0;
+uint32_t sTries = 0;
 
 void sendJson(AsyncWebServerRequest *req, int code, const JsonDocument &doc) {
   String body;
@@ -190,24 +195,44 @@ void registerRoutes() {
   });
 }
 
+void tryStart() {
+  sLastTry = millis();
+  ++sTries;
+  sServer.begin();
+  // Am Board gesehen: Direkt nach dem Einrichtungsportal ist Port 80 noch belegt (AsyncTCP: "bind error: -8").
+  // AsyncTCP gibt den Socket dann frei, ein späteres begin() versucht es neu.
+  sRunning = sServer.state() == LISTEN;
+  if (sRunning) {
+    LOGI("web", "Web-UI gestartet (Port 80%s)", sTries > 1 ? ", nach erneutem Versuch" : "");
+  } else if (sTries == 1) {
+    LOGW("web", "Port 80 noch belegt, neuer Versuch alle %lu s", static_cast<unsigned long>(kRetryMs / 1000));
+  }
+}
+
 }  // namespace
 
 void begin() {
-  if (sRunning) return;
+  if (sWanted) return;
   if (!sRoutes) {
     registerRoutes();
     sRoutes = true;
   }
-  sServer.begin();
-  sRunning = true;
-  LOGI("web", "Web-UI gestartet (Port 80)");
+  sWanted = true;
+  sTries = 0;
+  tryStart();
 }
 
 void end() {
+  if (!sWanted) return;
+  sWanted = false;
   if (!sRunning) return;
   sServer.end();
   sRunning = false;
   LOGI("web", "Web-UI gestoppt");
+}
+
+void loop() {
+  if (sWanted && !sRunning && millis() - sLastTry >= kRetryMs) tryStart();
 }
 
 bool running() { return sRunning; }

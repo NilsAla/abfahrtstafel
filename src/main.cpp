@@ -14,6 +14,7 @@
 #include "provider/departure_service.h"
 #include "system/system.h"
 #include "version.h"
+#include "web/web_server.h"
 
 namespace {
 
@@ -64,6 +65,7 @@ void loop() {
   sys::watchdogFeed();
   sys::loop();
   net::loop();
+  web::loop();
   ota::loop();
   heartbeat();
   delay(10);
