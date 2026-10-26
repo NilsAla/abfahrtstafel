@@ -69,6 +69,25 @@ Im Portal nur der Menüpunkt WLAN – das WiFiManager-eigene OTA-Update ist bewu
 
 Keine Authentifizierung: Gerät steht im Heimnetz. Bei Bedarf später ein optionales Passwort für schreibende Endpunkte.
 
+## Firmware-Update (M2)
+1. `GET …/releases/latest/download/manifest.json` (Redirects auf github.com/objects.githubusercontent.com)
+2. Manifest prüfen (`lib/ota`): SemVer, SHA-256 als Hex, Größe ≤ OTA-Partition, URL exakt versioniertes `firmware.bin`
+   dieses Repos. Angeboten wird nur eine echt neuere Version
+3. Installation nur per Knopf: Download in eigener Task (12 KB Stack) direkt in die inaktive Partition,
+   SHA-256 über mbedTLS beim Streamen, `esp_ota_end` prüft das Image, erst dann `esp_ota_set_boot_partition`
+4. Neustart → Bootloader setzt das Image auf PENDING_VERIFY → Selbsttest: WLAN verbunden + Web-UI läuft →
+   `esp_ota_mark_app_valid_cancel_rollback`. Kein Erfolg in 5 min oder Absturz/Stromausfall vorher → Rollback
+5. Zielversion steht in NVS `ota/pendingTo`; startet danach eine andere Version, wird „zurückgerollt“ gemeldet
+
+| Methode | Pfad | Inhalt |
+|---|---|---|
+| GET | `/api/update` | `current`, `state`, `busy`, `percent`, `error`, `offer{version,notes,size}`, `last_update{result,version}`, `selftest_running` |
+| POST | `/api/update/check` | Prüfung starten (202, 409 wenn beschäftigt) |
+| POST | `/api/update/install` | Angebot installieren (202, 409) |
+
+Für Rollback-Tests baut `release.yml` mit dem Schalter `selftest_fail` eine Firmware mit `-DFW_SELFTEST_FAIL`.
+Solche Releases nur veröffentlichen, solange keine Geräte im Einsatz sind, und sofort ein reguläres nachschieben.
+
 ## Release-Kette
 - Tag `vX.Y.Z` (oder manueller Start von `release.yml` mit Versionsfeld) → GitHub Actions baut mit `FW_VERSION`
 - Assets: `firmware.bin` (OTA), `firmware-factory.bin` (Erstflash ab 0x0), `manifest.json`

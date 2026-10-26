@@ -11,5 +11,6 @@ Alles hier muss in `env:native` kompilieren und ist dort per Unit-Test abgesiche
 | `wifisup` | WLAN-Statemachine (Einrichtung, Reconnect, Fallback-Portal), AP-Name | M1 |
 | `holdbutton` | Entprellter Taster mit Halte-Erkennung (Factory Reset) | M1 |
 | `timeutil` | Zeitzone Europe/Berlin, Plausibilität der Systemzeit | M1 |
+| `ota` | SemVer, Manifest-Parser, Update-Statemachine, Download-Prüfung, Selbsttest-Entscheidung | M2 |
 
-Geplant: OTA-Manifest/SemVer (M2), Transitous-Parser/Filter (M3), Helligkeit/Nachtmodus (M4).
+Geplant: Transitous-Parser/Filter (M3), Helligkeit/Nachtmodus (M4).

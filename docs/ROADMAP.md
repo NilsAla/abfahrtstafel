@@ -56,13 +56,15 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Gerät nach Factory Reset ohne Serial einrichtbar
 
 ## M2 – Update per Knopfdruck
-- [ ] [A] Update-Seite: aktuelle Version, „Nach Update suchen“, Release-Notes, „Update installieren“, Fortschritt
-- [ ] [A] Manifest → Semver → HTTPS-Download über `url` (Redirects folgen) → SHA-256 streamend prüfen → erst dann Boot-Partition setzen → Neustart
-- [ ] [A] Zustand „Update läuft“ als Event an die UI-Schicht (Darstellung in M4)
-- [ ] [A] Selbsttest nach Boot (WLAN + Web-UI), dann als gültig markieren. Rollback-Support des Bootloaders prüfen,
-  sonst Software-Rollback (Boot-Zähler)
-- [ ] [A] Build-Flag `FW_SELFTEST_FAIL` für absichtlich kaputten Test-Build
-- [ ] [A] Optional: täglicher Check, nur Hinweis
+- [x] [A] Update-Seite: aktuelle Version, „Nach Update suchen“, Release-Notes, „Update installieren“, Fortschritt,
+  Ergebnis des letzten Updates (erfolgreich / zurückgerollt)
+- [x] [A] Manifest → Semver → HTTPS-Download über `url` (Redirects manuell, Header-Puffer 4 KB) → SHA-256 streamend prüfen →
+  erst dann Boot-Partition setzen → Neustart. URL muss exakt `…/releases/download/v<version>/firmware.bin` dieses Repos sein
+- [x] [A] Zustand „Update läuft“ abfragbar über `ota::busy()` (Darstellung in M4)
+- [x] [A] Selbsttest nach Boot (WLAN + Web-UI), dann als gültig markieren. Bootloader-Rollback ist in den Arduino-Libs aktiv
+  (`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`); `verifyRollbackLater()` übernimmt die Entscheidung, Timeout 5 min
+- [x] [A] Build-Flag `FW_SELFTEST_FAIL` für absichtlich kaputten Test-Build (Rollback nach 30 s), in `release.yml` als Schalter
+- [x] [A] Optional: täglicher Check, nur Hinweis (Einstellung „Täglich nach Updates suchen“)
 - [ ] [B] Update per Knopf, Rollback, Bildverhalten während Flash-Write (Bounce-Buffer / statischer Screen)
 - Done (A): Manifest-/Semver-/Statemachine-Tests grün, Releases `v0.2.0` und `v0.2.1` für den Update-Test
 - Done (B): Update v0.2.0 → v0.2.1 per Knopf; kaputter Build rollt automatisch zurück
@@ -127,5 +129,16 @@ Phase B hakt ab oder notiert den Befund.
   Code: `src/system/system.cpp`, Pin in `src/board/board.h`.
 - [ ] **Watchdog (M1):** Testweise `delay(40000)` in `loop()` → Neustart, Reset-Grund „Task-Watchdog“ in `/api/status`.
   Danach wieder entfernen. Code: `sys::watchdogBegin()`.
+- [ ] **Update per Knopf (M2):** Gerät per USB mit `v0.2.0` (`firmware-factory.bin`) flashen, einrichten. Reiter Update →
+  „Nach Update suchen“ → Angebot `0.2.1` mit Notes → „Update installieren“ → Fortschritt bis 100 %, Neustart.
+  Danach: Version 0.2.1, grüner Hinweis „erfolgreich installiert“, Log `Selbsttest bestanden`. Dauer notieren.
+  Fehlerbilder: `Verbindung fehlgeschlagen`/`HTTP …` im Log (TLS, Redirect), `esp_ota_begin`/`esp_ota_write` (Flash).
+  Code: `src/ota/ota.cpp`.
+- [ ] **Rollback (M2):** Release mit Schalter `selftest_fail` als neueste Version veröffentlichen (z. B. `v0.2.2`),
+  Update darauf installieren. Erwartet: neue Version startet, Log `Test-Build: schlägt absichtlich fehl`, nach 30 s
+  `Rollback`, Neustart in die Vorversion, Update-Seite zeigt „hat nicht geklappt, bisherige Version läuft weiter“.
+  Danach sofort ein reguläres Release (`v0.2.3`) nachschieben, damit `latest` wieder gut ist.
+- [ ] **Stromausfall während Selbsttest (M2):** Direkt nach dem Update-Neustart (vor `Selbsttest bestanden`) Strom ziehen →
+  beim nächsten Start läuft die Vorversion (Bootloader setzt ungeprüfte Images auf ABORTED). Dokumentieren, ob gewollt.
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.
