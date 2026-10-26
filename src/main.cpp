@@ -1,5 +1,6 @@
 // Abfahrtstafel – Einstiegspunkt
 // M1: Logging, Konfiguration, WLAN-Einrichtung, Web-UI, Watchdog, Factory Reset.
+// M2: Firmware-Update per Knopfdruck, Selbsttest und Rollback.
 
 #include <Arduino.h>
 #include <esp_ota_ops.h>
@@ -8,6 +9,7 @@
 #include "config/config_service.h"
 #include "log/app_log.h"
 #include "net/network.h"
+#include "ota/ota.h"
 #include "system/system.h"
 #include "version.h"
 
@@ -52,12 +54,14 @@ void setup() {
   board::initButtons();
   config::begin();
   net::begin(config::get().hostname);
+  ota::begin();
 }
 
 void loop() {
   sys::watchdogFeed();
   sys::loop();
   net::loop();
+  ota::loop();
   heartbeat();
   delay(10);
 }

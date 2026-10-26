@@ -7,6 +7,9 @@
 //   POST /api/config             Teil-Update (JSON), 400 mit Feldfehlern
 //   POST /api/restart            Neustart nach kurzer Verzögerung
 //   GET  /api/log?since=N        Logzeilen > N als Text; Header X-Log-Last, X-Log-Gap
+//   GET  /api/update             Update-Zustand, Angebot, Fortschritt, Ergebnis des letzten Updates
+//   POST /api/update/check       Nach Update suchen (202, 409 wenn beschäftigt)
+//   POST /api/update/install     Angebotenes Update installieren (202, 409)
 #include "web_server.h"
 
 #include <ArduinoJson.h>
@@ -20,6 +23,7 @@
 #include "../config/config_service.h"
 #include "../generated/web_assets.h"
 #include "../log/app_log.h"
+#include "../ota/ota.h"
 #include "../system/status.h"
 #include "../system/system.h"
 
@@ -126,6 +130,29 @@ void registerRoutes() {
   });
 
   sServer.on("/api/log", HTTP_GET, handleLog);
+
+  sServer.on("/api/update", HTTP_GET, [](AsyncWebServerRequest *req) {
+    JsonDocument doc;
+    ota::buildStatus(doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/update/check", HTTP_POST, [](AsyncWebServerRequest *req) {
+    const bool ok = ota::requestCheck();
+    JsonDocument doc;
+    doc["ok"] = ok;
+    if (!ok) doc["message"] = "Es läuft bereits eine Prüfung oder ein Update.";
+    sendJson(req, ok ? 202 : 409, doc);
+  });
+
+  sServer.on("/api/update/install", HTTP_POST, [](AsyncWebServerRequest *req) {
+    LOGI("web", "Update-Installation über Web-UI angefordert");
+    const bool ok = ota::requestInstall();
+    JsonDocument doc;
+    doc["ok"] = ok;
+    if (!ok) doc["message"] = "Kein Update verfügbar oder es läuft bereits eines.";
+    sendJson(req, ok ? 202 : 409, doc);
+  });
 
   sServer.onNotFound([](AsyncWebServerRequest *req) {
     if (req->url().startsWith("/api/")) {

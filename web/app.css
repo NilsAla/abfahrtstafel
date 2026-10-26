@@ -9,6 +9,8 @@
   --error: #b42318;
   --error-bg: #fdecea;
   --info-bg: #e8f1fb;
+  --ok: #0b6e4f;
+  --ok-bg: #e3f4ec;
   color-scheme: light dark;
 }
 
@@ -24,10 +26,13 @@
     --error: #ff8a80;
     --error-bg: #3a1d1b;
     --info-bg: #1b2a3a;
+    --ok: #3fb68b;
+    --ok-bg: #16302a;
   }
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -125,6 +130,22 @@ button:disabled { opacity: 0.6; cursor: default; }
 .banner.error { background: var(--error-bg); color: var(--error); }
 .banner.info { background: var(--info-bg); margin-top: 12px; }
 .banner button { margin-left: 8px; }
+
+.banner.ok { background: var(--ok-bg); color: var(--ok); }
+
+.notes {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+.notes:empty { display: none; }
+
+.progress { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+.progress progress { flex: 1; height: 16px; accent-color: var(--accent); }
 
 pre#log {
   background: var(--bg);

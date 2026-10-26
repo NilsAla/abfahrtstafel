@@ -27,6 +27,7 @@
       <dt>Uhrzeit</dt><dd id="st-time">–</dd>
       <dt>Adresse</dt><dd id="st-addr">–</dd>
       <dt>Firmware</dt><dd id="st-version">–</dd>
+      <dt>Update</dt><dd id="st-update">–</dd>
       <dt>Läuft seit</dt><dd id="st-uptime">–</dd>
       <dt>Letzter Neustart</dt><dd id="st-reset">–</dd>
       <dt>Abfahrtsdaten</dt><dd id="st-fetch">–</dd>
@@ -96,8 +97,23 @@
 
   <section id="tab-update" hidden>
     <h2>Update</h2>
+    <div id="up-last" class="banner" hidden></div>
     <p>Installierte Version: <strong id="up-version">–</strong></p>
-    <p class="hint">Die Update-Funktion per Knopfdruck folgt mit einer der nächsten Versionen.</p>
+    <p id="up-state" role="status"></p>
+    <div id="up-offer" hidden>
+      <p>Neue Version: <strong id="up-new"></strong></p>
+      <div id="up-notes" class="notes"></div>
+    </div>
+    <div id="up-progress" class="progress" hidden>
+      <progress id="up-bar" max="100" value="0"></progress>
+      <span id="up-pct"></span>
+    </div>
+    <div class="actions">
+      <button type="button" id="up-check">Nach Update suchen</button>
+      <button type="button" id="up-install" class="primary" hidden>Update installieren</button>
+    </div>
+    <p class="hint">Während des Updates nicht den Strom trennen. Das Gerät startet danach neu.
+      Klappt etwas nicht, läuft automatisch die bisherige Version weiter.</p>
   </section>
 
   <section id="tab-protokoll" hidden>

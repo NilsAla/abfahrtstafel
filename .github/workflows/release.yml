@@ -12,6 +12,11 @@ on:
         description: "Release-Notes (kurz, erscheinen auch auf dem Gerät)"
         required: false
         default: ""
+      selftest_fail:
+        description: "Test-Build: Selbsttest schlägt absichtlich fehl → Rollback (nur zum Testen!)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -77,7 +82,10 @@ jobs:
       - name: Firmware bauen
         env:
           FW_VERSION: ${{ steps.ver.outputs.version }}
-        run: pio run -e esp32s3
+          PLATFORMIO_BUILD_FLAGS: ${{ inputs.selftest_fail && '-DFW_SELFTEST_FAIL' || '' }}
+        run: |
+          if [ -n "$PLATFORMIO_BUILD_FLAGS" ]; then echo "::warning::Test-Build mit $PLATFORMIO_BUILD_FLAGS"; fi
+          pio run -e esp32s3
 
       - name: Release-Dateien erzeugen
         env:
