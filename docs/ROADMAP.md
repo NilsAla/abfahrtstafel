@@ -30,7 +30,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
   `firmware.bin`, `manifest.json` (version, sha256, size, url, notes), `firmware-factory.bin` (gemergt, Offset 0x0)
 - [x] [A] Lizenz MIT, README, Projektdoku in `docs/`
 - [ ] [B] Hardware-Check: Waveshare-Demo flashen, Revision (V1/Rev1.1) notieren, BOOT-Taster, Strom C-zu-C, Maße nachmessen
-- Done (A): Release `v0.0.1` mit allen drei Assets, sha256 im Manifest stimmt
+- Done (A): Release `v0.0.1` mit allen drei Assets, sha256 im Manifest stimmt ✅ (2026-10-26, App 309 KB)
 - Done (B): `v0.0.1` per USB geflasht, bootet, Serial-Log sichtbar
 
 ## M0.5 – Board-HAL-Entwurf

@@ -61,8 +61,11 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 - Commits klein, Message auf Deutsch, imperativ
 - `pio run -e esp32s3` und `pio test -e native` müssen grün sein; GitHub Actions ist der Referenz-Build
 - Cloud-Sandbox: PlatformIO-Registry, Toolchain-Downloads und api.transitous.org sind dort nicht erreichbar.
-  Verifikation über GitHub Actions (Status per `gh api`), reine Logik lokal mit g++ + Unity testen.
-  Transitous-Fixtures liefert der Nutzer per curl.
+  Verifikation über GitHub Actions (Status per `env -u GH_TOKEN gh api …`; Job-Logs sind nicht abrufbar, nur Step-Status),
+  reine Logik lokal mit g++ + Unity testen. Transitous-Fixtures liefert der Nutzer per curl.
+- Releases aus der Cloud-Session: Tag-Pushes sind dort gesperrt → `release.yml` per `workflow_dispatch`
+  starten (`gh api -X POST …/actions/workflows/release.yml/dispatches -f ref=main -f 'inputs[version]=X.Y.Z' -f 'inputs[notes]=…'`).
+  Lokal geht auch `git tag -a vX.Y.Z -m "Notes" && git push origin vX.Y.Z`.
 - Keine neuen Libraries ohne Begründung im Commit
 - Nutzer kennt sich mit Git kaum aus: Git-Schritte selbst erledigen und kurz erklären, was passiert ist
 - Hardware-Tests nur in Phase B: `pio run -e esp32s3 -t upload`, Serial-Log in Datei
