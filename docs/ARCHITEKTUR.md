@@ -88,6 +88,26 @@ Keine Authentifizierung: Gerät steht im Heimnetz. Bei Bedarf später ein option
 Für Rollback-Tests baut `release.yml` mit dem Schalter `selftest_fail` eine Firmware mit `-DFW_SELFTEST_FAIL`.
 Solche Releases nur veröffentlichen, solange keine Geräte im Einsatz sind, und sofort ein reguläres nachschieben.
 
+## Abfahrten (M3)
+- `src/provider/`: Interface `Provider` (Transitous jetzt, Fallback später) – blockierende HTTPS-Aufrufe nur aus der
+  Abruf-Task, nie aus Webserver oder Loop. Antworten landen im PSRAM (20 Abfahrten ≈ 45 KB), JSON mit Filter-Dokument
+- Abruf-Task: je Haltestelle alle 60 s (Nutzungsregeln: ≥ 30 s), Backoff 30 s → 10 min, pausiert während Updates;
+  `n = 20` (alle) bzw. `40` (gefiltert)
+- Rohdaten werden gespeichert, die Aufbereitung (`lib/transitous/departure_board`) läuft bei jeder Anzeige mit der
+  aktuellen Uhrzeit → auch bei API-Ausfall laufen Minuten korrekt weiter, Vergangenes fällt heraus
+- Regeln der Aufbereitung: Ausfall (`cancelled` am Halt oder `tripCancelled`) wird zur Planzeit einsortiert und nach
+  deren Ablauf entfernt; Fußweg blendet Unerreichbares aus; Dubletten (Linie + Ziel + Planzeit) aus zweitem Feed
+  werden zusammengeführt (Echtzeit/Gleis gewinnt); Ziele gekürzt („Münster(Westf) Hbf“ → „Münster Hbf“)
+- Richtungsfilter: Auswahl = Liste aus `routeId` + GTFS-`directionId`, nicht Zieltext (der variiert je Fahrt/Feed).
+  Neue Linien bleiben ausgeblendet. Offenes Risiko: Pflege von `directionId` je Verbund (siehe ROADMAP)
+- Web-UI-Abfragen (Suche, Richtungen) sind asynchron: Antwort `pending`, Client fragt erneut, bis `done`/`error`
+
+| Methode | Pfad | Inhalt |
+|---|---|---|
+| GET | `/api/departures` | je Haltestelle `status`, `text`, `stale`, `age_s`, `rows[]` (line, to, track, mode, color, time, minutes, delay, realtime, cancelled) |
+| GET | `/api/stops?q=` | `state`, `results[]` (id, name, town, region, country, modes) |
+| GET | `/api/directions?stop=&more=1` | `state`, `groups[]` (to, options[route, dir, line, to, mode, count]), `can_more`, `until` |
+
 ## Release-Kette
 - Tag `vX.Y.Z` (oder manueller Start von `release.yml` mit Versionsfeld) → GitHub Actions baut mit `FW_VERSION`
 - Assets: `firmware.bin` (OTA), `firmware-factory.bin` (Erstflash ab 0x0), `manifest.json`

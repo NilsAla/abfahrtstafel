@@ -70,12 +70,14 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Update v0.2.0 → v0.2.1 per Knopf; kaputter Build rollt automatisch zurück
 
 ## M3 – Transitous-Client
-- [ ] [A] Provider-Interface (`src/provider/`) + Transitous-Implementierung, Fallback-Provider vorgesehen
-- [ ] [A] Parser als reine Funktion, Unit-Tests auf echten Antwort-Fixtures (`test/fixtures/`)
-- [ ] [A] Einstellungen: Haltestellensuche (geocode), bis zu 2 Haltestellen, Filter Linie/Richtung/Verkehrsmittel, Fußweg-Offset
-- [ ] [A] Polling ≥ 30 s mit Backoff, Fehlerzustände (kein WLAN, keine Zeit, API down, keine Abfahrten, nur Soll-Daten),
-  letzte Daten mit Datenalter
-- [ ] [A] User-Agent, Attribution in der Web-UI, `/api/departures`, `/api/stops?q=`
+- [x] [A] Provider-Interface (`src/provider/`) + Transitous-Implementierung, Fallback-Provider vorgesehen
+- [x] [A] Parser als reine Funktion, Unit-Tests auf echten Antwort-Fixtures (`test/fixtures/transitous/`)
+- [x] [A] Einstellungen: Haltestellensuche (geocode), bis zu 2 Haltestellen, Filter „alle“ (nach Verkehrsmittel) oder
+  „nur bestimmte Richtungen“ (Linie + GTFS-directionId, nach Ziel gruppiert), Fußweg-Offset
+- [x] [A] Polling 60 s mit Backoff (30 s … 10 min), Fehlerzustände (kein WLAN, keine Zeit, API down, keine Abfahrten),
+  letzte Daten mit Datenalter; Ausfälle zur Planzeit einordnen, Dubletten aus mehreren Feeds entfernen
+- [x] [A] User-Agent, Attribution in der Web-UI, `/api/departures`, `/api/stops?q=`, `/api/directions?stop=`
+- [ ] [A] Zweites Fixture (anderer Tag/Uhrzeit, Bushaltestelle, Lübeck): `directionId` über die Zeit stabil?
 - [ ] [B] 24-h-Dauerlauf ohne Heap-Leck
 - Done (A): Parser-/Filtertests grün, Release `v0.3.0`
 - Done (B): 24 h stabil
@@ -140,5 +142,14 @@ Phase B hakt ab oder notiert den Befund.
   Danach sofort ein reguläres Release (`v0.2.3`) nachschieben, damit `latest` wieder gut ist.
 - [ ] **Stromausfall während Selbsttest (M2):** Direkt nach dem Update-Neustart (vor `Selbsttest bestanden`) Strom ziehen →
   beim nächsten Start läuft die Vorversion (Bootloader setzt ungeprüfte Images auf ABORTED). Dokumentieren, ob gewollt.
+- [ ] **Abfahrten live (M3):** Haltestelle in der Web-UI suchen, auswählen, speichern → Status zeigt nach < 1 min
+  Abfahrten, die mit der DB-App übereinstimmen (Zeit, Verspätung, Gleis). Log `dep` ohne Warnungen.
+  Fehlerbilder: `HTTP 4xx`, `Antwort zu groß`, `Abfahrten nicht lesbar`. Code: `src/provider/`.
+- [ ] **Richtungsauswahl (M3):** „Nur bestimmte Richtungen“ → Gruppen erscheinen nach wenigen Sekunden, Auswahl
+  speichern, Vorschau zeigt nur diese Richtung. „Weiter in die Zukunft suchen“ ergänzt Linien.
+- [ ] **API weg / WLAN weg (M3):** Router aus → Vorschau zeigt weiter Abfahrten mit „Stand: vor N min (keine
+  WLAN-Verbindung)“, vergangene verschwinden. Nach Wiederkehr aktualisiert sich alles ohne Neustart.
+- [ ] **Speicher (M3):** `/api/status` → Heap nach 1 h Betrieb mit 2 Haltestellen stabil (min_free notieren),
+  PSRAM wird genutzt. Task-Stack der Abruf-Task reicht (kein Stack-Overflow im Log).
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.
