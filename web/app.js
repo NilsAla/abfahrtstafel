@@ -323,6 +323,66 @@ function ageText(seconds) {
   return m < 1 ? 'gerade eben' : m < 60 ? `vor ${m} min` : `vor ${Math.floor(m / 60)} Std ${m % 60} min`;
 }
 
+// --- Nachbildung der Tafel (gleiche Regeln wie das Display ab M4) ----------
+
+function scaleTafel() {
+  const wrap = $('tafel-wrap');
+  if (wrap.clientWidth) $('tafel').style.transform = `scale(${wrap.clientWidth / 820})`;
+}
+new ResizeObserver(scaleTafel).observe($('tafel-wrap'));
+
+function hhmmMinus(now, seconds) {
+  // Uhrzeit des Datenstands aus Gerätezeit und Datenalter
+  const [hh, mm] = now.split(':').map(Number);
+  const t = ((hh * 60 + mm - Math.round(seconds / 60)) % 1440 + 1440) % 1440;
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+}
+
+function tafelRow(r) {
+  const min = r.cancelled ? r.scheduled
+    : r.minutes <= 0 ? 'jetzt'
+      : r.minutes < 60 ? [String(r.minutes), h('small', {}, 'min')] : r.time;
+  const where = r.track ? `${r.mode === 'bus' ? 'Steig' : 'Gleis'} ${r.track}` : '';
+  let info;
+  if (r.cancelled) info = h('span', { class: 't-cancel' }, 'fällt', h('br'), 'aus');
+  else if (r.realtime && r.delay > 0) info = [h('span', { class: 't-late' }, `+${r.delay}`), where];
+  else info = where;
+  const style = r.color ? `background:${r.color};color:${r.text_color || '#fff'}` : null;
+  return h('div', { class: `t-row${r.cancelled ? ' cancelled' : ''}` },
+    h('div', { class: 't-min' }, min),
+    h('div', { class: `t-badge ${r.mode}`, style }, r.line),
+    h('div', { class: 't-to' }, r.to),
+    h('div', { class: 't-info' }, info));
+}
+
+function renderTafel(b) {
+  const t = $('tafel');
+  const clock = h('div', { class: 't-clock' }, b.now || '--:--');
+  t.replaceChildren();
+  t.classList.toggle('t-two', b.stops?.length > 1);
+  if (b.status !== 'ok' || !b.stops.length) {
+    t.append(h('div', { class: 't-head' }, h('div', { class: 't-stop' }, 'Abfahrtstafel'), clock),
+      h('div', { class: 't-msg' }, b.text || 'Noch keine Haltestelle eingerichtet.'));
+    return;
+  }
+  const two = b.stops.length > 1;
+  const perStop = two ? 2 : 4;
+  b.stops.forEach((stop, i) => {
+    t.append(h('div', { class: `t-head${two ? ' small' : ''}` }, h('div', { class: 't-stop' }, stop.name), i === 0 ? clock : null));
+    if (!stop.rows.length) {
+      t.append(h('div', { class: 't-msg' }, stop.text || 'Zurzeit keine Abfahrten.'));
+      return;
+    }
+    for (const r of stop.rows.slice(0, perStop)) t.append(tafelRow(r));
+  });
+  const stale = b.stops.find((s) => s.stale);
+  if (stale && b.now) {
+    t.append(h('div', { class: 't-banner' },
+      `${stale.offline ? 'Keine WLAN-Verbindung' : 'Fahrplandaten nicht erreichbar'} · Stand ${hhmmMinus(b.now, stale.age_s)} Uhr`));
+  }
+  scaleTafel();
+}
+
 async function loadBoard() {
   let b;
   try {
@@ -330,6 +390,7 @@ async function loadBoard() {
   } catch (e) {
     return;
   }
+  renderTafel(b);
   const box = $('board');
   box.replaceChildren();
   if (b.status !== 'ok') {
