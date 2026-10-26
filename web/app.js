@@ -9,10 +9,22 @@ const WIFI_STATE = {
   provisioning: 'noch nicht eingerichtet',
 };
 
+const UPDATE_STATE = {
+  idle: '',
+  checking: 'Suche nach Updates …',
+  up_to_date: 'Die Firmware ist aktuell.',
+  available: 'Ein Update ist verfügbar.',
+  downloading: 'Update wird heruntergeladen – bitte nicht den Strom trennen.',
+  verifying: 'Update wird geprüft …',
+  rebooting: 'Neustart … die Seite lädt gleich neu.',
+};
+
 let current = null;
 let statusTimer = null;
 let logTimer = null;
+let updateTimer = null;
 let logLast = 0;
+let updateRebooting = false;
 
 // --- Hilfsfunktionen -------------------------------------------------------
 
@@ -59,9 +71,14 @@ function showTab() {
 
   clearInterval(statusTimer);
   clearInterval(logTimer);
-  if (name === 'status' || name === 'update') {
+  clearInterval(updateTimer);
+  if (name === 'status') {
     loadStatus();
     statusTimer = setInterval(loadStatus, 5000);
+  }
+  if (name === 'update') {
+    loadUpdate();
+    updateTimer = setInterval(loadUpdate, 2000);
   }
   if (name === 'einstellungen') loadConfig();
   if (name === 'protokoll') {
@@ -95,7 +112,85 @@ async function loadStatus() {
   setText('st-psram', s.psram.total ? `${kb(s.psram.free)} frei von ${kb(s.psram.total)}` : 'nicht erkannt');
   setText('st-part', s.partition);
   setText('st-mac', w.mac);
+  try {
+    const u = await (await api('/api/update')).json();
+    setText('st-update', u.offer ? `Version ${u.offer.version} verfügbar – siehe Reiter „Update“`
+      : u.state === 'up_to_date' ? 'aktuell' : (u.auto_check ? 'wird täglich geprüft' : 'automatische Prüfung aus'));
+  } catch (e) {
+    // Status bleibt auch ohne Update-Info nutzbar
+  }
 }
+
+// --- Update ----------------------------------------------------------------
+
+async function loadUpdate() {
+  let u;
+  try {
+    u = await (await api('/api/update')).json();
+  } catch (e) {
+    // Während des Neustarts ist das Gerät kurz weg – das ist erwartet
+    if (updateRebooting) {
+      $('offline').hidden = true;
+      setText('up-state', 'Neustart … die Seite lädt gleich neu.');
+    } else {
+      offline();
+    }
+    return;
+  }
+
+  if (updateRebooting && u.state !== 'rebooting') updateRebooting = false;
+  setText('up-version', u.current);
+
+  const last = $('up-last');
+  if (u.last_update) {
+    last.hidden = false;
+    last.className = u.last_update.result === 'ok' ? 'banner ok' : 'banner error';
+    last.textContent = u.last_update.result === 'ok'
+      ? `Update auf Version ${u.last_update.version} erfolgreich installiert.`
+      : `Das Update auf Version ${u.last_update.version} hat nicht geklappt. Die bisherige Version läuft weiter.`;
+  } else {
+    last.hidden = true;
+  }
+
+  let text = u.state === 'error' ? u.error : (UPDATE_STATE[u.state] ?? u.state);
+  if (u.selftest_running) text = 'Neue Firmware wird geprüft (Selbsttest) …';
+  setText('up-state', text);
+
+  $('up-offer').hidden = !u.offer;
+  if (u.offer) {
+    setText('up-new', u.offer.version);
+    setText('up-notes', u.offer.notes || '');
+  }
+
+  const loading = u.state === 'downloading' || u.state === 'verifying' || u.state === 'rebooting';
+  $('up-progress').hidden = !loading;
+  $('up-bar').value = u.percent;
+  setText('up-pct', `${u.percent} %`);
+
+  $('up-check').disabled = u.busy;
+  $('up-install').hidden = !u.offer;
+  $('up-install').disabled = u.busy || u.selftest_running;
+  if (u.state === 'rebooting') updateRebooting = true;
+}
+
+async function postUpdate(path) {
+  try {
+    const res = await api(path, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) setText('up-state', data.message);
+  } catch (e) {
+    offline();
+  }
+  loadUpdate();
+}
+
+$('up-check').addEventListener('click', () => postUpdate('/api/update/check'));
+
+$('up-install').addEventListener('click', () => {
+  const version = $('up-new').textContent;
+  if (!confirm(`Update auf Version ${version} installieren?\n\nDas dauert etwa eine Minute, danach startet die Tafel neu.`)) return;
+  postUpdate('/api/update/install');
+});
 
 // --- Einstellungen ---------------------------------------------------------
 
