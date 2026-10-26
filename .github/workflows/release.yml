@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version ohne v, z. B. 0.1.0 (Bindestrich = Pre-Release)"
+        required: true
+      notes:
+        description: "Release-Notes (kurz, erscheinen auch auf dem Gerät)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Version bestimmen
+        id: ver
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_NOTES: ${{ inputs.notes }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            VERSION="${INPUT_VERSION#v}"
+            NOTES="${INPUT_NOTES}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+            NOTES="$(git for-each-ref "refs/tags/${GITHUB_REF_NAME}" --format='%(contents:subject)')"
+          fi
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::Ungültige Version '$VERSION'"; exit 1
+          fi
+          case "$VERSION" in *-*) PRE=true ;; *) PRE=false ;; esac
+          if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null && [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "::error::Tag v${VERSION} existiert bereits"; exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRE" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<__NOTES__"
+            echo "$NOTES"
+            echo "__NOTES__"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            ~/.cache/pip
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ runner.os }}-
+
+      - name: PlatformIO installieren
+        run: pip install --upgrade platformio
+
+      - name: Unit-Tests (native)
+        run: pio test -e native
+
+      - name: Firmware bauen
+        env:
+          FW_VERSION: ${{ steps.ver.outputs.version }}
+        run: pio run -e esp32s3
+
+      - name: Release-Dateien erzeugen
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          NOTES: ${{ steps.ver.outputs.notes }}
+        run: |
+          mkdir -p dist
+          cp .pio/build/esp32s3/firmware.bin dist/firmware.bin
+          cp .pio/build/esp32s3/firmware.factory.bin dist/firmware-factory.bin
+          python3 - <<'PY'
+          import hashlib, json, os
+          v = os.environ["VERSION"]
+          data = open("dist/firmware.bin", "rb").read()
+          manifest = {
+              "version": v,
+              "sha256": hashlib.sha256(data).hexdigest(),
+              "size": len(data),
+              "url": f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/v{v}/firmware.bin",
+              "notes": os.environ.get("NOTES", "").strip(),
+          }
+          json.dump(manifest, open("dist/manifest.json", "w"), indent=2, ensure_ascii=False)
+          print(json.dumps(manifest, indent=2, ensure_ascii=False))
+          PY
+          # Die App muss in eine OTA-Partition (6 MB) passen
+          test "$(stat -c%s dist/firmware.bin)" -lt 6291456
+
+      - name: GitHub-Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: v${{ steps.ver.outputs.version }}
+          body: ${{ steps.ver.outputs.notes }}
+          prerelease: ${{ steps.ver.outputs.prerelease }}
+          make_latest: ${{ steps.ver.outputs.prerelease == 'false' }}
+          files: |
+            dist/firmware.bin
+            dist/firmware-factory.bin
+            dist/manifest.json
+          fail_on_unmatched_files: true
