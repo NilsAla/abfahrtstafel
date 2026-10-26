@@ -1,5 +1,7 @@
 #include "config_json.h"
 
+#include <stop_config.h>
+
 namespace abf {
 
 namespace {
@@ -50,6 +52,7 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["night_end"] = formatHhMm(cfg.nightEnd);
   out["night_brightness"] = cfg.nightBrightness;
   out["update_check"] = cfg.updateCheck;
+  stopsToJson(cfg.stops, out["stops"].to<JsonArray>());
 }
 
 bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &errors) {
@@ -73,6 +76,14 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   applyTime(in, "night_end", next.nightEnd, errors);
   applyPercent(in, "night_brightness", 0, kBrightnessMax, next.nightBrightness, errors);
   applyBool(in, "update_check", next.updateCheck, errors);
+
+  JsonVariantConst stops = in["stops"];
+  if (!stops.isNull()) {
+    std::string error;
+    if (!stops.is<JsonArrayConst>() || !stopsFromJson(stops.as<JsonArrayConst>(), next.stops, error)) {
+      errors.push_back({"stops", error.empty() ? "Ungültige Haltestellen-Liste." : error});
+    }
+  }
 
   if (!errors.empty()) return false;
   cfg = next;

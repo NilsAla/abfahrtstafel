@@ -5,6 +5,9 @@
 #include <stdint.h>
 
 #include <string>
+#include <vector>
+
+#include <transit_types.h>
 
 namespace abf {
 
@@ -23,6 +26,7 @@ struct Config {
   uint32_t nightEnd = 6 * 60;
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
+  std::vector<StopConfig> stops;     // max. 2 Haltestellen (ab M3), in NVS als JSON
 };
 
 constexpr uint32_t kBrightnessMin = 5;
