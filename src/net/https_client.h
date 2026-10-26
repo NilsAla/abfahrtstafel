@@ -1,6 +1,9 @@
 // HTTPS-GET mit CA-Bundle, User-Agent und Redirects (für OTA und Datenanbieter).
 #pragma once
 
+// Arduino.h zwingend vor esp_http_client.h: lwip definiert INADDR_NONE als Makro, das sonst
+// Arduinos IPAddress.h (extern const IPAddress INADDR_NONE) beim späteren Include zerlegt.
+#include <Arduino.h>
 #include <esp_http_client.h>
 #include <stddef.h>
 #include <stdint.h>
