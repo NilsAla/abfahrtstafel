@@ -244,8 +244,9 @@ bool spawn(Job job) {
 void readLastUpdate() {
   Preferences prefs;
   if (!prefs.begin(kNvsNamespace, true)) return;  // Namespace existiert noch nicht
-  const String pendingTo = prefs.getString(kNvsPendingTo, "");
-  const String blocked = prefs.getString(kNvsBlocked, "");
+  // isKey vorab: getString loggt sonst einen Fehler für fehlende Keys
+  const String pendingTo = prefs.isKey(kNvsPendingTo) ? prefs.getString(kNvsPendingTo, "") : String();
+  const String blocked = prefs.isKey(kNvsBlocked) ? prefs.getString(kNvsBlocked, "") : String();
   prefs.end();
   if (!blocked.isEmpty()) sFlow.blockVersion(blocked.c_str());
   if (pendingTo.isEmpty()) return;

@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include <esp_ota_ops.h>
+#include <time_berlin.h>
 
 #include "board/board.h"
 #include "config/config_service.h"
@@ -44,6 +45,10 @@ void heartbeat() {
 }  // namespace
 
 void setup() {
+  // Zeitzone sofort setzen: Nach einem Software-Reset läuft die RTC weiter, die ersten Logzeilen
+  // erschienen sonst in UTC (am Board gesehen)
+  setenv("TZ", abf::kTzBerlin, 1);
+  tzset();
   Serial.begin(115200);
   // USB-CDC braucht nach dem Boot einen Moment, bis der Host verbunden ist.
   const uint32_t start = millis();

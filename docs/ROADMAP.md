@@ -118,7 +118,9 @@ Phase B hakt ab oder notiert den Befund.
   AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar
   (`AsyncTCP bind error: -8` → Wiederholung alle 2 s). Update 0.2.0 → 0.2.1 per Knopf erfolgreich, Rollback mit
   Test-Build 0.2.2 erfolgreich (zurück auf 0.2.1, Meldung in der Web-UI). Daraus: zurückgerollte Versionen werden
-  nie wieder angeboten (NVS `ota/blocked`).
+  nie wieder angeboten (NVS `ota/blocked`). Update 0.2.1 → 0.3.0: 1,44 MB in 28,5 s (~50 KB/s), Selbsttest nach 1,2 s
+  bestanden. Kosmetik behoben: erste Logzeilen nach Software-Reset in UTC, „per NTP gestellt“ ohne NTP,
+  NVS-Fehlerzeile für fehlenden Key.
 - [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
   Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
