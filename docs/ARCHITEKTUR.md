@@ -36,6 +36,20 @@ Stand: 2026-10-26 (M1)
 - RGB-Panel-Eigenheit: Während Flash-Schreibzugriffen (OTA) kann das Bild verrutschen/flackern → Bounce-Buffer im esp_lcd-RGB-Treiber
   und/oder statischer Screen „Update läuft“
 
+## Display (M4)
+- Zwei Schichten: `lib/dispmodel` entscheidet aus dem Gerätezustand, welcher Bildschirm mit welchen Texten, Farben und
+  welcher Helligkeit gezeigt wird (reine Logik, nativ getestet). `src/ui` zeichnet diese Beschreibung mit LVGL.
+- Vorrang der Bildschirme: Update läuft → Ersteinrichtung → Nachtabschaltung → WLAN-Fallback ohne Daten → keine Haltestelle
+  → Uhrzeit fehlt → Abfahrten bzw. Klartext-Meldung. Veraltete Daten bleiben sichtbar, mit gelber Leiste und Datenstand.
+- Neuaufbau des ganzen Bildschirms bei jeder Änderung (Vergleich der Beschreibung), statt einzelne Objekte nachzuführen.
+  Änderungen kommen höchstens sekündlich; einfacher und robuster als Zustandsabgleich.
+- Zeichenfläche immer Querformat 820 × 320, Drehung ins hochkant verbaute Panel übernimmt das HAL beim Flush.
+- Display-Task startet nur, wenn `board::displayBegin()` ein Display meldet → dieselbe Firmware läuft auf dem DevKit ohne Panel.
+- Farbstile Dunkel (Nachtblau) und Nacht (Bernstein auf Schwarz, kaum Blauanteil). Im Nachtzeitfenster immer Nacht-Stil
+  mit eigener Helligkeit; 0 % = Display aus. Ersteinrichtung und Update sind auch nachts sichtbar.
+- Schrift Barlow Semi Condensed (OFL): schmal, große Ziffern, gute Fernlesbarkeit. Versalhöhe Ziel bei 4 Zeilen 3,0 mm,
+  bei 3 Zeilen 3,7 mm.
+
 ## Konfiguration in NVS
 - Namespace `cfg`, je Feld ein Key (≤ 15 Zeichen), Key `schema` = Schema-Version (`kConfigSchema` in `lib/config`)
 - Fehlende oder ungültige Werte → Default (wird geloggt), nie Absturz

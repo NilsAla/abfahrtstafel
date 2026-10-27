@@ -32,14 +32,19 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Unit-Tests (native)
-        run: pio test -e native
+        run: |
+          set -o pipefail
+          pio test -e native 2>&1 | tee test.log
 
       - name: Firmware bauen
-        run: pio run -e esp32s3
+        run: |
+          set -o pipefail
+          pio run -e esp32s3 2>&1 | tee build.log
 
       - name: Artefakte prüfen
         run: |
-          ls -l .pio/build/esp32s3/firmware.bin .pio/build/esp32s3/firmware.factory.bin
+          ls -l .pio/build/esp32s3/firmware.bin .pio/build/esp32s3/firmware.factory.bin || {
+            ls -la .pio/build .pio/build/esp32s3 2>&1 | sed 's/^/::error::/'; exit 1; }
 
       - uses: actions/upload-artifact@v4
         with:
@@ -48,3 +53,24 @@ jobs:
             .pio/build/esp32s3/firmware.bin
             .pio/build/esp32s3/firmware.factory.bin
           retention-days: 14
+
+      # Erst nach dem Sichern der Firmware: PlatformIO räumt .pio/build bei Env-Wechsel ggf. auf
+      - name: Simulator bauen und Screens rendern
+        run: |
+          set -o pipefail
+          pio run -e sim 2>&1 | tee sim.log
+          python3 scripts/render_screens.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screens-${{ github.sha }}
+          path: docs/screens/*.png
+          retention-days: 14
+
+      # Job-Logs sind nicht überall abrufbar; Compiler-Fehler zusätzlich als Annotationen ausgeben
+      - name: Fehler als Annotationen
+        if: failure()
+        run: |
+          cat test.log build.log sim.log 2>/dev/null \
+            | grep -E "error:|Error |FAIL|undefined reference" | head -20 \
+            | while IFS= read -r line; do echo "::error::${line//%/%25}"; done

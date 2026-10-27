@@ -7,6 +7,7 @@
 #include <esp_timer.h>
 #include <time.h>
 
+#include "../display/display_task.h"
 #include "../net/network.h"
 #include "../provider/departure_service.h"
 #include "../version.h"
@@ -21,6 +22,7 @@ void build(JsonObject out) {
   const esp_partition_t *running = esp_ota_get_running_partition();
   out["partition"] = running ? running->label : "?";
   out["hostname"] = net::hostname();
+  out["display"] = display::active();
 
   JsonObject wifi = out["wifi"].to<JsonObject>();
   const abf::WifiState state = net::state();

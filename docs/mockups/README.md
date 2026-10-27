@@ -4,8 +4,8 @@ Erste Entwürfe für Display und Web-UI, Stand 2026-10-26. Inhalte aus einem ech
 Bahnhof Emsdetten (12:20 Uhr). Die Bilder sind in doppelter Auflösung gerendert; das Display hat
 820 × 320 Pixel bei rund 68 × 26 mm, also etwa 0,08 mm pro Pixel.
 
-Noch nicht umgesetzt: Die echten Display-Screens entstehen in M4 mit LVGL und werden aus `env:sim`
-nach `docs/screens/` gerendert. Die Web-UI nutzt derzeit noch das grüne Design aus M1.
+Umgesetzt in M4: Die echten Display-Screens liegen in `docs/screens/` (gerendert mit LVGL aus `env:sim`).
+Die Web-UI nutzt weiterhin das grüne Design aus M1.
 
 Bearbeitbares Original (Canvas, privat): https://claude.ai/artifact/MXckhM5JGMiyous1Ga2iqQ
 
@@ -46,7 +46,7 @@ Gleiche Farbwelt wie das Display (Nachtblau, Bernstein-Akzent).
 |---|---|---|
 | ![Status](WebStatus.png) | ![Haltestellen](WebStops.png) | ![Update](WebUpdate.png) |
 
-## Offene Entscheidungen
-- Zeilenzahl 3 oder 4: 4 Zeilen haben ~32 px Versalhöhe (knapp unter Ziel 36 px) → am echten Panel prüfen
-- Stil: Nachtblau, Bernstein oder Hell
-- Schrift: Barlow Semi Condensed (OFL, per `lv_font_conv` mit Umlauten einbettbar)
+## Entscheidungen (M4)
+- Zeilenzahl: 3 oder 4 per Einstellung in der Web-UI, Standard 4 – endgültig am echten Panel festlegen
+- Stil: Nachtblau („Dunkel“, Standard) und Bernstein („Nacht“), Umschalter in der Web-UI; Hell entfällt
+- Schrift: Barlow Semi Condensed (OFL)

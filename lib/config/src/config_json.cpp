@@ -52,6 +52,9 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["night_end"] = formatHhMm(cfg.nightEnd);
   out["night_brightness"] = cfg.nightBrightness;
   out["update_check"] = cfg.updateCheck;
+  out["theme"] = themeKey(cfg.theme);
+  out["rows"] = cfg.rows;
+  out["two_stops"] = twoStopKey(cfg.twoStops);
   stopsToJson(cfg.stops, out["stops"].to<JsonArray>());
 }
 
@@ -76,6 +79,23 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   applyTime(in, "night_end", next.nightEnd, errors);
   applyPercent(in, "night_brightness", 0, kBrightnessMax, next.nightBrightness, errors);
   applyBool(in, "update_check", next.updateCheck, errors);
+
+  JsonVariantConst theme = in["theme"];
+  if (!theme.isNull() && (!theme.is<const char *>() || !themeFromKey(theme.as<const char *>(), next.theme))) {
+    errors.push_back({"theme", "Bitte Dunkel oder Nacht wählen."});
+  }
+  JsonVariantConst rows = in["rows"];
+  if (!rows.isNull()) {
+    if (rows.is<int>() && rows.as<int>() >= static_cast<int>(kRowsMin) && rows.as<int>() <= static_cast<int>(kRowsMax)) {
+      next.rows = static_cast<uint32_t>(rows.as<int>());
+    } else {
+      errors.push_back({"rows", "Bitte 3 oder 4 Zeilen wählen."});
+    }
+  }
+  JsonVariantConst two = in["two_stops"];
+  if (!two.isNull() && (!two.is<const char *>() || !twoStopFromKey(two.as<const char *>(), next.twoStops))) {
+    errors.push_back({"two_stops", "Bitte „Geteilt“ oder „Im Wechsel“ wählen."});
+  }
 
   JsonVariantConst stops = in["stops"];
   if (!stops.isNull()) {

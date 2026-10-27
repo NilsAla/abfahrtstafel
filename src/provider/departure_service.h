@@ -6,9 +6,11 @@
 #pragma once
 
 #include <ArduinoJson.h>
+#include <display_model.h>
 #include <stdint.h>
 
 #include <string>
+#include <vector>
 
 namespace departures {
 
@@ -16,6 +18,9 @@ void begin();
 
 // /api/departures: Zustand und aufbereitete Abfahrten je Haltestelle (mit aktueller Uhrzeit berechnet)
 void buildBoard(JsonObject out, size_t maxRows);
+
+// Display: je Haltestelle aufbereitete Abfahrten und Zustand (mit aktueller Uhrzeit berechnet)
+void displayStops(std::vector<abf::StopInput> &out, size_t maxRows);
 
 // /api/stops?q=…
 void lookupStops(const std::string &query, JsonObject out);

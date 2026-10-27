@@ -22,6 +22,13 @@
 
   <section id="tab-status" hidden>
     <h2>So zeigt die Tafel gerade</h2>
+    <div class="seg-row">
+      <div class="seg" role="radiogroup" aria-label="Farbstil der Anzeige">
+        <label><input type="radio" name="theme-toggle" value="dark"><span>Dunkel</span></label>
+        <label><input type="radio" name="theme-toggle" value="night"><span>Nacht</span></label>
+      </div>
+      <span class="hint" id="theme-hint"></span>
+    </div>
     <div class="tafel-wrap" id="tafel-wrap"><div class="tafel" id="tafel" aria-label="Vorschau der Anzeige"></div></div>
     <p class="hint">Nachbildung der Anzeige (820 × 320 Pixel). Schrift kann am Gerät leicht abweichen.</p>
     <h2 class="spaced">Abfahrten im Detail</h2>
@@ -63,11 +70,31 @@
         <label for="brightness">Helligkeit <output id="brightness-out"></output></label>
         <input type="range" id="brightness" name="brightness" min="5" max="100" step="5">
         <p class="err" data-for="brightness"></p>
+        <label>Farbstil</label>
+        <div class="seg" role="radiogroup" aria-label="Farbstil">
+          <label><input type="radio" name="theme" value="dark"><span>Dunkel</span></label>
+          <label><input type="radio" name="theme" value="night"><span>Nacht (Bernstein)</span></label>
+        </div>
+        <p class="err" data-for="theme"></p>
+        <label>Abfahrten auf dem Display</label>
+        <div class="seg" role="radiogroup" aria-label="Abfahrten auf dem Display">
+          <label><input type="radio" name="rows" value="3"><span>3, größere Schrift</span></label>
+          <label><input type="radio" name="rows" value="4"><span>4</span></label>
+        </div>
+        <p class="err" data-for="rows"></p>
+        <label>Bei zwei Haltestellen</label>
+        <div class="seg" role="radiogroup" aria-label="Bei zwei Haltestellen">
+          <label><input type="radio" name="two_stops" value="split"><span>Untereinander</span></label>
+          <label><input type="radio" name="two_stops" value="alternate"><span>Im Wechsel</span></label>
+        </div>
+        <p class="hint">Untereinander: je 2 Abfahrten. Im Wechsel: alle 10 Sekunden die andere Haltestelle.</p>
+        <p class="err" data-for="two_stops"></p>
       </fieldset>
 
       <fieldset>
         <legend>Nachtmodus</legend>
         <label class="check"><input type="checkbox" id="night_enabled" name="night_enabled"> Nachts dunkler schalten</label>
+        <p class="hint">Im Zeitfenster zeigt die Tafel den Nacht-Stil (Bernstein) mit eigener Helligkeit. 0 % schaltet das Display aus.</p>
         <p class="err" data-for="night_enabled"></p>
         <div class="row">
           <div>

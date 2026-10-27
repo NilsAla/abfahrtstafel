@@ -83,15 +83,17 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): 24 h stabil
 
 ## M4 – Display
-- [ ] [A] UI-Schicht in LVGL 9.3, board-unabhängig; Headless-Rendering (`env:sim`) als PNG 820×320 nach `docs/screens/`
-- [ ] [A] Eigene Fonts per lv_font_conv inkl. Umlaute/ß, Größen als Konstanten in mm gedacht (~0,0825 mm/px)
-- [ ] [A] 3 und 4 Zeilen per Konstante (Versalhöhe ≥ ~36 px): Linien-Badge, Ziel, Minuten/Uhrzeit, Verspätung farbig,
-  Ausfälle durchgestrichen/grau, Gleis falls Platz
-- [ ] [A] Zustände: Erststart mit WLAN-QR, QR für `http://abfahrt.local`, Fehler im Klartext, Update läuft, keine Abfahrten,
-  Nachtmodus, 2 Haltestellen (Timer-Wechsel oder geteilte Ansicht)
-- [ ] [A] Statuszeile (WLAN, Datenalter, Update verfügbar, Uhrzeit), Helligkeit und Nachtabschaltung als Logik
+- [x] [A] UI-Schicht in LVGL 9.3, board-unabhängig (`src/ui/`); Logik in `lib/dispmodel/` (nativ getestet);
+  Headless-Rendering (`env:sim`, `scripts/render_screens.py`) als PNG 820×320 nach `docs/screens/`
+- [x] [A] Eigene Fonts aus Barlow Semi Condensed (OFL) + Font-Awesome-Symbole, `scripts/gen_fonts.py`, Größen mit mm-Kommentar
+- [x] [A] 3 und 4 Zeilen per Einstellung (Web-UI): Linien-Badge in Linienfarbe, Ziel mit „…“, Minuten bzw. Uhrzeit ab 60 min,
+  Verspätung farbig, Ausfälle durchgestrichen mit „fällt aus“, Gleis/Steig
+- [x] [A] Zustände: Erststart mit WLAN-QR, QR für `http://abfahrt.local`, WLAN-Fallback mit QR, Fehler im Klartext,
+  Update läuft/Neustart, keine Abfahrten, Laden, Uhrzeit fehlt, Nachtabschaltung, 2 Haltestellen (untereinander oder im Wechsel)
+- [x] [A] Statuszeile (WLAN, Update verfügbar, Seite 1/2, Uhrzeit), Hinweisleiste mit Datenstand, Helligkeit und Nachtfenster als Logik
+- [x] [A] Farbstile Dunkel (Nachtblau) und Nacht (Bernstein), Umschalter in der Web-UI; im Nachtfenster immer Nacht-Stil
 - [ ] [B] Software-Rotation, Framebuffer im PSRAM, Ruckeln, Leseabstand 1–2 m → endgültige Zeilenzahl/Schriftgröße
-- Done (A): Screenshots aller Zustände im Repo, Release `v0.4.0`
+- Done (A): Screenshots aller Zustände im Repo (`docs/screens/`), Release `v0.4.0`
 - Done (B): Layout am echten Display abgenommen
 
 ## M5 – Härtung und Übergabe
@@ -161,3 +163,21 @@ Phase B hakt ab oder notiert den Befund.
   PSRAM wird genutzt. Task-Stack der Abruf-Task reicht (kein Stack-Overflow im Log).
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.
+- [ ] **Display-HAL (M4 → M0.5):** `board::displayBegin()` liefert bis M0.5 `false`, die Display-Task startet dann nicht
+  (Log `Kein Display erkannt`, `/api/status` → `"display": false`). Mit HAL: `true`, Log `LVGL bereit, 820x320`.
+  Vertrag: `displayFlush()` bekommt Querformat-Koordinaten (820 × 320, RGB565 in CPU-Byte-Reihenfolge) und dreht selbst
+  ins Hochformat des Panels. Code: `src/board/`, `src/display/display_task.cpp`.
+- [ ] **Ausrichtung (M4):** Bild steht im Gehäuse richtig herum (Fahne: USB-C-Seite festlegen → Drehung 90° oder 270°).
+  Fehlerbild: Bild auf dem Kopf → Drehrichtung im HAL tauschen.
+- [ ] **Speicher (M4):** `/api/status` → PSRAM frei nach Start mit Display. Erwartet: LVGL-Puffer 525 KB + Panel-Framebuffer,
+  > 5 MB frei. Heap (intern) darf durch LVGL kaum sinken (Objekte landen per malloc teils intern – Minimum notieren).
+- [ ] **Ruckeln/Neuzeichnen (M4):** Minutenwechsel, Wechselanzeige (alle 10 s) und Umschalten Dunkel/Nacht in der Web-UI
+  erscheinen ohne sichtbares Flackern oder Zeilenversatz. Komplett-Neuaufbau je Änderung ist gewollt (`src/ui/ui.cpp`).
+- [ ] **Lesbarkeit (M4):** Aus 1 m und 2 m: 4 vs. 3 Zeilen (Einstellungen → Anzeige) und Nacht-Stil bei 5–15 % Helligkeit.
+  Ergebnis → Standard für `Config::rows` in `lib/config/src/app_config.h`.
+- [ ] **QR-Codes (M4):** Erststart: WLAN-QR mit iOS- und Android-Kamera scannen → Handy verbindet sich mit
+  `Abfahrtstafel-XXXX`. Danach QR `http://abfahrt.local` öffnet die Web-UI. Auch im Nacht-Stil scannbar.
+- [ ] **Nachtabschaltung (M4):** Nachtfenster mit 0 % → Backlight wirklich aus (nicht nur schwarzes Bild).
+  Während eines Updates in der Nacht geht das Display mit minimaler Helligkeit an.
+- [ ] **Update-Bild (M4/M2):** Während des Downloads aktualisiert sich der Fortschritt; Bild bleibt während Flash-Schreibzugriffen
+  stabil (sonst Bounce-Buffer im RGB-Treiber, siehe ARCHITEKTUR).
