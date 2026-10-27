@@ -16,8 +16,10 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 
 ## Stack
 - PlatformIO auf pioarduino (arduino-esp32 3.3.x, Plattform-Version in `platformio.ini` gepinnt), ESP32-S3, 16 MB Flash, 8 MB OPI-PSRAM
-- Environments: `esp32s3` (Firmware), `native` (Unit-Tests), `sim` (Headless-Rendering der UI als PNG, ab M4), `bringup` (Display-Testbild, ab M0.5)
-- LVGL 9.3 für das Display. Board-Spezifisches nur in `src/board/` (HAL), Rest board-unabhängig
+- Environments: `esp32s3` (Firmware), `native` (Unit-Tests), `sim` (Headless-Rendering der UI als PNG: `pio run -e sim && python3 scripts/render_screens.py`), `bringup` (Display-Testbild, ab M0.5)
+- LVGL 9.3 für das Display. Board-Spezifisches nur in `src/board/` (HAL), Rest board-unabhängig.
+  Was angezeigt wird, entscheidet `lib/dispmodel` (testbar, ohne LVGL); `src/ui` zeichnet nur.
+  Nach UI-Änderungen Screens neu rendern und `docs/screens/` mitcommitten.
 - ESPAsyncWebServer (ESP32Async-Fork), ArduinoJson (immer mit Filter-Dokument parsen), WiFiManager
 - Konfiguration in NVS (`Preferences`) mit Schema-Version, NICHT in LittleFS → überlebt Updates
 - Web-UI (HTML/CSS/JS, ohne Framework) wird beim Build gzip-komprimiert und in die Firmware

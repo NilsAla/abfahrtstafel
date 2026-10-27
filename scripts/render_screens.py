@@ -45,7 +45,7 @@ def main():
     if not program.exists():
         sys.exit(f"{program} fehlt – zuerst `pio run -e sim` ausführen")
     OUT.mkdir(parents=True, exist_ok=True)
-    for old in OUT.glob("*.png"):
+    for old in OUT.glob("*.png"):  # README.md bleibt
         old.unlink()
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([str(program), tmp], check=True, stdout=subprocess.DEVNULL)
