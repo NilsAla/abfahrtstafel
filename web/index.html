@@ -63,6 +63,15 @@
         <label for="brightness">Helligkeit <output id="brightness-out"></output></label>
         <input type="range" id="brightness" name="brightness" min="5" max="100" step="5">
         <p class="err" data-for="brightness"></p>
+        <label for="stop_name">Haltestellenname auf der Tafel</label>
+        <select id="stop_name" name="stop_name">
+          <option value="large">Groß</option>
+          <option value="normal">Normal</option>
+          <option value="off">Ausblenden (nur Datum und Uhrzeit)</option>
+        </select>
+        <p class="hint">Groß ist gut lesbar, macht die Abfahrtszeilen aber etwas niedriger.
+          Bei zwei Haltestellen werden die Namen immer angezeigt.</p>
+        <p class="err" data-for="stop_name"></p>
       </fieldset>
 
       <fieldset>

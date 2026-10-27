@@ -338,37 +338,53 @@ function hhmmMinus(now, seconds) {
   return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
 }
 
+// Ab dieser Verspätung wird die Zeile rot und die neue Abfahrtszeit angezeigt
+const LATE_MIN = 2;
+
 function tafelRow(r) {
   const min = r.cancelled ? r.scheduled
     : r.minutes <= 0 ? 'jetzt'
       : r.minutes < 60 ? [String(r.minutes), h('small', {}, 'min')] : r.time;
   const where = r.track ? `${r.mode === 'bus' ? 'Steig' : 'Gleis'} ${r.track}` : '';
+  const late = !r.cancelled && r.realtime && r.delay >= LATE_MIN;
   let info;
   if (r.cancelled) info = h('span', { class: 't-cancel' }, 'fällt', h('br'), 'aus');
-  else if (r.realtime && r.delay > 0) info = [h('span', { class: 't-late' }, `+${r.delay}`), where];
+  else if (late) info = [h('span', { class: 't-plan' }, r.scheduled), h('span', { class: 't-new' }, r.time)];
   else info = where;
   const style = r.color ? `background:${r.color};color:${r.text_color || '#fff'}` : null;
-  return h('div', { class: `t-row${r.cancelled ? ' cancelled' : ''}` },
+  return h('div', { class: `t-row${r.cancelled ? ' cancelled' : ''}${late ? ' late' : ''}` },
     h('div', { class: 't-min' }, min),
     h('div', { class: `t-badge ${r.mode}`, style }, r.line),
     h('div', { class: 't-to' }, r.to),
     h('div', { class: 't-info' }, info));
 }
 
+// Kopfzeile: Name (je nach Einstellung groß, normal oder ausgeblendet), Datum, Uhr
+function tafelHead(b, name, style, withClock) {
+  const clock = withClock ? [b.date ? h('div', { class: 't-date' }, b.date) : null,
+    h('div', { class: 't-clock' }, b.now || '--:--')] : [];
+  if (style === 'off') {
+    return h('div', { class: 't-head bare' }, h('div', { class: 't-date' }, b.date_long || ''),
+      h('div', { class: 't-clock' }, b.now || '--:--'));
+  }
+  return h('div', { class: `t-head${style === 'large' ? ' large' : style === 'small' ? ' small' : ''}` },
+    h('div', { class: 't-stop' }, name), clock);
+}
+
 function renderTafel(b) {
   const t = $('tafel');
-  const clock = h('div', { class: 't-clock' }, b.now || '--:--');
   t.replaceChildren();
   t.classList.toggle('t-two', b.stops?.length > 1);
   if (b.status !== 'ok' || !b.stops.length) {
-    t.append(h('div', { class: 't-head' }, h('div', { class: 't-stop' }, 'Abfahrtstafel'), clock),
+    t.append(tafelHead(b, 'Abfahrtstafel', b.stop_name === 'off' ? 'off' : 'normal', true),
       h('div', { class: 't-msg' }, b.text || 'Noch keine Haltestelle eingerichtet.'));
     return;
   }
   const two = b.stops.length > 1;
   const perStop = two ? 2 : 4;
   b.stops.forEach((stop, i) => {
-    t.append(h('div', { class: `t-head${two ? ' small' : ''}` }, h('div', { class: 't-stop' }, stop.name), i === 0 ? clock : null));
+    // Bei zwei Haltestellen bleibt der Name immer sichtbar, sonst ist die Zuordnung unklar
+    t.append(tafelHead(b, stop.name, two ? 'small' : b.stop_name, i === 0));
     if (!stop.rows.length) {
       t.append(h('div', { class: 't-msg' }, stop.text || 'Zurzeit keine Abfahrten.'));
       return;

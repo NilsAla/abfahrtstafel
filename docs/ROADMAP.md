@@ -90,6 +90,9 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [ ] [A] Zustände: Erststart mit WLAN-QR, QR für `http://abfahrt.local`, Fehler im Klartext, Update läuft, keine Abfahrten,
   Nachtmodus, 2 Haltestellen (Timer-Wechsel oder geteilte Ansicht)
 - [ ] [A] Statuszeile (WLAN, Datenalter, Update verfügbar, Uhrzeit), Helligkeit und Nachtabschaltung als Logik
+- [ ] [A] Kopfzeile wie Web-Vorschau: Datum + Uhr, Haltestellenname nach Einstellung `stop_name` (Groß 66 px /
+  Normal 44 px / Aus 36 px mit langem Datum; bei 2 Haltestellen immer Normal-klein). Verspätung ab +2 min:
+  Minuten rot, rechts Planzeit durchgestrichen + neue Zeit rot (Vorlage: `tafelHead`/`tafelRow` in `web/app.js`)
 - [ ] [B] Software-Rotation, Framebuffer im PSRAM, Ruckeln, Leseabstand 1–2 m → endgültige Zeilenzahl/Schriftgröße
 - Done (A): Screenshots aller Zustände im Repo, Release `v0.4.0`
 - Done (B): Layout am echten Display abgenommen
@@ -159,5 +162,8 @@ Phase B hakt ab oder notiert den Befund.
   WLAN-Verbindung)“, vergangene verschwinden. Nach Wiederkehr aktualisiert sich alles ohne Neustart.
 - [ ] **Speicher (M3):** `/api/status` → Heap nach 1 h Betrieb mit 2 Haltestellen stabil (min_free notieren),
   PSRAM wird genutzt. Task-Stack der Abruf-Task reicht (kein Stack-Overflow im Log).
+- [ ] **Kopfzeile/Datum (M3):** Einstellungen → „Haltestellenname auf der Tafel“ auf Groß/Normal/Ausblenden stellen,
+  speichern → Vorschau im Status wechselt beim nächsten Abruf. Datum stimmt (auch kurz nach Mitternacht).
+  Nach Neustart bleibt die Auswahl erhalten (NVS-Key `stopName`). Code: `departures::buildBoard`, `lib/config`.
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.
