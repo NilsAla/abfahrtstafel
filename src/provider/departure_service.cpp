@@ -223,6 +223,18 @@ void buildBoard(JsonObject out, size_t maxRows) {
   const bool timeValid = abf::isTimePlausible(now);
   const bool online = net::state() == abf::WifiState::Online;
 
+  // Darstellung wie am Display (für die Vorschau in der Web-UI)
+  const abf::Config cfg = config::get();
+  const abf::Backlight bl = abf::backlightFor(cfg, timeValid, timeValid ? abf::localMinuteOfDay(now) : 0);
+  JsonObject disp = out["display"].to<JsonObject>();
+  disp["theme"] = abf::themeKey(bl.theme);         // wirksam (nachts immer „night“)
+  disp["theme_setting"] = abf::themeKey(cfg.theme);
+  disp["night"] = bl.night;
+  disp["night_end"] = abf::formatHhMm(cfg.nightEnd);
+  disp["backlight"] = bl.percent;
+  disp["rows"] = abf::rowsNeeded(cfg);
+  disp["two_stops"] = abf::twoStopKey(cfg.twoStops);
+
   std::lock_guard<std::mutex> lock(sMutex);
   out["time_valid"] = timeValid;
   if (timeValid) out["now"] = localHhMm(now);
@@ -276,6 +288,32 @@ void buildBoard(JsonObject out, size_t maxRows) {
       o["realtime"] = r.realtime;
       o["cancelled"] = r.cancelled;
     }
+  }
+}
+
+void displayStops(std::vector<abf::StopInput> &out, size_t maxRows) {
+  const int64_t now = time(nullptr);
+  const bool timeValid = abf::isTimePlausible(now);
+  const bool online = net::state() == abf::WifiState::Online;
+  out.clear();
+
+  std::lock_guard<std::mutex> lock(sMutex);
+  for (const Slot &slot : sSlots) {
+    abf::StopInput s;
+    s.name = slot.cfg.name;
+    if (timeValid) s.rows = abf::prepareDepartures(slot.data, slot.cfg, now, maxRows);
+    abf::StatusInputs in;
+    in.hasStops = true;
+    in.timeValid = timeValid;
+    in.wifiOnline = online;
+    in.now = now;
+    in.everFetched = slot.everFetched;
+    in.lastFetchFailed = slot.lastFailed;
+    in.lastSuccess = slot.lastSuccess;
+    in.rows = s.rows.size();
+    s.status = abf::evaluateStatus(in);
+    s.lastSuccess = slot.lastSuccess;
+    out.push_back(std::move(s));
   }
 }
 

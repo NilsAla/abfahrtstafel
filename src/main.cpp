@@ -2,6 +2,7 @@
 // M1: Logging, Konfiguration, WLAN-Einrichtung, Web-UI, Watchdog, Factory Reset.
 // M2: Firmware-Update per Knopfdruck, Selbsttest und Rollback.
 // M3: Abfahrten von Transitous, Haltestellen mit Richtungsfilter.
+// M4: Display-Oberfläche (LVGL), aktiv sobald das Board-HAL ein Display meldet (M0.5).
 
 #include <Arduino.h>
 #include <esp_ota_ops.h>
@@ -9,6 +10,7 @@
 
 #include "board/board.h"
 #include "config/config_service.h"
+#include "display/display_task.h"
 #include "log/app_log.h"
 #include "net/network.h"
 #include "ota/ota.h"
@@ -64,6 +66,7 @@ void setup() {
   net::begin(config::get().hostname);
   ota::begin();
   departures::begin();
+  display::begin();
 }
 
 void loop() {

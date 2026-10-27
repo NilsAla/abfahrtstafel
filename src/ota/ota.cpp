@@ -353,6 +353,20 @@ bool busy() {
   return sFlow.busy();
 }
 
+DisplayInfo displayInfo() {
+  std::lock_guard<std::mutex> lock(sMutex);
+  DisplayInfo d;
+  switch (sFlow.state()) {
+    case abf::UpdateState::Downloading: d.phase = abf::UpdatePhase::Downloading; break;
+    case abf::UpdateState::Verifying:   d.phase = abf::UpdatePhase::Verifying; break;
+    case abf::UpdateState::Rebooting:   d.phase = abf::UpdatePhase::Rebooting; break;
+    default: break;
+  }
+  d.percent = sFlow.percent();
+  d.available = sFlow.hasOffer() && !sFlow.busy();
+  return d;
+}
+
 void buildStatus(JsonObject out) {
   std::lock_guard<std::mutex> lock(sMutex);
   out["current"] = FW_VERSION;
