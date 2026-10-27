@@ -189,12 +189,12 @@ void setupScreen(View &v, const ViewInputs &in, bool fallback) {
     v.heading = "WLAN nicht erreichbar";
     v.steps = {"Router an? Dann einfach kurz warten.",
                "Neues WLAN? Code scannen oder WLAN „" + in.apName + "“ wählen",
-               "Eigenes WLAN auswählen und Passwort eingeben"};
+               "Eigenes WLAN wählen, Passwort eingeben"};
   } else {
     v.heading = "Hallo! Kurz einrichten:";
-    v.steps = {"Code mit dem Handy scannen oder WLAN „" + in.apName + "“ wählen",
-               "Eigenes WLAN auswählen und Passwort eingeben",
-               "Fertig – danach hier die Haltestelle einstellen"};
+    v.steps = {"Code scannen oder WLAN „" + in.apName + "“ wählen",
+               "Eigenes WLAN wählen, Passwort eingeben",
+               "Fertig – dann die Haltestelle einstellen"};
   }
 }
 
