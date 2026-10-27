@@ -18,6 +18,12 @@ namespace abf {
 //  - Ältere Firmware (Rollback) muss ein neueres Schema lesen können: Keys nie umdeuten, sondern neu anlegen.
 constexpr uint32_t kConfigSchema = 1;
 
+// Farbstil des Displays. Nachts (Nachtzeitfenster aktiv) gilt immer Night.
+enum class DisplayTheme : uint8_t { Dark = 0, Night = 1 };
+
+// Zwei Haltestellen: untereinander geteilt oder im Wechsel als Vollbild
+enum class TwoStopLayout : uint8_t { Split = 0, Alternate = 1 };
+
 struct Config {
   std::string hostname = "abfahrt";  // mDNS/DHCP-Name → http://abfahrt.local
   uint32_t brightness = 80;          // Prozent, 5..100
@@ -26,12 +32,22 @@ struct Config {
   uint32_t nightEnd = 6 * 60;
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
+  DisplayTheme theme = DisplayTheme::Dark;  // ab M4
+  uint32_t rows = 4;                 // Abfahrten pro Haltestelle im Vollbild: 3 (größer) oder 4
+  TwoStopLayout twoStops = TwoStopLayout::Split;
   std::vector<StopConfig> stops;     // max. 2 Haltestellen (ab M3), in NVS als JSON
 };
 
 constexpr uint32_t kBrightnessMin = 5;
 constexpr uint32_t kBrightnessMax = 100;
 constexpr uint32_t kMinutesPerDay = 24 * 60;
+constexpr uint32_t kRowsMin = 3;
+constexpr uint32_t kRowsMax = 4;
+
+const char *themeKey(DisplayTheme t);            // "dark", "night"
+bool themeFromKey(const std::string &key, DisplayTheme &out);
+const char *twoStopKey(TwoStopLayout l);         // "split", "alternate"
+bool twoStopFromKey(const std::string &key, TwoStopLayout &out);
 
 // Schlüssel-Wert-Speicher (NVS). Keys max. 15 Zeichen.
 class KvStore {

@@ -308,6 +308,57 @@ static void test_stops_json_api(void) {
   TEST_ASSERT_FALSE(applyConfigJson(notArray.as<JsonObjectConst>(), c, errors));
 }
 
+// --- Anzeige (M4) ----------------------------------------------------------
+
+static void test_display_defaults_and_roundtrip(void) {
+  MemStore s;
+  Config d = loadConfig(s);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(d.theme));
+  TEST_ASSERT_EQUAL_UINT32(4, d.rows);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Split), static_cast<int>(d.twoStops));
+
+  Config c;
+  c.theme = DisplayTheme::Night;
+  c.rows = 3;
+  c.twoStops = TwoStopLayout::Alternate;
+  TEST_ASSERT_TRUE(saveConfig(s, c));
+  Config l = loadConfig(s);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Night), static_cast<int>(l.theme));
+  TEST_ASSERT_EQUAL_UINT32(3, l.rows);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Alternate), static_cast<int>(l.twoStops));
+}
+
+static void test_display_invalid_nvs_values(void) {
+  MemStore s;
+  s.u32["theme"] = 7;
+  s.u32["rows"] = 9;
+  s.u32["twoStops"] = 2;
+  int invalid = 0;
+  Config l = loadConfig(s, &invalid);
+  TEST_ASSERT_EQUAL_INT(3, invalid);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(l.theme));
+  TEST_ASSERT_EQUAL_UINT32(4, l.rows);
+}
+
+static void test_display_json(void) {
+  Config c;
+  std::vector<FieldError> errors;
+  JsonDocument ok;
+  deserializeJson(ok, R"({"theme": "night", "rows": 3, "two_stops": "alternate"})");
+  TEST_ASSERT_TRUE(applyConfigJson(ok.as<JsonObjectConst>(), c, errors));
+  JsonDocument out;
+  configToJson(c, out.to<JsonObject>());
+  TEST_ASSERT_EQUAL_STRING("night", out["theme"]);
+  TEST_ASSERT_EQUAL_INT(3, out["rows"].as<int>());
+  TEST_ASSERT_EQUAL_STRING("alternate", out["two_stops"]);
+
+  JsonDocument bad;
+  deserializeJson(bad, R"({"theme": "hell", "rows": 5, "two_stops": 1})");
+  TEST_ASSERT_FALSE(applyConfigJson(bad.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_size_t(3, errors.size());
+  TEST_ASSERT_EQUAL_UINT32(3, c.rows);  // unverändert
+}
+
 int main(int, char **) {
   UNITY_BEGIN();
   RUN_TEST(test_migrate_fresh_writes_schema);
@@ -327,5 +378,8 @@ int main(int, char **) {
   RUN_TEST(test_stops_persist);
   RUN_TEST(test_stops_missing_or_broken_in_nvs);
   RUN_TEST(test_stops_json_api);
+  RUN_TEST(test_display_defaults_and_roundtrip);
+  RUN_TEST(test_display_invalid_nvs_values);
+  RUN_TEST(test_display_json);
   return UNITY_END();
 }

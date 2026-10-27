@@ -17,6 +17,9 @@ constexpr const char *kKeyNightEnd = "nightEnd";
 constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
 constexpr const char *kKeyStops = "stops";
+constexpr const char *kKeyTheme = "theme";
+constexpr const char *kKeyRows = "rows";
+constexpr const char *kKeyTwoStops = "twoStops";
 
 // Migrationsschritte: kSteps[n] hebt Schema n auf n+1.
 // Schema 1 ist das erste veröffentlichte, daher noch keine Schritte.
@@ -51,6 +54,8 @@ void readBool(const KvStore &store, const char *key, bool &field, int &invalid) 
 bool validBrightness(uint32_t v) { return v >= kBrightnessMin && v <= kBrightnessMax; }
 bool validNightBrightness(uint32_t v) { return v <= kBrightnessMax; }
 bool validMinutes(uint32_t v) { return v < kMinutesPerDay; }
+bool validRows(uint32_t v) { return v >= kRowsMin && v <= kRowsMax; }
+bool validEnum2(uint32_t v) { return v <= 1; }
 
 }  // namespace
 
@@ -86,6 +91,14 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readU32(store, kKeyNightEnd, cfg.nightEnd, validMinutes, invalid);
   readU32(store, kKeyNightBright, cfg.nightBrightness, validNightBrightness, invalid);
   readBool(store, kKeyUpdateCheck, cfg.updateCheck, invalid);
+  readU32(store, kKeyRows, cfg.rows, validRows, invalid);
+  uint32_t v = 0;
+  if (store.getU32(kKeyTheme, v)) {
+    if (validEnum2(v)) cfg.theme = static_cast<DisplayTheme>(v); else ++invalid;
+  }
+  if (store.getU32(kKeyTwoStops, v)) {
+    if (validEnum2(v)) cfg.twoStops = static_cast<TwoStopLayout>(v); else ++invalid;
+  }
 
   std::string stops;
   if (store.getStr(kKeyStops, stops) && !stopsFromString(stops, cfg.stops)) {
@@ -106,7 +119,36 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyNightBright, cfg.nightBrightness);
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
   ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
+  ok &= store.putU32(kKeyTheme, static_cast<uint32_t>(cfg.theme));
+  ok &= store.putU32(kKeyRows, cfg.rows);
+  ok &= store.putU32(kKeyTwoStops, static_cast<uint32_t>(cfg.twoStops));
   return ok;
+}
+
+const char *themeKey(DisplayTheme t) { return t == DisplayTheme::Night ? "night" : "dark"; }
+
+bool themeFromKey(const std::string &key, DisplayTheme &out) {
+  if (key == "dark") {
+    out = DisplayTheme::Dark;
+  } else if (key == "night") {
+    out = DisplayTheme::Night;
+  } else {
+    return false;
+  }
+  return true;
+}
+
+const char *twoStopKey(TwoStopLayout l) { return l == TwoStopLayout::Alternate ? "alternate" : "split"; }
+
+bool twoStopFromKey(const std::string &key, TwoStopLayout &out) {
+  if (key == "split") {
+    out = TwoStopLayout::Split;
+  } else if (key == "alternate") {
+    out = TwoStopLayout::Alternate;
+  } else {
+    return false;
+  }
+  return true;
 }
 
 bool isValidHostname(const std::string &name) {
