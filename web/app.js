@@ -247,7 +247,7 @@ form.addEventListener('submit', async (ev) => {
     const el = form.elements[key];
     if (!el) continue;
     if (el.type === 'checkbox') body[key] = el.checked;
-    else if (el.type === 'range') body[key] = Number(el.value);
+    else if (typeof current[key] === 'number') body[key] = Number(el.value);  // auch Radiogruppen
     else body[key] = el.value;
   }
   body.stops = collectStops();
@@ -357,30 +357,79 @@ function tafelRow(r) {
 
 function renderTafel(b) {
   const t = $('tafel');
+  const d = b.display || {};
   const clock = h('div', { class: 't-clock' }, b.now || '--:--');
   t.replaceChildren();
-  t.classList.toggle('t-two', b.stops?.length > 1);
+  const night = d.theme === 'night';
+  t.classList.toggle('night', night);
+  $('tafel-wrap').classList.toggle('night', night);
+  t.classList.toggle('off', d.backlight === 0);
+  t.classList.toggle('rows3', d.rows === 3);
+  renderThemeToggle(d);
   if (b.status !== 'ok' || !b.stops.length) {
+    t.classList.remove('t-two');
     t.append(h('div', { class: 't-head' }, h('div', { class: 't-stop' }, 'Abfahrtstafel'), clock),
       h('div', { class: 't-msg' }, b.text || 'Noch keine Haltestelle eingerichtet.'));
     return;
   }
-  const two = b.stops.length > 1;
-  const perStop = two ? 2 : 4;
-  b.stops.forEach((stop, i) => {
-    t.append(h('div', { class: `t-head${two ? ' small' : ''}` }, h('div', { class: 't-stop' }, stop.name), i === 0 ? clock : null));
+  // Wie am Display: untereinander je 2 Abfahrten oder im Wechsel alle 10 s
+  let stops = b.stops;
+  let page = null;
+  if (stops.length > 1 && d.two_stops === 'alternate') {
+    const i = Math.floor(Date.now() / 10000) % stops.length;
+    stops = [stops[i]];
+    page = h('div', { class: 't-page' }, `${i + 1}/${b.stops.length}`);
+  }
+  const two = stops.length > 1;
+  t.classList.toggle('t-two', two);
+  const stale = stops.find((s) => s.stale && s.rows.length);
+  const perStop = two ? 2 : (d.rows || 4) - (stale ? 1 : 0);
+  stops.forEach((stop, i) => {
+    t.append(h('div', { class: `t-head${two ? ' small' : ''}` }, h('div', { class: 't-stop' }, stop.name),
+      i === 0 ? page : null, i === 0 ? clock : null));
     if (!stop.rows.length) {
       t.append(h('div', { class: 't-msg' }, stop.text || 'Zurzeit keine Abfahrten.'));
       return;
     }
     for (const r of stop.rows.slice(0, perStop)) t.append(tafelRow(r));
   });
-  const stale = b.stops.find((s) => s.stale);
   if (stale && b.now) {
     t.append(h('div', { class: 't-banner' },
       `${stale.offline ? 'Keine WLAN-Verbindung' : 'Fahrplandaten nicht erreichbar'} · Stand ${hhmmMinus(b.now, stale.age_s)} Uhr`));
   }
   scaleTafel();
+}
+
+// Schneller Umschalter Dunkel/Nacht über der Vorschau: speichert sofort
+let themeBusy = false;
+
+function renderThemeToggle(d) {
+  if (themeBusy || !d.theme_setting) return;
+  for (const r of document.querySelectorAll('input[name="theme-toggle"]')) r.checked = r.value === d.theme_setting;
+  let hint = '';
+  if (d.backlight === 0) hint = `Nachtzeit – Display ist bis ${d.night_end} Uhr aus.`;
+  else if (d.night) hint = `Nachtzeit – bis ${d.night_end} Uhr gilt der Nacht-Stil.`;
+  setText('theme-hint', hint);
+}
+
+for (const r of document.querySelectorAll('input[name="theme-toggle"]')) {
+  r.addEventListener('change', async () => {
+    themeBusy = true;
+    try {
+      const res = await api('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: r.value }),
+      });
+      const data = await res.json();
+      if (!data.ok) setText('theme-hint', data.message || 'Speichern fehlgeschlagen.');
+    } catch (e) {
+      offline();
+    } finally {
+      themeBusy = false;
+      loadBoard();
+    }
+  });
 }
 
 async function loadBoard() {
