@@ -251,6 +251,15 @@ static void test_view_setup_and_nostops(void) {
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Icon::NoWifi), static_cast<int>(v.icon));
 }
 
+static void test_view_stop_saved_but_not_loaded(void) {
+  ViewInputs in = boardInputs(1, 0);
+  in.stops.clear();  // Konfiguration hat schon eine Haltestelle, Abruf-Task noch nicht
+  View v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Icon::Loading), static_cast<int>(v.icon));
+  TEST_ASSERT_EQUAL_STRING("Emsdetten, Bahnhof", v.title.c_str());
+}
+
 static void test_view_fallback_only_without_data(void) {
   ViewInputs in = boardInputs(1, 4);
   in.wifi = WifiState::Fallback;
@@ -332,6 +341,7 @@ int main(int, char **) {
   RUN_TEST(test_view_stale_banner);
   RUN_TEST(test_view_split_and_alternate);
   RUN_TEST(test_view_setup_and_nostops);
+  RUN_TEST(test_view_stop_saved_but_not_loaded);
   RUN_TEST(test_view_fallback_only_without_data);
   RUN_TEST(test_view_messages);
   RUN_TEST(test_view_night_off_and_update);

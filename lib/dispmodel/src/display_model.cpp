@@ -262,7 +262,12 @@ View buildView(const ViewInputs &in) {
   }
 
   // 5. Keine Haltestelle
-  if (cfg.stops.empty() || in.stops.empty()) {
+  if (!cfg.stops.empty() && in.stops.empty()) {  // gerade gespeichert, Abruf-Task übernimmt sie noch
+    v.title = cfg.stops.front().name;
+    messageScreen(v, Icon::Loading, boardStatusText(BoardStatus::Loading), statusHint(BoardStatus::Loading));
+    return v;
+  }
+  if (cfg.stops.empty()) {
     v.title = "Abfahrtstafel";
     if (!online) {
       messageScreen(v, Icon::NoWifi, "Keine WLAN-Verbindung.", statusHint(BoardStatus::NoWifi));
