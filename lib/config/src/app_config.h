@@ -18,6 +18,13 @@ namespace abf {
 //  - Ältere Firmware (Rollback) muss ein neueres Schema lesen können: Keys nie umdeuten, sondern neu anlegen.
 constexpr uint32_t kConfigSchema = 1;
 
+// Haltestellenname in der Kopfzeile der Tafel. Werte sind NVS-Inhalt: nie umnummerieren.
+enum class StopNameStyle : uint32_t {
+  Normal = 0,  // klein und grau, wie bisher
+  Large = 1,   // groß, höhere Kopfzeile
+  Off = 2,     // nur Datum und Uhr (z. B. Etikett am Gehäuse); bei 2 Haltestellen trotzdem sichtbar
+};
+
 struct Config {
   std::string hostname = "abfahrt";  // mDNS/DHCP-Name → http://abfahrt.local
   uint32_t brightness = 80;          // Prozent, 5..100
@@ -26,6 +33,7 @@ struct Config {
   uint32_t nightEnd = 6 * 60;
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
+  StopNameStyle stopName = StopNameStyle::Normal;
   std::vector<StopConfig> stops;     // max. 2 Haltestellen (ab M3), in NVS als JSON
 };
 
@@ -69,6 +77,10 @@ bool saveConfig(KvStore &store, const Config &cfg);
 // Hostname: 1..32 Zeichen, a-z, 0-9, '-', nicht am Anfang/Ende.
 bool isValidHostname(const std::string &name);
 std::string normalizeHostname(const std::string &name);  // trimmt, Kleinbuchstaben
+
+// StopNameStyle ↔ "normal" | "large" | "off" (Web-UI)
+const char *stopNameStyleKey(StopNameStyle style);
+bool parseStopNameStyle(const std::string &key, StopNameStyle &out);
 
 // "HH:MM" ↔ Minuten ab Mitternacht
 bool parseHhMm(const std::string &text, uint32_t &minutes);

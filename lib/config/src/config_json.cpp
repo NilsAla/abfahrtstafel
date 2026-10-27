@@ -52,6 +52,7 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["night_end"] = formatHhMm(cfg.nightEnd);
   out["night_brightness"] = cfg.nightBrightness;
   out["update_check"] = cfg.updateCheck;
+  out["stop_name"] = stopNameStyleKey(cfg.stopName);
   stopsToJson(cfg.stops, out["stops"].to<JsonArray>());
 }
 
@@ -76,6 +77,12 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   applyTime(in, "night_end", next.nightEnd, errors);
   applyPercent(in, "night_brightness", 0, kBrightnessMax, next.nightBrightness, errors);
   applyBool(in, "update_check", next.updateCheck, errors);
+
+  JsonVariantConst stopName = in["stop_name"];
+  if (!stopName.isNull() &&
+      (!stopName.is<const char *>() || !parseStopNameStyle(stopName.as<const char *>(), next.stopName))) {
+    errors.push_back({"stop_name", "Bitte eine der angebotenen Varianten wählen."});
+  }
 
   JsonVariantConst stops = in["stops"];
   if (!stops.isNull()) {

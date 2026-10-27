@@ -17,6 +17,7 @@ constexpr const char *kKeyNightEnd = "nightEnd";
 constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
 constexpr const char *kKeyStops = "stops";
+constexpr const char *kKeyStopName = "stopName";
 
 // Migrationsschritte: kSteps[n] hebt Schema n auf n+1.
 // Schema 1 ist das erste veröffentlichte, daher noch keine Schritte.
@@ -51,6 +52,7 @@ void readBool(const KvStore &store, const char *key, bool &field, int &invalid) 
 bool validBrightness(uint32_t v) { return v >= kBrightnessMin && v <= kBrightnessMax; }
 bool validNightBrightness(uint32_t v) { return v <= kBrightnessMax; }
 bool validMinutes(uint32_t v) { return v < kMinutesPerDay; }
+bool validStopName(uint32_t v) { return v <= static_cast<uint32_t>(StopNameStyle::Off); }
 
 }  // namespace
 
@@ -86,6 +88,9 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readU32(store, kKeyNightEnd, cfg.nightEnd, validMinutes, invalid);
   readU32(store, kKeyNightBright, cfg.nightBrightness, validNightBrightness, invalid);
   readBool(store, kKeyUpdateCheck, cfg.updateCheck, invalid);
+  uint32_t stopName = static_cast<uint32_t>(cfg.stopName);
+  readU32(store, kKeyStopName, stopName, validStopName, invalid);
+  cfg.stopName = static_cast<StopNameStyle>(stopName);
 
   std::string stops;
   if (store.getStr(kKeyStops, stops) && !stopsFromString(stops, cfg.stops)) {
@@ -106,6 +111,7 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyNightBright, cfg.nightBrightness);
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
   ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
+  ok &= store.putU32(kKeyStopName, static_cast<uint32_t>(cfg.stopName));
   return ok;
 }
 
@@ -129,6 +135,24 @@ std::string normalizeHostname(const std::string &name) {
     if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
   }
   return out;
+}
+
+const char *stopNameStyleKey(StopNameStyle style) {
+  switch (style) {
+    case StopNameStyle::Large: return "large";
+    case StopNameStyle::Off:   return "off";
+    default:                   return "normal";
+  }
+}
+
+bool parseStopNameStyle(const std::string &key, StopNameStyle &out) {
+  for (StopNameStyle s : {StopNameStyle::Normal, StopNameStyle::Large, StopNameStyle::Off}) {
+    if (key == stopNameStyleKey(s)) {
+      out = s;
+      return true;
+    }
+  }
+  return false;
 }
 
 bool parseHhMm(const std::string &text, uint32_t &minutes) {

@@ -100,6 +100,7 @@ static void test_load_empty_gives_defaults(void) {
   TEST_ASSERT_EQUAL_UINT32(d.brightness, c.brightness);
   TEST_ASSERT_EQUAL_UINT32(d.nightStart, c.nightStart);
   TEST_ASSERT_TRUE(c.updateCheck);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(c.stopName));
 }
 
 static void test_save_load_roundtrip(void) {
@@ -112,6 +113,7 @@ static void test_save_load_roundtrip(void) {
   c.nightEnd = 5 * 60 + 45;
   c.nightBrightness = 10;
   c.updateCheck = false;
+  c.stopName = StopNameStyle::Off;
   TEST_ASSERT_TRUE(saveConfig(s, c));
 
   Config l = loadConfig(s);
@@ -122,6 +124,8 @@ static void test_save_load_roundtrip(void) {
   TEST_ASSERT_EQUAL_UINT32(5 * 60 + 45, l.nightEnd);
   TEST_ASSERT_EQUAL_UINT32(10, l.nightBrightness);
   TEST_ASSERT_FALSE(l.updateCheck);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Off), static_cast<int>(l.stopName));
+  TEST_ASSERT_EQUAL_UINT32(2, s.u32["stopName"]);  // NVS-Wert ist eingefroren
 }
 
 static void test_load_invalid_values_fall_back(void) {
@@ -131,10 +135,12 @@ static void test_load_invalid_values_fall_back(void) {
   s.u32["nightOn"] = 7;
   s.u32["nightStart"] = 24 * 60;
   s.u32["nightBright"] = 101;
+  s.u32["stopName"] = 3;
   int invalid = 0;
   Config c = loadConfig(s, &invalid);
   Config d;
-  TEST_ASSERT_EQUAL_INT(5, invalid);
+  TEST_ASSERT_EQUAL_INT(6, invalid);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(c.stopName));
   TEST_ASSERT_EQUAL_STRING(d.hostname.c_str(), c.hostname.c_str());
   TEST_ASSERT_EQUAL_UINT32(d.brightness, c.brightness);
   TEST_ASSERT_FALSE(c.nightEnabled);
@@ -247,6 +253,28 @@ static void test_json_brightness_type_and_range(void) {
   TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
 }
 
+static void test_json_stop_name(void) {
+  Config c;
+  JsonDocument out;
+  configToJson(c, out.to<JsonObject>());
+  TEST_ASSERT_EQUAL_STRING("normal", out["stop_name"]);
+
+  std::vector<FieldError> errors;
+  JsonDocument doc;
+  deserializeJson(doc, R"({"stop_name": "large"})");
+  TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Large), static_cast<int>(c.stopName));
+
+  const char *bad[] = {R"({"stop_name": "riesig"})", R"({"stop_name": 1})", R"({"stop_name": ""})"};
+  for (const char *json : bad) {
+    JsonDocument d;
+    deserializeJson(d, json);
+    TEST_ASSERT_FALSE_MESSAGE(applyConfigJson(d.as<JsonObjectConst>(), c, errors), json);
+    TEST_ASSERT_EQUAL_STRING("stop_name", errors[0].field.c_str());
+  }
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Large), static_cast<int>(c.stopName));
+}
+
 // --- Haltestellen (ab M3) --------------------------------------------------
 
 static void test_stops_persist(void) {
@@ -324,6 +352,7 @@ int main(int, char **) {
   RUN_TEST(test_json_hostname_normalized);
   RUN_TEST(test_json_errors_are_atomic);
   RUN_TEST(test_json_brightness_type_and_range);
+  RUN_TEST(test_json_stop_name);
   RUN_TEST(test_stops_persist);
   RUN_TEST(test_stops_missing_or_broken_in_nvs);
   RUN_TEST(test_stops_json_api);

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <board_status.h>
+#include <date_de.h>
 #include <departure_board.h>
 #include <stop_config.h>
 #include <time.h>
@@ -222,10 +223,19 @@ void buildBoard(JsonObject out, size_t maxRows) {
   const int64_t now = time(nullptr);
   const bool timeValid = abf::isTimePlausible(now);
   const bool online = net::state() == abf::WifiState::Online;
+  const abf::StopNameStyle stopName = config::get().stopName;
 
   std::lock_guard<std::mutex> lock(sMutex);
   out["time_valid"] = timeValid;
-  if (timeValid) out["now"] = localHhMm(now);
+  out["stop_name"] = abf::stopNameStyleKey(stopName);
+  if (timeValid) {
+    const time_t t = static_cast<time_t>(now);
+    struct tm tm;
+    localtime_r(&t, &tm);
+    out["now"] = localHhMm(now);
+    out["date"] = abf::formatDateShort(tm);
+    out["date_long"] = abf::formatDateLong(tm);
+  }
 
   abf::StatusInputs base;
   base.hasStops = !sSlots.empty();
