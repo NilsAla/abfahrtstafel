@@ -93,7 +93,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [x] [A] Statuszeile (WLAN, Update verfügbar, Seite 1/2, Uhrzeit), Hinweisleiste mit Datenstand, Helligkeit und Nachtfenster als Logik
 - [x] [A] Farbstile Dunkel (Nachtblau) und Nacht (Bernstein), Umschalter in der Web-UI; im Nachtfenster immer Nacht-Stil
 - [ ] [B] Software-Rotation, Framebuffer im PSRAM, Ruckeln, Leseabstand 1–2 m → endgültige Zeilenzahl/Schriftgröße
-- Done (A): Screenshots aller Zustände im Repo (`docs/screens/`), Release `v0.4.0`
+- Done (A): Screenshots aller Zustände im Repo (`docs/screens/`), Release `v0.4.0` ✅ (2026-10-27, App 2,1 MB)
 - Done (B): Layout am echten Display abgenommen
 
 ## M5 – Härtung und Übergabe
@@ -163,6 +163,10 @@ Phase B hakt ab oder notiert den Befund.
   PSRAM wird genutzt. Task-Stack der Abruf-Task reicht (kein Stack-Overflow im Log).
 - [ ] **Serial ohne Host (M1):** Am USB-Netzteil (ohne PC) läuft das Gerät flüssig, Web-UI reagiert sofort
   (Serial-Ausgabe darf ohne verbundenen Host nicht blockieren). Code: `src/log/app_log.cpp`.
+- [ ] **Web-UI M4 am DevKit (geht ohne Panel):** Update auf `v0.4.0`. Status-Reiter: Umschalter Dunkel/Nacht speichert sofort,
+  Vorschau wechselt die Farben, Wert bleibt nach Neustart. Einstellungen → Anzeige: 3/4 Zeilen und „Untereinander/Im Wechsel“
+  ändern die Vorschau. Nachtfenster auf die aktuelle Uhrzeit legen → Hinweis „Nachtzeit …“, Vorschau im Nacht-Stil.
+  `/api/status` → `"display": false`, Log `Kein Display erkannt`. Update dauert länger (2,1 MB statt 1,4 MB).
 - [ ] **Display-HAL (M4 → M0.5):** `board::displayBegin()` liefert bis M0.5 `false`, die Display-Task startet dann nicht
   (Log `Kein Display erkannt`, `/api/status` → `"display": false`). Mit HAL: `true`, Log `LVGL bereit, 820x320`.
   Vertrag: `displayFlush()` bekommt Querformat-Koordinaten (820 × 320, RGB565 in CPU-Byte-Reihenfolge) und dreht selbst
