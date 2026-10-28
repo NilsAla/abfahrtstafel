@@ -3,6 +3,7 @@
 
 #include <esp_core_dump.h>
 #include <esp_partition.h>
+#include <stdio.h>
 
 #include <mutex>
 
