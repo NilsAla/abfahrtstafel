@@ -22,6 +22,7 @@ namespace {
 
 constexpr uint32_t kUpdateMs = 500;           // Zustand abfragen; neu gezeichnet wird nur bei Änderungen
 constexpr uint32_t kStackBytes = 16 * 1024;   // LVGL-Software-Rendering braucht etwas Stack
+constexpr uint32_t kStripeLines = 20;         // Höhe des LVGL-Renderstreifens (Querformat-Zeilen)
 
 bool sActive = false;
 
@@ -51,18 +52,20 @@ void taskMain(void *) {
   lv_init();
   lv_tick_set_cb([]() -> uint32_t { return millis(); });
 
-  // Ein Vollbild-Puffer im PSRAM (820 × 320 × 2 = 525 KB); das HAL kopiert gedreht ins Panel
-  const size_t bytes = static_cast<size_t>(board::kLogicalWidth) * board::kLogicalHeight * 2;
-  void *buf = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  // Streifen-Puffer im internen RAM (820 × 20 × 2 = 32 KB): LVGL rendert und das HAL dreht ohne PSRAM-Lesezugriffe.
+  // Am Board: Vollbild-Puffer im PSRAM brauchte 250 ms pro gedrehtem Flush und ließ das Bild seitlich wackeln, weil der
+  // RGB-DMA in der Zeit nicht schnell genug aus dem PSRAM nachgeladen wurde.
+  const size_t bytes = static_cast<size_t>(board::kLogicalWidth) * kStripeLines * 2;
+  void *buf = heap_caps_malloc(bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (!buf) {
-    LOGE("disp", "Kein PSRAM für den Bildpuffer (%u Bytes)", static_cast<unsigned>(bytes));
+    LOGE("disp", "Kein RAM für den Bildpuffer (%u Bytes)", static_cast<unsigned>(bytes));
     sActive = false;
     vTaskDelete(nullptr);
     return;
   }
   lv_display_t *disp = lv_display_create(board::kLogicalWidth, board::kLogicalHeight);
   lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565);
-  lv_display_set_buffers(disp, buf, nullptr, static_cast<uint32_t>(bytes), LV_DISPLAY_RENDER_MODE_FULL);
+  lv_display_set_buffers(disp, buf, nullptr, static_cast<uint32_t>(bytes), LV_DISPLAY_RENDER_MODE_PARTIAL);
   lv_display_set_flush_cb(disp, flush);
   LOGI("disp", "LVGL bereit, %ux%u", static_cast<unsigned>(board::kLogicalWidth),
        static_cast<unsigned>(board::kLogicalHeight));
@@ -88,7 +91,7 @@ void taskMain(void *) {
 
 void begin() {
   if (!board::displayBegin()) {
-    LOGI("disp", "Kein Display erkannt, Anzeige bleibt aus");
+    LOGI("disp", "Kein Display erkannt, Anzeige bleibt aus (%s)", board::displayError());
     return;
   }
   sActive = true;

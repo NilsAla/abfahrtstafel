@@ -122,8 +122,9 @@ bool displayBegin() {
   cfg.bits_per_pixel = 16;
   cfg.num_fbs = 1;
   // Bounce-Buffer im internen RAM: Bild bleibt stabil, während Flash geschrieben wird (OTA) und der
-  // PSRAM-Cache kurz aus ist. 10 Zeilen wie in der Demo; 820 ist durch 10 teilbar.
-  cfg.bounce_buffer_size_px = 10 * kNativeWidth;
+  // PSRAM-Cache kurz aus ist. Demo: 10 Zeilen → mit WLAN leichtes seitliches Wackeln (WLAN-/LWIP-Puffer liegen im
+  // PSRAM). 41 Zeilen (2 × 26 KB) puffern das ab, am Board ruhig. Die Zeilenzahl muss 820 teilen.
+  cfg.bounce_buffer_size_px = 41 * kNativeWidth;
   cfg.dma_burst_size = 64;
   cfg.hsync_gpio_num = kHsync;
   cfg.vsync_gpio_num = kVsync;
