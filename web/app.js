@@ -26,6 +26,9 @@ let updateTimer = null;
 let logLast = 0;
 let updateRebooting = false;
 
+// Ergebnis der letzten Update-Prüfung gilt so lange als frisch; älter → beim Öffnen des Reiters neu prüfen
+const UPDATE_FRESH_S = 5 * 60;
+
 // --- Hilfsfunktionen -------------------------------------------------------
 
 async function api(path, options = {}) {
@@ -77,7 +80,7 @@ function showTab() {
     statusTimer = setInterval(loadStatus, 5000);
   }
   if (name === 'update') {
-    loadUpdate();
+    loadUpdate(true);
     updateTimer = setInterval(loadUpdate, 2000);
   }
   if (name === 'einstellungen') loadConfig();
@@ -124,7 +127,7 @@ async function loadStatus() {
 
 // --- Update ----------------------------------------------------------------
 
-async function loadUpdate() {
+async function loadUpdate(opening = false) {
   let u;
   try {
     u = await (await api('/api/update')).json();
@@ -175,6 +178,10 @@ async function loadUpdate() {
   $('up-install').hidden = !u.offer;
   $('up-install').disabled = u.busy || u.selftest_running;
   if (u.state === 'rebooting') updateRebooting = true;
+
+  // Sonst bleibt z. B. das Ergebnis der automatischen Prüfung nach dem Start stehen, obwohl es längst ein neueres Release gibt
+  const stale = u.checked_s === undefined || u.checked_s > UPDATE_FRESH_S;
+  if (opening && stale && !u.busy && !u.selftest_running) postUpdate('/api/update/check');
 }
 
 async function postUpdate(path) {

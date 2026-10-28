@@ -147,9 +147,11 @@ Phase B hakt ab oder notiert den Befund.
   WLAN-Router kurz trennen → Bild bleibt deckungsgleich. Danach Update auf eine Folgeversion: Bild während Download/Flash
   höchstens kurz gestört, danach ohne Versatz. `/api/status`: Heap frei notieren (IRAM-Bedarf steigt leicht).
   Fehlerbild weiter vorhanden → Bounce-Buffer auf 20 Zeilen (Versatz halbiert sich?) zur Bestätigung der Diagnose.
-- [ ] [A] **Update-Seite zeigt veraltetes Angebot:** Ergebnis der automatischen Prüfung (2 min nach Start) bleibt stehen,
-  bis jemand erneut prüft – am Board sah man `0.4.0`, obwohl `0.5.0` schon veröffentlicht war. Vorschlag: beim Öffnen
-  des Reiters „Update“ automatisch neu prüfen (höchstens alle paar Minuten). Code: `web/`, `src/ota/ota.cpp`.
+- [ ] **Update-Seite prüft beim Öffnen neu:** Ergebnis der automatischen Prüfung blieb stehen (am Board `0.4.0` angeboten,
+  obwohl `0.5.0` schon draußen war). Jetzt liefert `/api/update` `checked_s` (Alter der letzten Prüfung); ist sie älter als
+  5 min oder fehlt sie, prüft der Reiter „Update“ beim Öffnen selbst. Test: Gerät > 5 min laufen lassen, Reiter öffnen →
+  kurz „Suche nach Updates …“, dann aktuelles Ergebnis; erneut öffnen innerhalb 5 min → keine neue Prüfung (Log ohne
+  zweite `Firmware aktuell`-Zeile). Code: `loadUpdate()` in `web/app.js`, `buildStatus()` in `src/ota/ota.cpp`.
 - Befund 2026-10-26 (DevKitC-1 N16R8 statt Waveshare, v0.2.0): Flash/PSRAM ok (8192 KB PSRAM, 229 KB Heap frei),
   Portal-Einrichtung ok, mDNS ok, NTP ok, automatische Update-Prüfung nach 2 min ok. Gefunden und im Branch behoben:
   AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar
