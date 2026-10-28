@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 log.txt
 src/generated/
+vendor/
