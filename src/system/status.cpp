@@ -11,6 +11,8 @@
 #include "../net/network.h"
 #include "../provider/departure_service.h"
 #include "../version.h"
+#include "coredump.h"
+#include "heap_monitor.h"
 #include "system.h"
 
 namespace status {
@@ -23,6 +25,7 @@ void build(JsonObject out) {
   out["partition"] = running ? running->label : "?";
   out["hostname"] = net::hostname();
   out["display"] = display::active();
+  out["coredump"] = coredump::present();
 
   JsonObject wifi = out["wifi"].to<JsonObject>();
   const abf::WifiState state = net::state();
@@ -50,7 +53,8 @@ void build(JsonObject out) {
   JsonObject heap = out["heap"].to<JsonObject>();
   heap["free"] = ESP.getFreeHeap();
   heap["min_free"] = ESP.getMinFreeHeap();
-  heap["largest_block"] = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  heap["largest_block"] = heapmon::largestBlock();
+  heap["state"] = abf::heapLevelName(heapmon::level());
   heap["total"] = ESP.getHeapSize();
 
   JsonObject psram = out["psram"].to<JsonObject>();

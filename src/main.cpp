@@ -3,6 +3,7 @@
 // M2: Firmware-Update per Knopfdruck, Selbsttest und Rollback.
 // M3: Abfahrten von Transitous, Haltestellen mit Richtungsfilter.
 // M4: Display-Oberfläche (LVGL), aktiv sobald das Board-HAL ein Display meldet (M0.5).
+// M5: Heap-Überwachung, Absturzbericht (Coredump) über die Web-UI.
 
 #include <Arduino.h>
 #include <esp_ota_ops.h>
@@ -15,6 +16,8 @@
 #include "net/network.h"
 #include "ota/ota.h"
 #include "provider/departure_service.h"
+#include "system/coredump.h"
+#include "system/heap_monitor.h"
 #include "system/system.h"
 #include "version.h"
 #include "web/web_server.h"
@@ -40,8 +43,9 @@ void heartbeat() {
   static uint32_t last = 0;
   if (millis() - last < kHeartbeatMs) return;
   last = millis();
-  LOGI("sys", "Heap %lu (min %lu), PSRAM %lu", static_cast<unsigned long>(ESP.getFreeHeap()),
-       static_cast<unsigned long>(ESP.getMinFreeHeap()), static_cast<unsigned long>(ESP.getFreePsram()));
+  LOGI("sys", "Heap %lu (min %lu, Block %lu), PSRAM %lu (min %lu)", static_cast<unsigned long>(ESP.getFreeHeap()),
+       static_cast<unsigned long>(ESP.getMinFreeHeap()), static_cast<unsigned long>(heapmon::largestBlock()),
+       static_cast<unsigned long>(ESP.getFreePsram()), static_cast<unsigned long>(ESP.getMinFreePsram()));
 }
 
 }  // namespace
@@ -60,6 +64,7 @@ void setup() {
 
   applog::begin();
   logBootInfo();
+  coredump::begin();
   sys::watchdogBegin(kWatchdogMs);
   board::initButtons();
   config::begin();
@@ -76,5 +81,6 @@ void loop() {
   web::loop();
   ota::loop();
   heartbeat();
+  heapmon::loop();
   delay(10);
 }

@@ -101,7 +101,8 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Layout am echten Display abgenommen
 
 ## M5 – Härtung und Übergabe
-- [ ] [A] Heap-Monitoring, Coredump über Web-UI abrufbar
+- [x] [A] Heap-Monitoring (`lib/heapwatch`: Warnung, Neustart nach 10 min kritisch, `heap.state` in `/api/status`),
+  Coredump (ELF) über Web-UI abrufbar (Reiter „Protokoll“, `/api/coredump`), `firmware.elf` als Release-Asset zum Auswerten
 - [ ] [A] Web-Flash-Seite (ESP Web Tools, GitHub Pages) als Recovery-Pfad, nutzt `firmware-factory.bin`
 - [ ] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe)
 - [ ] [B] 48-h-Dauertest, Übergabe-Test mit fremdem WLAN
@@ -229,3 +230,15 @@ Phase B hakt ab oder notiert den Befund.
   wechselt binnen 1 s, Web-Vorschau beim nächsten Abruf. Groß: Name aus 1–2 m lesbar, Abfahrtszeilen nicht zu gedrängt?
   Ausblenden: langes Datum links. Datum stimmt (auch nach Mitternacht). Verspätete Zeile (≥ +2 min): rote Minuten,
   Planzeit durchgestrichen über neuer Zeit, beides aus 1–2 m unterscheidbar. Code: `src/ui/ui.cpp` (`header`, `row`).
+- [ ] **Absturzbericht (M5):** Build mit Coredump (`CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH`, ELF). Testweise
+  `*(volatile int *)nullptr = 0;` in `loop()` nach 60 s Laufzeit → Absturz, Neustart. Erwartet: Log
+  `Absturzbericht vorhanden: Task "loopTask", PC 0x…`, `/api/status` → `"coredump": true`, im Reiter „Protokoll“ Block
+  „Absturzbericht“ mit Grund (`LoadStoreError`/`StoreProhibited`) und Backtrace. Download liefert `coredump-<version>.elf`;
+  `esp-coredump info_corefile -c coredump-….elf .pio/build/esp32s3/firmware.elf` zeigt `loop()` in `main.cpp`.
+  „Bericht löschen“ → Block verschwindet, auch nach Neustart. Passt das Image nicht in 64 KB (viele Tasks), steht beim
+  Absturz im Serial-Log ein Coredump-Fehler → dann `CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` senken. Danach Test-Code entfernen.
+  Code: `src/system/coredump.cpp`, Routen in `src/web/web_server.cpp`.
+- [ ] **Heap-Überwachung (M5):** Heartbeat alle 10 min zeigt `Heap … (min …, Block …), PSRAM … (min …)`. Im Normalbetrieb
+  mit Display und 2 Haltestellen kein `Heap knapp` (Schwellen 40 KB frei / 24 KB Block, kritisch 20 / 10 KB). Falls doch:
+  realistische Werte notieren und `HeapWatch::Limits` in `lib/heapwatch/src/heap_watch.h` anpassen. `/api/status` →
+  `heap.state` = `ok`. Code: `src/system/heap_monitor.cpp`.

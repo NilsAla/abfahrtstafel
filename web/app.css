@@ -113,8 +113,9 @@ input[aria-invalid="true"] { border-color: var(--error); }
 
 .actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
 
-button {
+button, a.button {
   font: inherit;
+  text-decoration: none;
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid var(--line);

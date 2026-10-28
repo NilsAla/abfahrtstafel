@@ -51,6 +51,7 @@
         <dt>PSRAM</dt><dd id="st-psram">–</dd>
         <dt>Partition</dt><dd id="st-part">–</dd>
         <dt>MAC</dt><dd id="st-mac">–</dd>
+        <dt>Absturzbericht</dt><dd id="st-crash">–</dd>
       </dl>
     </details>
   </section>
@@ -172,6 +173,21 @@
       <button type="button" id="log-copy">Kopieren</button>
     </div>
     <pre id="log"></pre>
+    <div id="crash" hidden>
+      <h2 class="spaced">Absturzbericht</h2>
+      <p class="hint">Die Tafel ist einmal abgestürzt und hat sich selbst neu gestartet. Der Bericht hilft dem Entwickler
+        bei der Fehlersuche – bitte herunterladen und zusammen mit dem Protokoll schicken.</p>
+      <dl class="facts small">
+        <dt>Task</dt><dd id="crash-task">–</dd>
+        <dt>Grund</dt><dd id="crash-reason">–</dd>
+        <dt>Backtrace</dt><dd><code id="crash-bt">–</code></dd>
+        <dt>ELF-SHA-256</dt><dd><code id="crash-sha">–</code></dd>
+      </dl>
+      <div class="actions">
+        <a class="button" id="crash-dl" href="/api/coredump" download>Bericht herunterladen</a>
+        <button type="button" id="crash-erase">Bericht löschen</button>
+      </div>
+    </div>
   </section>
 </main>
 
