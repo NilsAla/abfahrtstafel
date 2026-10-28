@@ -1,6 +1,7 @@
 // Display-Logik: Nachtzeit, Helligkeit, Stil, Zeilentexte, Bildschirmwahl
 #include <display_model.h>
 #include <time_berlin.h>
+#include <string.h>
 #include <unity.h>
 
 #include <stdlib.h>
@@ -255,10 +256,38 @@ static void test_view_setup_and_nostops(void) {
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::NoStops), static_cast<int>(v.screen));
   TEST_ASSERT_EQUAL_STRING("http://abfahrt.local", v.qr.c_str());
 
+  // Mit IP: QR auf die IP, .local und IP im Text
+  in.ip = "192.168.178.23";
+  v = buildView(in);
+  TEST_ASSERT_EQUAL_STRING("http://192.168.178.23", v.qr.c_str());
+  TEST_ASSERT_EQUAL_STRING("192.168.178.23", v.qrCaption.c_str());
+  TEST_ASSERT_NOT_NULL(strstr(v.steps[1].c_str(), "abfahrt.local"));
+  TEST_ASSERT_NOT_NULL(strstr(v.steps[1].c_str(), "192.168.178.23"));
+  in.ip.clear();
+
   in.wifi = WifiState::Connecting;
   v = buildView(in);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Icon::NoWifi), static_cast<int>(v.icon));
+}
+
+static void test_view_setup_restart(void) {
+  ViewInputs in = boardInputs(0, 0);
+  in.wifi = WifiState::Online;
+  in.setupRestart = true;
+  View v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
+  TEST_ASSERT_EQUAL_STRING("WLAN verbunden!", v.heading.c_str());
+  // auch im Nachtfenster mit 0 % sichtbar
+  in.cfg.nightEnabled = true;
+  in.cfg.nightBrightness = 0;
+  in.cfg.nightStart = 0;
+  in.cfg.nightEnd = 24 * 60 - 1;
+  v = buildView(in);
+  TEST_ASSERT_TRUE(v.backlight > 0);
+  // Update geht trotzdem vor
+  in.update = UpdatePhase::Downloading;
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Update), static_cast<int>(buildView(in).screen));
 }
 
 static void test_view_stop_saved_but_not_loaded(void) {
@@ -380,6 +409,7 @@ int main(int, char **) {
   RUN_TEST(test_view_stale_banner);
   RUN_TEST(test_view_split_and_alternate);
   RUN_TEST(test_view_setup_and_nostops);
+  RUN_TEST(test_view_setup_restart);
   RUN_TEST(test_view_stop_saved_but_not_loaded);
   RUN_TEST(test_view_fallback_only_without_data);
   RUN_TEST(test_view_messages);

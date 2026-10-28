@@ -240,6 +240,14 @@ View buildView(const ViewInputs &in) {
   }
 
   // 2. Ersteinrichtung immer zeigen, auch nachts (Uhr kann nach Werksreset noch laufen)
+  if (in.setupRestart) {
+    // Nach dem Einrichtungsportal startet die Tafel einmal neu, damit die Web-UI sicher erreichbar ist
+    messageScreen(v, Icon::Loading, "WLAN verbunden!", "Die Tafel startet einmal neu – gleich geht es weiter.");
+    v.title = "Abfahrtstafel";
+    v.wifi = WifiMark::Ok;
+    if (v.backlight == 0) v.backlight = kBrightnessMin;
+    return v;
+  }
   if (in.wifi == WifiState::Provisioning) {
     setupScreen(v, in, false);
     if (v.backlight == 0) v.backlight = kBrightnessMin;
@@ -285,15 +293,16 @@ View buildView(const ViewInputs &in) {
       messageScreen(v, Icon::NoWifi, "Keine WLAN-Verbindung.", statusHint(BoardStatus::NoWifi));
       return v;
     }
-    const std::string url = "http://" + (in.hostname.empty() ? std::string("abfahrt") : in.hostname) + ".local";
+    const std::string local = (in.hostname.empty() ? std::string("abfahrt") : in.hostname) + ".local";
     v.screen = Screen::NoStops;
     v.wifi = WifiMark::None;
     v.heading = "Fast geschafft!";
-    v.steps = {"Handy mit demselben WLAN verbinden",
-               "Code scannen oder " + url.substr(7) + " im Browser öffnen",
-               "Haltestelle suchen und speichern"};
-    v.qr = url;
-    v.qrCaption = url.substr(7);
+    // .local klappt nicht in jedem Netz/auf jedem Handy → QR führt direkt auf die IP, beide Adressen stehen da
+    std::string open = "Code scannen oder " + local + " im Browser öffnen";
+    if (!in.ip.empty()) open += " (sonst " + in.ip + ")";
+    v.steps = {"Handy mit demselben WLAN verbinden", open, "Haltestelle suchen und speichern"};
+    v.qr = "http://" + (in.ip.empty() ? local : in.ip);
+    v.qrCaption = in.ip.empty() ? local : in.ip;
     return v;
   }
 

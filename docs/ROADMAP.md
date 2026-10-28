@@ -169,6 +169,12 @@ Phase B hakt ab oder notiert den Befund.
   Code: `include/wm_strings_de.h`.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
   `mDNS: http://abfahrt.local`. Code: `src/net/portal.cpp`, `src/net/network.cpp`.
+- [ ] **Neustart nach Einrichtung (M1):** Befund: Nach der Ersteinrichtung war ein Neustart nötig. Jetzt: sobald die
+  Tafel nach dem Portal (Erststart oder neue Zugangsdaten im Fallback-Portal) online ist, Log `WLAN eingerichtet, Neustart
+  in 4 s`, Display „WLAN verbunden! Die Tafel startet einmal neu …“, danach Neustart ohne Portal. Dann Bildschirm
+  „Fast geschafft!“: QR öffnet `http://<IP>`, Schritt 2 nennt `abfahrt.local` und die IP, unter dem QR steht die IP.
+  Router nur kurz weg (ohne neue Zugangsdaten) → kein Neustart. Code: `apply()` in `src/net/network.cpp`,
+  `setupRestart`/`ip` in `lib/dispmodel`.
 - [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
   WiFiManager-Problem: Port wird beim Schließen evtl. nicht freigegeben → dann bindet ESPAsyncWebServer nicht.
   Fehlerbild: Web-UI erst nach Neustart erreichbar. Code: `web::begin()` in `src/web/web_server.cpp`.

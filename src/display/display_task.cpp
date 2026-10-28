@@ -37,6 +37,8 @@ abf::ViewInputs collect() {
   in.wifi = net::state();
   in.apName = net::apName();
   in.hostname = net::hostname();
+  in.ip = net::ip();
+  in.setupRestart = net::setupRestart();
   in.now = time(nullptr);
   in.timeValid = abf::isTimePlausible(in.now);
   const ota::DisplayInfo up = ota::displayInfo();

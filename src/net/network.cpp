@@ -11,6 +11,7 @@
 #include <atomic>
 
 #include "../log/app_log.h"
+#include "../system/system.h"
 #include "../web/web_server.h"
 #include "portal.h"
 
@@ -25,6 +26,9 @@ std::string sApName;
 bool sMdnsStarted = false;
 std::atomic<bool> sTimeSynced{false};   // Uhrzeit plausibel (NTP oder über Software-Reset erhalten)
 std::atomic<bool> sNtpEvent{false};
+std::atomic<bool> sSetupRestart{false};
+bool sPortalSaved = false;  // im Portal gespeichert, Verbindung steht noch aus
+constexpr uint32_t kSetupRestartMs = 4000;  // Zeit für den Hinweis auf dem Display
 
 void startMdns() {
   if (sMdnsStarted) return;
@@ -44,7 +48,7 @@ void reconnect() {
   WiFi.begin();
 }
 
-void apply(const abf::WifiActions &a) {
+void apply(const abf::WifiActions &a, bool fromPortal) {
   // Erst stoppen, dann starten: Portal und Web-UI teilen sich Port 80
   if (a.stopWeb) web::end();
   if (a.stopPortal) portal::stop();
@@ -55,6 +59,13 @@ void apply(const abf::WifiActions &a) {
     LOGI("wifi", "Verbunden mit \"%s\", IP %s, RSSI %d dBm", WiFi.SSID().c_str(),
          WiFi.localIP().toString().c_str(), WiFi.RSSI());
     startMdns();
+    // Nach dem Einrichtungsportal war die Web-UI am Board teils erst nach einem Neustart erreichbar
+    // (Port 80/WLAN-Stack im AP+STA-Zustand). Ein Neustart mit den neuen Zugangsdaten ist der sichere Weg.
+    if (fromPortal && !sSetupRestart) {
+      LOGI("wifi", "WLAN eingerichtet, Neustart in %lu s", static_cast<unsigned long>(kSetupRestartMs / 1000));
+      sSetupRestart = true;
+      sys::scheduleRestart(kSetupRestartMs);
+    }
   }
 }
 
@@ -84,7 +95,7 @@ void begin(const std::string &hostname) {
   } else {
     LOGI("wifi", "Noch kein WLAN eingerichtet");
   }
-  apply(sSup.begin(creds, millis()));
+  apply(sSup.begin(creds, millis()), false);
   sState = sSup.state();
 }
 
@@ -96,7 +107,11 @@ void loop() {
   in.portalHasClients = sSup.portalOpen() && WiFi.softAPgetStationNum() > 0;
 
   const abf::WifiState before = sSup.state();
-  apply(sSup.update(in, millis()));
+  // Neu eingerichtet: aus der Ersteinrichtung oder mit im Fallback-Portal gespeicherten Zugangsdaten
+  sPortalSaved |= portal::takeCredentialsSaved();
+  const abf::WifiActions actions = sSup.update(in, millis());
+  apply(actions, actions.wentOnline && (before == abf::WifiState::Provisioning || sPortalSaved));
+  if (actions.wentOnline) sPortalSaved = false;
   if (sSup.state() != before) {
     LOGI("wifi", "Zustand: %s → %s", abf::wifiStateName(before), abf::wifiStateName(sSup.state()));
     sState = sSup.state();
@@ -124,5 +139,12 @@ abf::WifiState state() { return sState; }
 const std::string &hostname() { return sHostname; }
 const std::string &apName() { return sApName; }
 bool timeSynced() { return sTimeSynced; }
+
+std::string ip() {
+  if (sState != abf::WifiState::Online) return std::string();
+  return WiFi.localIP().toString().c_str();
+}
+
+bool setupRestart() { return sSetupRestart; }
 
 }  // namespace net

@@ -114,6 +114,8 @@ struct ViewInputs {
   WifiState wifi = WifiState::Connecting;
   std::string apName;               // "Abfahrtstafel-AB0C"
   std::string hostname;             // aktiver Hostname (für http://<name>.local)
+  std::string ip;                   // IP im Heim-WLAN, leer ohne Verbindung (Ersatz, wenn .local nicht geht)
+  bool setupRestart = false;        // WLAN gerade eingerichtet, Neustart folgt gleich
   bool timeValid = false;
   int64_t now = 0;                  // Unix-Zeit
   UpdatePhase update = UpdatePhase::None;

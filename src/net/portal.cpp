@@ -3,6 +3,8 @@
 
 #include <WiFiManager.h>
 
+#include <atomic>
+
 #include "../log/app_log.h"
 
 namespace portal {
@@ -11,6 +13,7 @@ namespace {
 
 WiFiManager sWm;
 const char *sMenu[] = {"wifi"};  // nur WLAN-Auswahl: kein Update/Erase/Exit im Portal
+std::atomic<bool> sSaved{false};
 
 }  // namespace
 
@@ -22,7 +25,10 @@ void configure(const std::string &hostname) {
   sWm.setConnectTimeout(20);
   sWm.setWiFiAutoReconnect(true);
   sWm.setHostname(hostname.c_str());
-  sWm.setSaveConfigCallback([] { LOGI("wifi", "Neue WLAN-Zugangsdaten gespeichert"); });
+  sWm.setSaveConfigCallback([] {
+    LOGI("wifi", "Neue WLAN-Zugangsdaten gespeichert");
+    sSaved = true;
+  });
 }
 
 bool hasSavedCredentials() { return sWm.getWiFiIsSaved(); }
@@ -42,6 +48,8 @@ void stop() {
 }
 
 bool active() { return sWm.getConfigPortalActive(); }
+
+bool takeCredentialsSaved() { return sSaved.exchange(false); }
 
 void process() {
   if (sWm.getConfigPortalActive()) sWm.process();
