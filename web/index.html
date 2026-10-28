@@ -89,6 +89,15 @@
         </div>
         <p class="hint">Untereinander: je 2 Abfahrten. Im Wechsel: alle 10 Sekunden die andere Haltestelle.</p>
         <p class="err" data-for="two_stops"></p>
+        <label for="stop_name">Haltestellenname</label>
+        <select id="stop_name" name="stop_name">
+          <option value="large">Groß</option>
+          <option value="normal">Normal</option>
+          <option value="off">Ausblenden (nur Datum und Uhrzeit)</option>
+        </select>
+        <p class="hint">Groß ist gut lesbar, macht die Abfahrtszeilen aber etwas niedriger.
+          Bei zwei Haltestellen werden die Namen immer angezeigt.</p>
+        <p class="err" data-for="stop_name"></p>
       </fieldset>
 
       <fieldset>

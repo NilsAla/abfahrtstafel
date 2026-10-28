@@ -53,7 +53,8 @@ struct RowView {
   std::string to;
   std::string time;      // "22", "jetzt", "13:27"
   std::string unit;      // "min" oder leer
-  std::string note;      // "+4", "fällt aus"
+  std::string note;      // neue Abfahrtszeit bei Verspätung ("12:42") bzw. "fällt aus"
+  std::string planned;   // Planzeit bei Verspätung ("12:38", wird durchgestrichen)
   NoteKind noteKind = NoteKind::None;
   std::string track;     // "Gleis 1", "Steig B" bzw. kurz "B"
   bool cancelled = false;
@@ -73,8 +74,10 @@ struct View {
   uint8_t backlight = 80;
 
   // Kopfzeile
+  StopNameStyle header = StopNameStyle::Normal;  // Off: Titel ausgeblendet, langes Datum links
   std::string title;           // Haltestelle bzw. Gerätename
   std::string clock;           // "12:20" oder leer
+  std::string date;            // "Di 27.10." bzw. bei Off "Dienstag, 27. Oktober"; leer ohne Uhrzeit
   WifiMark wifi = WifiMark::None;
   bool updateAvailable = false;
   std::string page;            // "1/2" bei Wechselanzeige
@@ -123,6 +126,7 @@ struct ViewInputs {
 constexpr uint32_t kAlternateSeconds = 10;    // Wechselanzeige: Sekunden je Haltestelle
 constexpr int32_t kClockFromMinutes = 60;      // ab hier Uhrzeit statt Minuten
 constexpr size_t kSplitRows = 2;               // geteilte Ansicht: Zeilen je Haltestelle
+constexpr int32_t kLateMinutes = 2;            // ab hier gilt eine Abfahrt als verspätet (rot)
 
 // Wie viele Abfahrten je Haltestelle aufbereitet werden müssen
 size_t rowsNeeded(const Config &cfg);

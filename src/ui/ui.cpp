@@ -21,11 +21,14 @@ using abf::NoteKind;
 using abf::RowView;
 using abf::Screen;
 using abf::SectionView;
+using abf::StopNameStyle;
 using abf::View;
 using abf::WifiMark;
 
 constexpr int32_t kMargin = 16;
 constexpr int32_t kHeader = 44;       // Kopfzeile Vollbild
+constexpr int32_t kHeaderLarge = 66;  // mit großem Haltestellennamen
+constexpr int32_t kHeaderBare = 36;   // ohne Haltestellennamen, nur Datum und Uhr
 constexpr int32_t kSplitHeader = 32;  // Kopfzeile je Haltestelle (geteilt)
 constexpr int32_t kBanner = 40;       // Hinweisleiste unten
 constexpr int32_t kRight = kWidth - kMargin;
@@ -37,7 +40,8 @@ struct Palette {
   uint32_t rowAlt;
   uint32_t text;
   uint32_t dim;        // Nebentexte
-  uint32_t accent;     // Verspätung, Symbole, Leiste
+  uint32_t accent;     // Symbole, Leiste
+  uint32_t late;       // Verspätung: Minuten und neue Abfahrtszeit
   uint32_t cancel;     // „fällt aus“
   uint32_t struck;     // durchgestrichene Abfahrt
   uint32_t bannerText;
@@ -47,9 +51,9 @@ struct Palette {
 
 // Dunkel: Nachtblau wie die Mockups. Nacht: Bernstein auf Schwarz, kaum Blauanteil.
 constexpr Palette kDark = {0x0b1a2e, 0x050f1e, 0x0b1a2e, 0x12243c, 0xf2f4f7, 0x9fb1c9,
-                           0xffb020, 0xff7a6b, 0x8193ab, 0x1a1306, 0x1e3858, 0xffffff};
+                           0xffb020, 0xff5a4a, 0xff7a6b, 0x8193ab, 0x1a1306, 0x1e3858, 0xffffff};
 constexpr Palette kNight = {0x000000, 0x000000, 0x090806, 0x15110b, 0xffb000, 0xc28a1c,
-                            0xffe08a, 0xff7a6b, 0x8f6a1e, 0x000000, 0x2a2010, 0xf2e2c0};
+                            0xffe08a, 0xff6a4a, 0xff7a6b, 0x8f6a1e, 0x000000, 0x2a2010, 0xf2e2c0};
 
 // Maße je Zeilen-Layout
 struct RowMetrics {
@@ -158,6 +162,10 @@ int32_t headerRight(lv_obj_t *scr, const View &v, const Palette &p, int32_t top,
   if (!v.clock.empty()) {
     x = placeRight(label(scr, v.clock, &ui_font_clock, p.text), v.clock, &ui_font_clock, x, clockBase) - 20;
   }
+  // Kurzes Datum neben der Uhr; ohne Haltestellennamen steht das lange Datum links (siehe header())
+  if (!v.date.empty() && v.header != StopNameStyle::Off) {
+    x = placeRight(label(scr, v.date, &ui_font_small, p.dim), v.date, &ui_font_small, x, smallBase) - 20;
+  }
   if (!icons) return x;
   if (!v.page.empty()) {
     x = placeRight(label(scr, v.page, &ui_font_small, p.dim), v.page, &ui_font_small, x, smallBase) - 18;
@@ -179,14 +187,27 @@ int32_t headerRight(lv_obj_t *scr, const View &v, const Palette &p, int32_t top,
   return x;
 }
 
+int32_t headerHeight(const View &v) {
+  switch (v.header) {
+    case StopNameStyle::Large: return kHeaderLarge;
+    case StopNameStyle::Off:   return kHeaderBare;
+    default:                   return kHeader;
+  }
+}
+
 void header(lv_obj_t *scr, const View &v, const Palette &p, const std::string &title, int32_t top, int32_t height,
             bool icons) {
   box(scr, 0, top, kWidth, height, p.header);
   const int32_t rightEdge = headerRight(scr, v, p, top, height, icons);
-  if (title.empty()) return;
-  lv_obj_t *t = label(scr, title, &ui_font_small, p.dim);
-  singleLine(t, &ui_font_small, std::max<int32_t>(40, rightEdge - 20 - (kMargin + 4)));
-  placeBaseline(t, &ui_font_small, kMargin + 4, top + (height + capHeight(&ui_font_small)) / 2);
+  // Links: Haltestelle (klein und grau oder groß und hell) bzw. bei ausgeblendetem Namen das lange Datum
+  const bool bare = v.header == StopNameStyle::Off;
+  const std::string &text = bare ? v.date : title;
+  if (text.empty()) return;
+  const bool large = v.header == StopNameStyle::Large && height >= kHeaderLarge;
+  const lv_font_t *font = large ? &ui_font_title : &ui_font_small;
+  lv_obj_t *t = label(scr, text, font, large ? p.text : p.dim);
+  singleLine(t, font, std::max<int32_t>(40, rightEdge - 20 - (kMargin + 4)));
+  placeBaseline(t, font, kMargin + 4, top + (height + capHeight(font)) / 2);
 }
 
 // --- Abfahrtszeile ---------------------------------------------------------
@@ -195,6 +216,7 @@ struct Line {
   std::string text;
   const lv_font_t *font;
   uint32_t color;
+  bool struck = false;
 };
 
 void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p, int32_t top, int32_t height,
@@ -203,13 +225,16 @@ void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p,
   const int32_t center = top + height / 2;
   const int32_t base = center + capHeight(m.dest) / 2;
   const uint32_t mainColor = r.cancelled ? p.struck : p.text;
+  const bool late = r.noteKind == NoteKind::Delay;
 
-  // Zeit: große Zahl + „min“ auf gemeinsamer Grundlinie, rechtsbündig
+  // Zeit: große Zahl + „min“ auf gemeinsamer Grundlinie, rechtsbündig. Rot bei Verspätung:
+  // die Minuten enthalten sie schon, nichts muss gerechnet werden.
   int32_t timeRight = m.timeRight;
   if (!r.unit.empty()) {
-    timeRight = placeRight(label(scr, r.unit, m.unit, r.cancelled ? p.struck : p.dim), r.unit, m.unit, timeRight, base) - 6;
+    const uint32_t unitColor = r.cancelled ? p.struck : late ? p.late : p.dim;
+    timeRight = placeRight(label(scr, r.unit, m.unit, unitColor), r.unit, m.unit, timeRight, base) - 6;
   }
-  lv_obj_t *time = label(scr, r.time, m.time, mainColor);
+  lv_obj_t *time = label(scr, r.time, m.time, late ? p.late : mainColor);
   placeRight(time, r.time, m.time, timeRight, base);
   if (r.cancelled) lv_obj_set_style_text_decor(time, LV_TEXT_DECOR_STRIKETHROUGH, 0);
 
@@ -220,14 +245,17 @@ void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p,
   lv_obj_t *bl = label(badge, r.line, m.badge, r.badgeFg);
   lv_obj_align(bl, LV_ALIGN_CENTER, 0, 1);
 
-  // Rechte Spalte: Verspätung/Ausfall über Gleis
+  // Rechte Spalte: Ausfall, Verspätung (Planzeit durchgestrichen über neuer Zeit) oder Gleis.
+  // Für Planzeit, neue Zeit und Gleis reicht die Zeilenhöhe nicht – bei Verspätung entfällt das Gleis.
   std::vector<Line> lines;
   if (r.noteKind == NoteKind::Cancelled) {
     lines.push_back({"fällt", &ui_font_bold, p.cancel});
     lines.push_back({"aus", &ui_font_bold, p.cancel});
-  } else {
-    if (!r.note.empty()) lines.push_back({r.note, &ui_font_bold, p.accent});
-    if (!r.track.empty()) lines.push_back({r.track, m.unit, p.dim});
+  } else if (late) {
+    lines.push_back({r.planned, &ui_font_small, p.dim, true});
+    lines.push_back({r.note, &ui_font_bold, p.late});
+  } else if (!r.track.empty()) {
+    lines.push_back({r.track, m.unit, p.dim});
   }
   int32_t rightW = 0;
   int32_t stackH = 0;
@@ -240,7 +268,9 @@ void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p,
   int32_t y = center - stackH / 2;
   for (const Line &l : lines) {
     y += capHeight(l.font);
-    placeRight(label(scr, l.text, l.font, l.color), l.text, l.font, kRight, y);
+    lv_obj_t *t = label(scr, l.text, l.font, l.color);
+    if (l.struck) lv_obj_set_style_text_decor(t, LV_TEXT_DECOR_STRIKETHROUGH, 0);
+    placeRight(t, l.text, l.font, kRight, y);
     y += kGap;
   }
 
@@ -263,7 +293,10 @@ void drawBoard(lv_obj_t *scr, const View &v, const Palette &p) {
       const SectionView &s = v.sections[i];
       const int32_t top = static_cast<int32_t>(i) * half;
       View head = v;
-      if (i > 0) head.clock.clear();
+      if (i > 0) {
+        head.clock.clear();
+        head.date.clear();
+      }
       header(scr, head, p, s.title, top, kSplitHeader, i == 0);
       if (s.rows.empty()) {
         box(scr, 0, top + kSplitHeader, kWidth, half - kSplitHeader, p.row);
@@ -280,16 +313,17 @@ void drawBoard(lv_obj_t *scr, const View &v, const Palette &p) {
     return;
   }
 
-  header(scr, v, p, v.title, 0, kHeader, true);
+  const int32_t headH = headerHeight(v);
+  header(scr, v, p, v.title, 0, headH, true);
   const RowMetrics &m = v.rows <= 3 ? kRows3 : kRows4;
   const int32_t bottom = v.banner.empty() ? kHeight : kHeight - kBanner;
   const int32_t slots = v.banner.empty() ? v.rows : v.rows - 1;
-  const int32_t rowH = (bottom - kHeader) / std::max<int32_t>(1, slots);
-  box(scr, 0, kHeader, kWidth, bottom - kHeader, p.row);
+  const int32_t rowH = (bottom - headH) / std::max<int32_t>(1, slots);
+  box(scr, 0, headH, kWidth, bottom - headH, p.row);
   if (!v.sections.empty()) {
     const SectionView &s = v.sections.front();
     for (size_t r = 0; r < s.rows.size(); ++r) {
-      row(scr, s.rows[r], m, p, kHeader + static_cast<int32_t>(r) * rowH, rowH, r % 2 == 1);
+      row(scr, s.rows[r], m, p, headH + static_cast<int32_t>(r) * rowH, rowH, r % 2 == 1);
     }
   }
   if (!v.banner.empty()) {
@@ -370,8 +404,9 @@ void centeredStack(lv_obj_t *scr, const Palette &p, const Symbol &sym, const std
 }
 
 void drawMessage(lv_obj_t *scr, const View &v, const Palette &p) {
-  header(scr, v, p, v.title, 0, kHeader, true);
-  centeredStack(scr, p, symbolFor(v.icon, p), v.heading, v.text, kHeader, kHeight, -1);
+  const int32_t headH = headerHeight(v);
+  header(scr, v, p, v.title, 0, headH, true);
+  centeredStack(scr, p, symbolFor(v.icon, p), v.heading, v.text, headH, kHeight, -1);
 }
 
 void drawUpdate(lv_obj_t *scr, const View &v, const Palette &p) {

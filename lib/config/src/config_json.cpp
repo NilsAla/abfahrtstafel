@@ -55,6 +55,7 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["theme"] = themeKey(cfg.theme);
   out["rows"] = cfg.rows;
   out["two_stops"] = twoStopKey(cfg.twoStops);
+  out["stop_name"] = stopNameKey(cfg.stopName);
   stopsToJson(cfg.stops, out["stops"].to<JsonArray>());
 }
 
@@ -95,6 +96,11 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   JsonVariantConst two = in["two_stops"];
   if (!two.isNull() && (!two.is<const char *>() || !twoStopFromKey(two.as<const char *>(), next.twoStops))) {
     errors.push_back({"two_stops", "Bitte „Geteilt“ oder „Im Wechsel“ wählen."});
+  }
+  JsonVariantConst stopName = in["stop_name"];
+  if (!stopName.isNull() &&
+      (!stopName.is<const char *>() || !stopNameFromKey(stopName.as<const char *>(), next.stopName))) {
+    errors.push_back({"stop_name", "Bitte „Groß“, „Normal“ oder „Aus“ wählen."});
   }
 
   JsonVariantConst stops = in["stops"];
