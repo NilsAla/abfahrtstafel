@@ -130,9 +130,19 @@ static void test_row_minutes_and_clock(void) {
 static void test_row_delay_and_cancel(void) {
   BoardRow r = row("RE15", "Münster Hbf", 22);
   r.delayMin = 4;
+  r.scheduled = r.when - 4 * 60;
   RowView v = makeRow(r, false);
-  TEST_ASSERT_EQUAL_STRING("+4", v.note.c_str());
+  TEST_ASSERT_EQUAL_STRING("22", v.time.c_str());          // Minuten enthalten die Verspätung
+  TEST_ASSERT_EQUAL_STRING("12:42", v.note.c_str());       // neue Abfahrtszeit
+  TEST_ASSERT_EQUAL_STRING("12:38", v.planned.c_str());    // Planzeit (durchgestrichen)
   TEST_ASSERT_EQUAL_INT(static_cast<int>(NoteKind::Delay), static_cast<int>(v.noteKind));
+
+  r.delayMin = kLateMinutes - 1;  // kleine Abweichung bleibt unauffällig
+  r.scheduled = r.when - r.delayMin * 60;
+  v = makeRow(r, false);
+  TEST_ASSERT_EQUAL_STRING("", v.note.c_str());
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(NoteKind::None), static_cast<int>(v.noteKind));
+  r.delayMin = 4;
 
   r.realtime = false;  // Verspätung ohne Echtzeit ist bedeutungslos
   TEST_ASSERT_EQUAL_STRING("", makeRow(r, false).note.c_str());
@@ -315,6 +325,35 @@ static void test_view_night_off_and_update(void) {
   TEST_ASSERT_TRUE(v.backlight > 0);  // Update auch nachts sichtbar
 }
 
+static void test_view_header_style_and_date(void) {
+  ViewInputs in = boardInputs();
+  View v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(v.header));
+  TEST_ASSERT_EQUAL_STRING("Di 27.10.", v.date.c_str());
+
+  in.cfg.stopName = StopNameStyle::Large;
+  v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Large), static_cast<int>(v.header));
+  TEST_ASSERT_EQUAL_STRING("Emsdetten, Bahnhof", v.title.c_str());
+
+  in.cfg.stopName = StopNameStyle::Off;
+  v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Off), static_cast<int>(v.header));
+  TEST_ASSERT_EQUAL_STRING("Dienstag, 27. Oktober", v.date.c_str());
+
+  // Zwei Haltestellen: Name bleibt sichtbar (auch im Wechsel)
+  in = boardInputs(2);
+  in.cfg.stopName = StopNameStyle::Off;
+  in.cfg.twoStops = TwoStopLayout::Alternate;
+  v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(v.header));
+  TEST_ASSERT_EQUAL_STRING("Di 27.10.", v.date.c_str());
+
+  in = boardInputs();
+  in.timeValid = false;
+  TEST_ASSERT_EQUAL_STRING("", buildView(in).date.c_str());
+}
+
 static void test_view_equality_detects_changes(void) {
   ViewInputs in = boardInputs(1, 4);
   View a = buildView(in);
@@ -345,6 +384,7 @@ int main(int, char **) {
   RUN_TEST(test_view_fallback_only_without_data);
   RUN_TEST(test_view_messages);
   RUN_TEST(test_view_night_off_and_update);
+  RUN_TEST(test_view_header_style_and_date);
   RUN_TEST(test_view_equality_detects_changes);
   return UNITY_END();
 }

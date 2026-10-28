@@ -1,5 +1,6 @@
 #include "display_model.h"
 
+#include <date_de.h>
 #include <stdio.h>
 #include <time.h>
 
@@ -36,7 +37,7 @@ Backlight backlightFor(const Config &cfg, bool timeValid, uint32_t minuteOfDay) 
 
 bool RowView::operator==(const RowView &o) const {
   return line == o.line && badgeBg == o.badgeBg && badgeFg == o.badgeFg && to == o.to && time == o.time &&
-         unit == o.unit && note == o.note && noteKind == o.noteKind && track == o.track &&
+         unit == o.unit && note == o.note && planned == o.planned && noteKind == o.noteKind && track == o.track &&
          cancelled == o.cancelled;
 }
 
@@ -45,8 +46,8 @@ bool SectionView::operator==(const SectionView &o) const {
 }
 
 bool View::operator==(const View &o) const {
-  return screen == o.screen && theme == o.theme && backlight == o.backlight && title == o.title &&
-         clock == o.clock && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
+  return screen == o.screen && theme == o.theme && backlight == o.backlight && header == o.header &&
+         title == o.title && clock == o.clock && date == o.date && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
          sections == o.sections && rows == o.rows && banner == o.banner && icon == o.icon &&
          heading == o.heading && text == o.text && steps == o.steps && qr == o.qr &&
          qrCaption == o.qrCaption && progress == o.progress;
@@ -122,8 +123,11 @@ RowView makeRow(const BoardRow &r, bool compactTrack) {
     } else {
       v.time = localHhMm(r.when);
     }
-    if (r.realtime && r.delayMin > 0) {
-      v.note = "+" + std::to_string(r.delayMin);
+    // Minuten enthalten die Verspätung schon. Statt „+4“ (wird als Aufschlag gelesen) neue Zeit und
+    // durchgestrichene Planzeit; kleine Abweichungen bleiben unauffällig.
+    if (r.realtime && r.delayMin >= kLateMinutes) {
+      v.note = localHhMm(r.when);
+      v.planned = localHhMm(r.scheduled);
       v.noteKind = NoteKind::Delay;
     }
   }
@@ -249,6 +253,14 @@ View buildView(const ViewInputs &in) {
   }
 
   v.clock = in.timeValid ? localHhMm(in.now) : "";
+  // Bei zwei Haltestellen muss erkennbar bleiben, welche gerade gezeigt wird
+  v.header = cfg.stopName == StopNameStyle::Off && cfg.stops.size() >= 2 ? StopNameStyle::Normal : cfg.stopName;
+  if (in.timeValid) {
+    const time_t t = static_cast<time_t>(in.now);
+    struct tm tm;
+    localtime_r(&t, &tm);
+    v.date = v.header == StopNameStyle::Off ? formatDateLong(tm) : formatDateShort(tm);
+  }
   v.wifi = online ? WifiMark::Ok : WifiMark::Off;
   v.updateAvailable = in.updateAvailable;
 

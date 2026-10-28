@@ -141,6 +141,18 @@ std::vector<Scenario> scenarios() {
   night.cfg.theme = DisplayTheme::Night;
   out.push_back({"board-4-zeilen-nacht", night});
 
+  // Haltestellenname: groß bzw. ausgeblendet (nur Datum und Uhr)
+  ViewInputs large = in;
+  large.cfg.stopName = StopNameStyle::Large;
+  out.push_back({"kopfzeile-gross", large});
+  large.cfg.rows = 3;
+  out.push_back({"kopfzeile-gross-3-zeilen", large});
+  ViewInputs bare = in;
+  bare.cfg.stopName = StopNameStyle::Off;
+  out.push_back({"kopfzeile-aus", bare});
+  bare.cfg.theme = DisplayTheme::Night;
+  out.push_back({"kopfzeile-aus-nacht", bare});
+
   in = base();
   in.cfg.rows = 3;
   addStop(in, stop("Emsdetten · Richtung Münster", richtungMuenster()));

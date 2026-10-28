@@ -13,6 +13,14 @@ Beispieldaten: Emsdetten, Bahnhof, Dienstag 12:20 Uhr. Szenarien in `src/sim/sim
 | ![4 Zeilen](board-4-zeilen.png) | ![4 Zeilen Nacht](board-4-zeilen-nacht.png) |
 | ![3 Zeilen](board-3-zeilen.png) | ![3 Zeilen Nacht](board-3-zeilen-nacht.png) |
 
+## Haltestellenname (Einstellung)
+| Groß | Ausblenden (nur Datum und Uhr) |
+|---|---|
+| ![Groß](kopfzeile-gross.png) | ![Aus](kopfzeile-aus.png) |
+| ![Groß, 3 Zeilen](kopfzeile-gross-3-zeilen.png) | ![Aus, Nacht](kopfzeile-aus-nacht.png) |
+
+Verspätung ab +2 min: Minuten rot (enthalten die Verspätung), rechts Planzeit durchgestrichen und neue Zeit.
+
 Lange Namen werden gekürzt, Badges wachsen bis 170 px:
 
 ![Lange Namen](lange-namen.png)
