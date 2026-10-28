@@ -28,7 +28,7 @@ Stand: 2026-10-26 (M1)
 - RP2350 / Pico 2 W – kein WLAN im Chip, wenig RAM für TLS, ESP-spezifischer Stack (OTA, CA-Bundle) fehlt
 
 ## Firmware
-- PlatformIO (pioarduino), LVGL (`LV_COLOR_DEPTH 16`, Framebuffer im PSRAM, ~525 KB pro Buffer), WiFiManager (Captive Portal),
+- PlatformIO (pioarduino), LVGL (`LV_COLOR_DEPTH 16`, rendert in 820×20-Streifen im internen RAM, HAL dreht in den Panel-Framebuffer im PSRAM), WiFiManager (Captive Portal),
   ESPAsyncWebServer, ArduinoJson mit Filter
 - Konfiguration in NVS
 - TLS über esp_crt_bundle, NTP mit Europe/Berlin

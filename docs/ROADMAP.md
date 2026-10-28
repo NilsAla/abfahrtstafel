@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: 2026-10-26 (M1 Phase A)
+Stand: 2026-10-28 (M0.5 Phase B)
 
 Reihenfolge ist Absicht: Update-Mechanismus kommt vor allen Features. Sobald M2 auf echter Hardware steht,
 kann alles Weitere remote ausgeliefert werden – auch nachdem das Gerät bei der Endnutzerin hängt.
@@ -34,11 +34,12 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): `v0.0.1` per USB geflasht, bootet, Serial-Log sichtbar
 
 ## M0.5 – Board-HAL-Entwurf
-- [ ] [A] Pins, Timings und ST7701-Init-Sequenz aus Waveshare-Demo-Code und Schaltplan übernehmen, CS-Konflikt (0 vs. 42) auflösen
-- [ ] [A] HAL-Interface in `src/board/`: Display-Init/Flush, Backlight (PWM), Taster. Implementierung als UNGETESTET markiert
-- [ ] [A] Environment `bringup`: nur Testbild direkt in den Framebuffer (ohne LVGL) + Serial
-- [ ] [B] **Bring-up zuerst:** Testbild korrekt, keine Farbvertauschung, Backlight dimmbar – erst danach voller Stack, Schicht für Schicht
-- Done (B): Testbild stimmt, Orientierung bekannt
+- [x] Pins, Timings und ST7701-Init-Sequenz aus Waveshare-Demo-Code und Schaltplan übernehmen, CS-Konflikt (0 vs. 42) auflösen
+  (in Phase B erledigt, Demo-Paket lag nicht im Repo)
+- [x] HAL in `src/board/`: ST7701-Init per Bit-Bang, esp_lcd-RGB-Panel, Backlight (PWM, invertiert), Taster
+- [x] Environment `bringup`: nur Testbild direkt in den Framebuffer (ohne LVGL) + Serial
+- [x] [B] **Bring-up zuerst:** Testbild korrekt, keine Farbvertauschung, Backlight dimmbar – erst danach voller Stack, Schicht für Schicht
+- Done (B): Testbild stimmt, Orientierung bekannt ✅ (2026-10-28, Board 1 = Rev1.1), Firmware zeigt UI ruhig, Release `v0.5.0`
 
 ## M1 – WLAN-Setup und Web-UI
 - [x] [A] Captive Portal beim Erststart (WiFiManager, nicht blockierend), AP `Abfahrtstafel-XXXX`; danach ESPAsyncWebServer
@@ -114,7 +115,20 @@ Phase B hakt ab oder notiert den Befund.
   Erwartet im Serial-Log: `=== Abfahrtstafel 0.0.1 ===`, Reset-Grund, Partition `app0 @ 0x010000`, Flash 16 MB,
   PSRAM ≈ 8 MB gesamt, danach alle 10 s eine Heap-Zeile. Fehlerbilder: PSRAM 0 → `memory_type`/`qio_opi` prüfen;
   kein Serial → `ARDUINO_USB_CDC_ON_BOOT` in `platformio.ini`. Code: `src/main.cpp`.
-- [ ] **CS-Pin klären (M0.5):** CS 0 vs. 42 und möglicher Konflikt mit BOOT/GPIO0. Code: `src/board/`.
+- [x] **CS-Pin klären (M0.5):** CS = GPIO0 (R38 0 Ω), „IO42“ ist ein Tabellenfehler im Schaltplan V1. GPIO0 nach der Init
+  wieder Eingang → BOOT funktioniert nach `displayBegin()` (am Board geprüft, Log `BOOT gedrückt/losgelassen`).
+  Details `docs/HARDWARE.md`.
+- [x] **Bring-up (M0.5):** Befund 2026-10-28, Board 1 (Rev1.1, Flash XMC 0x20), vorher `erase_flash`. `pio run -e bringup -t upload`:
+  `displayBegin ok in 434 ms`. Testbild: Farben R/G/B/Weiß und Verläufe korrekt, Rahmen an allen vier Kanten, kein
+  Spiegeln. Panel-Oberkante (y = 0) = Seite gegenüber USB-C, x = 0 links. Backlight-Rampe 0–100 % sichtbar.
+  Nebenbefund: grüne Lade-LED (LED1, ETA6098) flackert ohne Akku dauerhaft → im Gehäuse abdecken.
+- [x] **Display-HAL im Firmware-Stack (M0.5):** Log `LVGL bereit, 820x320`, Einrichtungs- und Abfahrtsbildschirm stimmen mit
+  `docs/screens/` überein (quer, USB-C links). Befund Bildruhe: Mit WLAN wackelte das Bild seitlich. Ursache 1: LVGL-Vollbild-
+  puffer im PSRAM, gedrehter Flush 250 ms mit spaltenweisen PSRAM-Lesezugriffen → LVGL rendert jetzt in 820×20-Streifen
+  im internen RAM (`src/display/display_task.cpp`, 32 KB). Ursache 2: Bounce-Buffer 10 Zeilen zu knapp, weil WLAN-/LWIP-
+  Puffer im PSRAM liegen (`CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP`) → 41 Zeilen (2 × 26 KB). Danach ruhig. Heap frei nach
+  Display-Start ≈ 118 KB. Versuch PCLK 14 MHz machte es deutlich schlimmer (zusammen mit dem alten Vollbild-Flush) → 18 MHz.
+  Offen: Langzeit-Beobachtung, Verhalten während OTA-Download (siehe „Update-Bild“) und Speicher nach TLS-Abruf.
 - Befund 2026-10-26 (DevKitC-1 N16R8 statt Waveshare, v0.2.0): Flash/PSRAM ok (8192 KB PSRAM, 229 KB Heap frei),
   Portal-Einrichtung ok, mDNS ok, NTP ok, automatische Update-Prüfung nach 2 min ok. Gefunden und im Branch behoben:
   AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar
@@ -167,14 +181,14 @@ Phase B hakt ab oder notiert den Befund.
   Vorschau wechselt die Farben, Wert bleibt nach Neustart. Einstellungen → Anzeige: 3/4 Zeilen und „Untereinander/Im Wechsel“
   ändern die Vorschau. Nachtfenster auf die aktuelle Uhrzeit legen → Hinweis „Nachtzeit …“, Vorschau im Nacht-Stil.
   `/api/status` → `"display": false`, Log `Kein Display erkannt`. Update dauert länger (2,1 MB statt 1,4 MB).
-- [ ] **Display-HAL (M4 → M0.5):** `board::displayBegin()` liefert bis M0.5 `false`, die Display-Task startet dann nicht
+- [x] **Display-HAL (M4 → M0.5):** erledigt, siehe oben. `board::displayBegin()` liefert bis M0.5 `false`, die Display-Task startet dann nicht
   (Log `Kein Display erkannt`, `/api/status` → `"display": false`). Mit HAL: `true`, Log `LVGL bereit, 820x320`.
   Vertrag: `displayFlush()` bekommt Querformat-Koordinaten (820 × 320, RGB565 in CPU-Byte-Reihenfolge) und dreht selbst
   ins Hochformat des Panels. Code: `src/board/`, `src/display/display_task.cpp`.
-- [ ] **Ausrichtung (M4):** Bild steht im Gehäuse richtig herum (Fahne: USB-C-Seite festlegen → Drehung 90° oder 270°).
-  Fehlerbild: Bild auf dem Kopf → Drehrichtung im HAL tauschen.
-- [ ] **Speicher (M4):** `/api/status` → PSRAM frei nach Start mit Display. Erwartet: LVGL-Puffer 525 KB + Panel-Framebuffer,
-  > 5 MB frei. Heap (intern) darf durch LVGL kaum sinken (Objekte landen per malloc teils intern – Minimum notieren).
+- [x] **Ausrichtung (M4):** Festgelegt: USB-C links im Gehäuse → `kRotateClockwise = false` in `src/board/board.cpp`.
+  Am Board geprüft (2026-10-28). Für USB-C rechts die Konstante auf `true`.
+- [ ] **Speicher (M4):** `/api/status` → PSRAM frei nach Start mit Display. Seit M0.5: LVGL-Streifen 32 KB intern,
+  Bounce-Buffer 52 KB intern, Panel-Framebuffer 512,5 KB PSRAM → > 7 MB PSRAM frei erwartet. Heap (intern) darf durch LVGL kaum sinken (Objekte landen per malloc teils intern – Minimum notieren).
 - [ ] **Ruckeln/Neuzeichnen (M4):** Minutenwechsel, Wechselanzeige (alle 10 s) und Umschalten Dunkel/Nacht in der Web-UI
   erscheinen ohne sichtbares Flackern oder Zeilenversatz. Komplett-Neuaufbau je Änderung ist gewollt (`src/ui/ui.cpp`).
 - [ ] **Lesbarkeit (M4):** Aus 1 m und 2 m: 4 vs. 3 Zeilen (Einstellungen → Anzeige) und Nacht-Stil bei 5–15 % Helligkeit.
