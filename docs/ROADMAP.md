@@ -93,6 +93,9 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
   Update läuft/Neustart, keine Abfahrten, Laden, Uhrzeit fehlt, Nachtabschaltung, 2 Haltestellen (untereinander oder im Wechsel)
 - [x] [A] Statuszeile (WLAN, Update verfügbar, Seite 1/2, Uhrzeit), Hinweisleiste mit Datenstand, Helligkeit und Nachtfenster als Logik
 - [x] [A] Farbstile Dunkel (Nachtblau) und Nacht (Bernstein), Umschalter in der Web-UI; im Nachtfenster immer Nacht-Stil
+- [x] [A] Feedback Endnutzerin: Datum in der Kopfzeile; Haltestellenname Groß/Normal/Aus (Web-UI, NVS `stopName`,
+  bei 2 Haltestellen immer sichtbar); Verspätung ab +2 min: Minuten rot, rechts Planzeit durchgestrichen + neue Zeit
+  statt „+4“ (wurde als Aufschlag gelesen), Gleis entfällt in dieser Zeile
 - [ ] [B] Software-Rotation, Framebuffer im PSRAM, Ruckeln, Leseabstand 1–2 m → endgültige Zeilenzahl/Schriftgröße
 - Done (A): Screenshots aller Zustände im Repo (`docs/screens/`), Release `v0.4.0` ✅ (2026-10-27, App 2,1 MB)
 - Done (B): Layout am echten Display abgenommen
@@ -206,3 +209,7 @@ Phase B hakt ab oder notiert den Befund.
   Während eines Updates in der Nacht geht das Display mit minimaler Helligkeit an.
 - [ ] **Update-Bild (M4/M2):** Während des Downloads aktualisiert sich der Fortschritt; Bild bleibt während Flash-Schreibzugriffen
   stabil (sonst Bounce-Buffer im RGB-Treiber, siehe ARCHITEKTUR).
+- [ ] **Kopfzeile und Verspätung (M4):** Einstellungen → „Haltestellenname“ Groß / Normal / Ausblenden → Display
+  wechselt binnen 1 s, Web-Vorschau beim nächsten Abruf. Groß: Name aus 1–2 m lesbar, Abfahrtszeilen nicht zu gedrängt?
+  Ausblenden: langes Datum links. Datum stimmt (auch nach Mitternacht). Verspätete Zeile (≥ +2 min): rote Minuten,
+  Planzeit durchgestrichen über neuer Zeit, beides aus 1–2 m unterscheidbar. Code: `src/ui/ui.cpp` (`header`, `row`).

@@ -91,7 +91,7 @@ legend { font-weight: 600; margin-bottom: 8px; }
 label { display: block; margin: 8px 0 4px; }
 label.check { display: flex; align-items: center; gap: 8px; }
 
-input[type="text"], input[type="time"] {
+input[type="text"], input[type="time"], select {
   width: 100%;
   padding: 8px 10px;
   font: inherit;
@@ -202,6 +202,12 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
   overflow: hidden; text-overflow: ellipsis; }
 .t-head.small .t-stop { font-size: 22px; }
 .t-clock { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.t-date { font-size: 22px; font-weight: 600; color: #9fb1c6; white-space: nowrap; }
+/* Haltestellenname groß (höhere Kopfzeile) bzw. ausgeblendet (nur langes Datum + Uhr) */
+.t-head.large { height: 66px; }
+.t-head.large .t-stop { font-size: 42px; font-weight: 700; color: #f3f5f7; }
+.t-head.bare { height: 36px; }
+.t-head.small .t-date { font-size: 20px; }
 .t-row { flex: 1; min-height: 0; display: flex; align-items: center; gap: 18px; padding: 0 20px; }
 .t-row:nth-child(odd of .t-row) { background: #11253c; }
 .t-min { width: 118px; flex: none; text-align: right; font-size: 46px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -215,7 +221,10 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
 .t-to { flex: 1; min-width: 0; font-size: 44px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .t-info { width: 100px; flex: none; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05;
   font-size: 22px; color: #9fb1c6; }
-.t-late { font-size: 28px; font-weight: 700; color: #ffb020; }
+/* Verspätung: Minuten rot (enthalten sie schon), rechts Planzeit durchgestrichen über neuer Zeit */
+.t-row.late .t-min, .t-row.late .t-min small { color: #ff5a4a; }
+.t-plan { text-decoration: line-through; }
+.t-late { font-size: 28px; font-weight: 700; color: #ff5a4a; }
 .t-row.cancelled .t-min, .t-row.cancelled .t-to { color: #9fb1c6; text-decoration: line-through; }
 .t-row.cancelled .t-min { font-size: 40px; }
 .t-row.cancelled .t-badge { opacity: 0.55; }
@@ -242,9 +251,10 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
 .tafel-wrap.night, .tafel.night { background: #000; }
 .tafel.night { color: #ffb000; }
 .tafel.night .t-head { background: #000; }
-.tafel.night .t-stop, .tafel.night .t-min small, .tafel.night .t-info, .tafel.night .t-page { color: #c28a1c; }
+.tafel.night .t-stop, .tafel.night .t-date, .tafel.night .t-min small, .tafel.night .t-info, .tafel.night .t-page { color: #c28a1c; }
 .tafel.night .t-row:nth-child(odd of .t-row) { background: #15110b; }
-.tafel.night .t-late { color: #ffe08a; }
+.tafel.night .t-late, .tafel.night .t-row.late .t-min, .tafel.night .t-row.late .t-min small { color: #ff6a4a; }
+.tafel.night .t-head.large .t-stop { color: #ffb000; }
 .tafel.night .t-row.cancelled .t-min, .tafel.night .t-row.cancelled .t-to { color: #8f6a1e; }
 .tafel.night .t-banner { background: #ffb000; color: #000; }
 .tafel.off * { visibility: hidden; }
