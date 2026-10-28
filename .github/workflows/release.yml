@@ -97,6 +97,8 @@ jobs:
           mkdir -p dist
           cp .pio/build/esp32s3/firmware.bin dist/firmware.bin
           cp .pio/build/esp32s3/firmware.factory.bin dist/firmware-factory.bin
+          # Nur zum Auswerten von Absturzberichten (esp-coredump), das Gerät lädt es nie
+          cp .pio/build/esp32s3/firmware.elf dist/firmware.elf
           python3 - <<'PY'
           import hashlib, json, os
           v = os.environ["VERSION"]
@@ -127,4 +129,5 @@ jobs:
             dist/firmware.bin
             dist/firmware-factory.bin
             dist/manifest.json
+            dist/firmware.elf
           fail_on_unmatched_files: true

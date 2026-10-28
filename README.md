@@ -23,12 +23,14 @@ Details: [`docs/HARDWARE.md`](docs/HARDWARE.md), Entscheidungen: [`docs/ARCHITEK
 ## Firmware flashen
 Die fertige Firmware liegt unter [Releases](https://github.com/NilsAla/abfahrtstafel/releases/latest):
 
-- `firmware-factory.bin` – Erstinstallation per USB, ab Adresse `0x0` flashen, z. B. mit dem
-  [Espressif Web-Flasher](https://espressif.github.io/esptool-js/) (Chrome/Edge)
+- **Am einfachsten:** [Flash-Seite](https://nilsala.github.io/abfahrtstafel/) in Chrome/Edge öffnen, Tafel per USB
+  anschließen, „Installieren“ – spielt immer das neueste Release ein (auch als Notfall-Weg, wenn nichts mehr startet)
+- `firmware-factory.bin` – Erstinstallation per USB, ab Adresse `0x0` flashen
 - `firmware.bin` – wird vom Gerät selbst für Updates genutzt
 - `manifest.json` – Versionsinfo und Prüfsumme für den Update-Mechanismus
+- `firmware.elf` – nur zum Auswerten von Absturzberichten (`esp-coredump info_corefile -c coredump.elf firmware.elf`)
 
-Später gibt es eine eigene Flash-Seite, die alles mit einem Klick erledigt.
+Bedienung für Endnutzer: [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md)
 
 ## Einrichtung
 1. Gerät mit Strom verbinden. Beim ersten Start erscheint das WLAN **Abfahrtstafel-XXXX**.

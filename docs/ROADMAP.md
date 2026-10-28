@@ -51,7 +51,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [x] [A] `/api/log?since=N`: Ringpuffer (32 KB PSRAM) für Remote-Debugging ohne Serial
 - [x] [A] Konfiguration in NVS mit Schema-Version und Migration (`lib/config`, rollback-sicher)
 - [x] [A] Factory Reset per BOOT (GPIO0, 10 s), Task-Watchdog (30 s)
-- [ ] [A] WiFiManager-Portal auf Deutsch (eigene Strings via `WM_STRINGS_FILE`), Hinweis zur Bedienung im Portal
+- [x] [A] WiFiManager-Portal auf Deutsch (`include/wm_strings_de.h` via `WM_STRINGS_FILE`), Hinweis zur Bedienung im Portal
 - [ ] [B] Portal-Flow, mDNS, Taster am Gerät (siehe „Offen am Board“)
 - Done (A): baut, Config-/Migrationstests grün, Release `v0.1.0`
 - Done (B): Gerät nach Factory Reset ohne Serial einrichtbar
@@ -101,9 +101,11 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Layout am echten Display abgenommen
 
 ## M5 – Härtung und Übergabe
-- [ ] [A] Heap-Monitoring, Coredump über Web-UI abrufbar
-- [ ] [A] Web-Flash-Seite (ESP Web Tools, GitHub Pages) als Recovery-Pfad, nutzt `firmware-factory.bin`
-- [ ] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe)
+- [x] [A] Heap-Monitoring (`lib/heapwatch`: Warnung, Neustart nach 10 min kritisch, `heap.state` in `/api/status`),
+  Coredump (ELF) über Web-UI abrufbar (Reiter „Protokoll“, `/api/coredump`), `firmware.elf` als Release-Asset zum Auswerten
+- [x] [A] Web-Flash-Seite (ESP Web Tools 10.4.0, GitHub Pages) als Recovery-Pfad, nutzt `firmware-factory.bin`:
+  `flash/index.html`, `.github/workflows/pages.yml` (nach jedem Release). Einmalig: Settings → Pages → Source „GitHub Actions“
+- [x] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe): `docs/ANLEITUNG.md`
 - [ ] [B] 48-h-Dauertest, Übergabe-Test mit fremdem WLAN
 - [ ] [B] Gehäuse (3D-Druck, Schild-Look) nach Messung: Ausschnitt ≈ 27 × 68 mm, 4× M2, Zugang USB-C und BOOT,
   Ein/Aus-Schalter verdeckt bzw. auf ON fixiert
@@ -147,9 +149,11 @@ Phase B hakt ab oder notiert den Befund.
   WLAN-Router kurz trennen → Bild bleibt deckungsgleich. Danach Update auf eine Folgeversion: Bild während Download/Flash
   höchstens kurz gestört, danach ohne Versatz. `/api/status`: Heap frei notieren (IRAM-Bedarf steigt leicht).
   Fehlerbild weiter vorhanden → Bounce-Buffer auf 20 Zeilen (Versatz halbiert sich?) zur Bestätigung der Diagnose.
-- [ ] [A] **Update-Seite zeigt veraltetes Angebot:** Ergebnis der automatischen Prüfung (2 min nach Start) bleibt stehen,
-  bis jemand erneut prüft – am Board sah man `0.4.0`, obwohl `0.5.0` schon veröffentlicht war. Vorschlag: beim Öffnen
-  des Reiters „Update“ automatisch neu prüfen (höchstens alle paar Minuten). Code: `web/`, `src/ota/ota.cpp`.
+- [ ] **Update-Seite prüft beim Öffnen neu:** Ergebnis der automatischen Prüfung blieb stehen (am Board `0.4.0` angeboten,
+  obwohl `0.5.0` schon draußen war). Jetzt liefert `/api/update` `checked_s` (Alter der letzten Prüfung); ist sie älter als
+  5 min oder fehlt sie, prüft der Reiter „Update“ beim Öffnen selbst. Test: Gerät > 5 min laufen lassen, Reiter öffnen →
+  kurz „Suche nach Updates …“, dann aktuelles Ergebnis; erneut öffnen innerhalb 5 min → keine neue Prüfung (Log ohne
+  zweite `Firmware aktuell`-Zeile). Code: `loadUpdate()` in `web/app.js`, `buildStatus()` in `src/ota/ota.cpp`.
 - Befund 2026-10-26 (DevKitC-1 N16R8 statt Waveshare, v0.2.0): Flash/PSRAM ok (8192 KB PSRAM, 229 KB Heap frei),
   Portal-Einrichtung ok, mDNS ok, NTP ok, automatische Update-Prüfung nach 2 min ok. Gefunden und im Branch behoben:
   AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar
@@ -160,6 +164,9 @@ Phase B hakt ab oder notiert den Befund.
   NVS-Fehlerzeile für fehlenden Key.
 - [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
   Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
+  Portal komplett deutsch: Knopf „WLAN einrichten“, Hinweis „So geht es …“, Felder „WLAN-Name“/„WLAN-Passwort“,
+  Knopf „Verbinden“, danach Meldung „Gespeichert.“; falsches Passwort → „Nicht verbunden … Passwort falsch“.
+  Code: `include/wm_strings_de.h`.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
   `mDNS: http://abfahrt.local`. Code: `src/net/portal.cpp`, `src/net/network.cpp`.
 - [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
@@ -224,3 +231,21 @@ Phase B hakt ab oder notiert den Befund.
   wechselt binnen 1 s, Web-Vorschau beim nächsten Abruf. Groß: Name aus 1–2 m lesbar, Abfahrtszeilen nicht zu gedrängt?
   Ausblenden: langes Datum links. Datum stimmt (auch nach Mitternacht). Verspätete Zeile (≥ +2 min): rote Minuten,
   Planzeit durchgestrichen über neuer Zeit, beides aus 1–2 m unterscheidbar. Code: `src/ui/ui.cpp` (`header`, `row`).
+- [ ] **Absturzbericht (M5):** Build mit Coredump (`CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH`, ELF). Testweise
+  `*(volatile int *)nullptr = 0;` in `loop()` nach 60 s Laufzeit → Absturz, Neustart. Erwartet: Log
+  `Absturzbericht vorhanden: Task "loopTask", PC 0x…`, `/api/status` → `"coredump": true`, im Reiter „Protokoll“ Block
+  „Absturzbericht“ mit Grund (`LoadStoreError`/`StoreProhibited`) und Backtrace. Download liefert `coredump-<version>.elf`;
+  `esp-coredump info_corefile -c coredump-….elf .pio/build/esp32s3/firmware.elf` zeigt `loop()` in `main.cpp`.
+  „Bericht löschen“ → Block verschwindet, auch nach Neustart. Passt das Image nicht in 64 KB (viele Tasks), steht beim
+  Absturz im Serial-Log ein Coredump-Fehler → dann `CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` senken. Danach Test-Code entfernen.
+  Code: `src/system/coredump.cpp`, Routen in `src/web/web_server.cpp`.
+- [ ] **Web-Flash-Seite (M5):** https://nilsala.github.io/abfahrtstafel/ in Chrome/Edge öffnen, Board per USB, „Installieren“
+  → Port „USB JTAG/serial debug unit“ wählen → Fortschritt bis 100 %, Board startet mit der neuesten Version und öffnet
+  das Einrichtungs-WLAN (NVS leer, weil das Factory-Image den Bereich mit 0xFF überschreibt). Auch prüfen: Board im
+  Download-Modus (BOOT halten + RESET). Code: `flash/index.html`, `.github/workflows/pages.yml`.
+- [ ] **Kurzanleitung (M5):** `docs/ANLEITUNG.md` am fertigen Gerät gegenlesen (Texte, Knopf-Lage im Gehäuse), am besten
+  von jemandem ohne Vorwissen durchspielen lassen.
+- [ ] **Heap-Überwachung (M5):** Heartbeat alle 10 min zeigt `Heap … (min …, Block …), PSRAM … (min …)`. Im Normalbetrieb
+  mit Display und 2 Haltestellen kein `Heap knapp` (Schwellen 40 KB frei / 24 KB Block, kritisch 20 / 10 KB). Falls doch:
+  realistische Werte notieren und `HeapWatch::Limits` in `lib/heapwatch/src/heap_watch.h` anpassen. `/api/status` →
+  `heap.state` = `ok`. Code: `src/system/heap_monitor.cpp`.

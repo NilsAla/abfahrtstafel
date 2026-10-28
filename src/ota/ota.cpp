@@ -53,6 +53,8 @@ String sLastResult;   // "ok" | "rolled_back" | ""
 String sLastVersion;  // Zielversion des letzten Updates
 bool sAutoCheckArmed = false;
 uint32_t sNextAutoCheck = 0;
+bool sChecked = false;      // seit dem Start schon einmal geprüft (Erfolg oder Fehler)
+uint32_t sLastCheckMs = 0;  // Ende der letzten Prüfung, für die Frische-Anzeige in der Web-UI
 
 // --- Hilfen ----------------------------------------------------------------
 
@@ -223,6 +225,9 @@ void taskMain(void *arg) {
   const Job job = static_cast<Job>(reinterpret_cast<uintptr_t>(arg));
   if (job == Job::Check) {
     runCheck();
+    std::lock_guard<std::mutex> lock(sMutex);
+    sChecked = true;
+    sLastCheckMs = millis();
   } else {
     runInstall();
   }
@@ -386,6 +391,8 @@ void buildStatus(JsonObject out) {
     last["version"] = sLastVersion;
   }
   if (sFlow.skippedBlocked()) out["skipped"] = sFlow.blockedVersion();
+  // Alter der letzten Prüfung: Web-UI prüft beim Öffnen des Reiters neu, wenn das Ergebnis alt ist
+  if (sChecked) out["checked_s"] = (millis() - sLastCheckMs) / 1000;
   out["selftest_running"] = sSelfTest.active();
   out["auto_check"] = config::get().updateCheck;
 }

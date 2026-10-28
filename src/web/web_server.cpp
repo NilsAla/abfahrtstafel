@@ -13,6 +13,9 @@
 //   GET  /api/departures         Abfahrten je Haltestelle, aufbereitet, mit Zustand und Datenalter
 //   GET  /api/stops?q=…          Haltestellensuche (asynchron: state pending → done/error, erneut abfragen)
 //   GET  /api/directions?stop=…  Linien/Richtungen einer Haltestelle für die Auswahl (asynchron, &more=1)
+//   GET  /api/coredump/info      Absturzbericht vorhanden? Task, Grund, Backtrace
+//   GET  /api/coredump           Absturzbericht als ELF-Datei (404 ohne Bericht)
+//   POST /api/coredump/erase     Absturzbericht löschen
 #include "web_server.h"
 
 #include <ArduinoJson.h>
@@ -28,8 +31,10 @@
 #include "../log/app_log.h"
 #include "../ota/ota.h"
 #include "../provider/departure_service.h"
+#include "../system/coredump.h"
 #include "../system/status.h"
 #include "../system/system.h"
+#include "../version.h"
 
 namespace web {
 
@@ -103,6 +108,26 @@ void handleLog(AsyncWebServerRequest *req) {
       });
   res->addHeader("X-Log-Last", String(c->last));
   res->addHeader("X-Log-Gap", c->gap ? "1" : "0");
+  res->addHeader("Cache-Control", "no-store");
+  req->send(res);
+}
+
+void handleCoredump(AsyncWebServerRequest *req) {
+  const size_t total = coredump::size();
+  if (total == 0) {
+    JsonDocument doc;
+    doc["ok"] = false;
+    doc["message"] = "Kein Absturzbericht vorhanden.";
+    sendJson(req, 404, doc);
+    return;
+  }
+  // Direkt aus dem Flash streamen, kein Puffer für das ganze Image (bis 64 KB)
+  AsyncWebServerResponse *res = req->beginResponse(
+      "application/octet-stream", total, [total](uint8_t *buf, size_t maxLen, size_t index) -> size_t {
+        const size_t n = std::min(maxLen, total - index);
+        return coredump::read(index, buf, n) ? n : 0;
+      });
+  res->addHeader("Content-Disposition", "attachment; filename=\"coredump-" FW_VERSION ".elf\"");
   res->addHeader("Cache-Control", "no-store");
   req->send(res);
 }
@@ -181,6 +206,22 @@ void registerRoutes() {
     JsonDocument doc;
     departures::lookupDirections(stop ? stop->value().c_str() : "", req->hasParam("more"), doc.to<JsonObject>());
     sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/coredump/info", HTTP_GET, [](AsyncWebServerRequest *req) {
+    JsonDocument doc;
+    coredump::buildInfo(doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
+  sServer.on("/api/coredump", HTTP_GET, handleCoredump);
+
+  sServer.on("/api/coredump/erase", HTTP_POST, [](AsyncWebServerRequest *req) {
+    const bool ok = coredump::erase();
+    JsonDocument doc;
+    doc["ok"] = ok;
+    if (!ok) doc["message"] = "Löschen fehlgeschlagen.";
+    sendJson(req, ok ? 200 : 500, doc);
   });
 
   sServer.onNotFound([](AsyncWebServerRequest *req) {

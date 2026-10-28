@@ -26,6 +26,9 @@ let updateTimer = null;
 let logLast = 0;
 let updateRebooting = false;
 
+// Ergebnis der letzten Update-Prüfung gilt so lange als frisch; älter → beim Öffnen des Reiters neu prüfen
+const UPDATE_FRESH_S = 5 * 60;
+
 // --- Hilfsfunktionen -------------------------------------------------------
 
 async function api(path, options = {}) {
@@ -77,11 +80,12 @@ function showTab() {
     statusTimer = setInterval(loadStatus, 5000);
   }
   if (name === 'update') {
-    loadUpdate();
+    loadUpdate(true);
     updateTimer = setInterval(loadUpdate, 2000);
   }
   if (name === 'einstellungen') loadConfig();
   if (name === 'protokoll') {
+    loadCrash();
     loadLog();
     logTimer = setInterval(() => { if ($('log-follow').checked) loadLog(); }, 3000);
   }
@@ -109,10 +113,12 @@ async function loadStatus() {
   setText('st-uptime', duration(s.uptime_s));
   setText('st-reset', s.reset_reason);
   setText('st-fetch', s.last_fetch ? s.last_fetch.replace('T', ' ').slice(0, 19) : 'noch keine');
-  setText('st-heap', `${kb(s.heap.free)} frei, min. ${kb(s.heap.min_free)}, größter Block ${kb(s.heap.largest_block)}`);
+  const heapState = { low: ' – knapp', critical: ' – kritisch' }[s.heap.state] || '';
+  setText('st-heap', `${kb(s.heap.free)} frei, min. ${kb(s.heap.min_free)}, größter Block ${kb(s.heap.largest_block)}${heapState}`);
   setText('st-psram', s.psram.total ? `${kb(s.psram.free)} frei von ${kb(s.psram.total)}` : 'nicht erkannt');
   setText('st-part', s.partition);
   setText('st-mac', w.mac);
+  setText('st-crash', s.coredump ? 'vorhanden – siehe Reiter „Protokoll“' : 'keiner');
   try {
     const u = await (await api('/api/update')).json();
     setText('st-update', u.offer ? `Version ${u.offer.version} verfügbar – siehe Reiter „Update“`
@@ -124,7 +130,7 @@ async function loadStatus() {
 
 // --- Update ----------------------------------------------------------------
 
-async function loadUpdate() {
+async function loadUpdate(opening = false) {
   let u;
   try {
     u = await (await api('/api/update')).json();
@@ -175,6 +181,10 @@ async function loadUpdate() {
   $('up-install').hidden = !u.offer;
   $('up-install').disabled = u.busy || u.selftest_running;
   if (u.state === 'rebooting') updateRebooting = true;
+
+  // Sonst bleibt z. B. das Ergebnis der automatischen Prüfung nach dem Start stehen, obwohl es längst ein neueres Release gibt
+  const stale = u.checked_s === undefined || u.checked_s > UPDATE_FRESH_S;
+  if (opening && stale && !u.busy && !u.selftest_running) postUpdate('/api/update/check');
 }
 
 async function postUpdate(path) {
@@ -703,6 +713,33 @@ async function loadLog() {
   pre.textContent += text;
   if (atBottom) pre.scrollTop = pre.scrollHeight;
 }
+
+// --- Absturzbericht --------------------------------------------------------
+
+async function loadCrash() {
+  let c;
+  try {
+    c = await (await api('/api/coredump/info')).json();
+  } catch (e) {
+    return;
+  }
+  $('crash').hidden = !c.present;
+  if (!c.present) return;
+  setText('crash-task', c.task || 'unbekannt');
+  setText('crash-reason', c.reason || 'unbekannt');
+  setText('crash-bt', (c.backtrace || []).join(' ') + (c.backtrace_corrupted ? ' (unvollständig)' : '') || '–');
+  setText('crash-sha', c.elf_sha256 || '–');
+}
+
+$('crash-erase').addEventListener('click', async () => {
+  if (!confirm('Absturzbericht löschen? Vorher herunterladen, falls er noch gebraucht wird.')) return;
+  try {
+    await api('/api/coredump/erase', { method: 'POST' });
+  } catch (e) {
+    offline();
+  }
+  loadCrash();
+});
 
 $('log-copy').addEventListener('click', async () => {
   try {

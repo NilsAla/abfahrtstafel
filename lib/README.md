@@ -13,5 +13,6 @@ Alles hier muss in `env:native` kompilieren und ist dort per Unit-Test abgesiche
 | `timeutil` | Zeitzone Europe/Berlin, Plausibilität der Systemzeit | M1 |
 | `ota` | SemVer, Manifest-Parser, Update-Statemachine, Download-Prüfung, Selbsttest-Entscheidung | M2 |
 | `transitous` | MOTIS-Parser, URLs, Aufbereitung/Filter, Richtungsgruppen, Haltestellen-JSON, Status/Backoff | M3 |
+| `heapwatch` | Heap-Schwellen mit Hysterese, Neustart nach Dauer-Knappheit | M5 |
 
 Geplant: Helligkeit/Nachtmodus (M4).
