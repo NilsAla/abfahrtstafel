@@ -51,7 +51,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [x] [A] `/api/log?since=N`: Ringpuffer (32 KB PSRAM) für Remote-Debugging ohne Serial
 - [x] [A] Konfiguration in NVS mit Schema-Version und Migration (`lib/config`, rollback-sicher)
 - [x] [A] Factory Reset per BOOT (GPIO0, 10 s), Task-Watchdog (30 s)
-- [ ] [A] WiFiManager-Portal auf Deutsch (eigene Strings via `WM_STRINGS_FILE`), Hinweis zur Bedienung im Portal
+- [x] [A] WiFiManager-Portal auf Deutsch (`include/wm_strings_de.h` via `WM_STRINGS_FILE`), Hinweis zur Bedienung im Portal
 - [ ] [B] Portal-Flow, mDNS, Taster am Gerät (siehe „Offen am Board“)
 - Done (A): baut, Config-/Migrationstests grün, Release `v0.1.0`
 - Done (B): Gerät nach Factory Reset ohne Serial einrichtbar
@@ -162,6 +162,9 @@ Phase B hakt ab oder notiert den Befund.
   NVS-Fehlerzeile für fehlenden Key.
 - [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
   Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
+  Portal komplett deutsch: Knopf „WLAN einrichten“, Hinweis „So geht es …“, Felder „WLAN-Name“/„WLAN-Passwort“,
+  Knopf „Verbinden“, danach Meldung „Gespeichert.“; falsches Passwort → „Nicht verbunden … Passwort falsch“.
+  Code: `include/wm_strings_de.h`.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
   `mDNS: http://abfahrt.local`. Code: `src/net/portal.cpp`, `src/net/network.cpp`.
 - [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
