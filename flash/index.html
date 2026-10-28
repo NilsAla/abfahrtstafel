@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Abfahrtstafel flashen</title>
+<!-- Recovery-Pfad: installiert firmware-factory.bin des neuesten Releases per USB (Web Serial).
+     Wird von .github/workflows/pages.yml zusammen mit manifest.json und der Firmware auf GitHub Pages veröffentlicht. -->
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --text: #1c1f24; --muted: #5d6573; --line: #d9dde3;
+    --accent: #0b6e4f; --accent-text: #ffffff; --warn-bg: #fff4e0;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a; --card: #1d2026; --text: #e8eaed; --muted: #9aa1ad; --line: #333842;
+      --accent: #3fb68b; --accent-text: #0b1410; --warn-bg: #3a2f1b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 20px; margin: 16px 0; }
+  .muted { color: var(--muted); }
+  .warn { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; }
+  ol { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  code { overflow-wrap: anywhere; }
+  esp-web-install-button { --esp-tools-button-color: var(--accent); --esp-tools-button-text-color: var(--accent-text); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Abfahrtstafel flashen</h1>
+  <p class="muted">Installiert die neueste Firmware <strong id="ver">…</strong> per USB-Kabel – für die Erstinstallation
+    oder wenn die Tafel gar nicht mehr startet. Normale Updates laufen über die Weboberfläche der Tafel.</p>
+
+  <div class="card">
+    <ol>
+      <li>Tafel mit einem <strong>USB-C-Datenkabel</strong> an diesen Computer anschließen.</li>
+      <li>Auf <strong>Installieren</strong> klicken und im Fenster den Eintrag mit „USB“ bzw. „JTAG“ auswählen.</li>
+      <li>Startet die Tafel nicht mehr: BOOT-Taster gedrückt halten, kurz RESET drücken, BOOT loslassen – dann erneut versuchen.</li>
+      <li>Nach etwa einer Minute ist die Tafel fertig und öffnet das WLAN <strong>Abfahrtstafel-XXXX</strong> zur Einrichtung.</li>
+    </ol>
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate">Installieren</button>
+      <span slot="unsupported" class="warn">Dieser Browser kann nicht per USB flashen. Bitte Chrome oder Edge am
+        Computer verwenden (nicht am Handy).</span>
+      <span slot="not-allowed" class="warn">Flashen geht nur über HTTPS – bitte diese Seite über GitHub Pages öffnen.</span>
+    </esp-web-install-button>
+  </div>
+
+  <p class="warn">Die Firmware wird komplett neu geschrieben. WLAN-Zugangsdaten und Einstellungen gehen dabei verloren
+    und müssen danach neu eingerichtet werden.</p>
+
+  <p class="muted">Quelle und alle Versionen:
+    <a href="https://github.com/NilsAla/abfahrtstafel/releases">github.com/NilsAla/abfahrtstafel/releases</a></p>
+</main>
+<script>
+  fetch('manifest.json', { cache: 'no-store' }).then((r) => r.json())
+    .then((m) => { document.getElementById('ver').textContent = m.version; })
+    .catch(() => { document.getElementById('ver').textContent = '(unbekannt)'; });
+</script>
+</body>
+</html>

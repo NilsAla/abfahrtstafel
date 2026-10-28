@@ -103,8 +103,9 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 ## M5 – Härtung und Übergabe
 - [x] [A] Heap-Monitoring (`lib/heapwatch`: Warnung, Neustart nach 10 min kritisch, `heap.state` in `/api/status`),
   Coredump (ELF) über Web-UI abrufbar (Reiter „Protokoll“, `/api/coredump`), `firmware.elf` als Release-Asset zum Auswerten
-- [ ] [A] Web-Flash-Seite (ESP Web Tools, GitHub Pages) als Recovery-Pfad, nutzt `firmware-factory.bin`
-- [ ] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe)
+- [x] [A] Web-Flash-Seite (ESP Web Tools 10.4.0, GitHub Pages) als Recovery-Pfad, nutzt `firmware-factory.bin`:
+  `flash/index.html`, `.github/workflows/pages.yml` (nach jedem Release). Einmalig: Settings → Pages → Source „GitHub Actions“
+- [x] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe): `docs/ANLEITUNG.md`
 - [ ] [B] 48-h-Dauertest, Übergabe-Test mit fremdem WLAN
 - [ ] [B] Gehäuse (3D-Druck, Schild-Look) nach Messung: Ausschnitt ≈ 27 × 68 mm, 4× M2, Zugang USB-C und BOOT,
   Ein/Aus-Schalter verdeckt bzw. auf ON fixiert
@@ -238,6 +239,12 @@ Phase B hakt ab oder notiert den Befund.
   „Bericht löschen“ → Block verschwindet, auch nach Neustart. Passt das Image nicht in 64 KB (viele Tasks), steht beim
   Absturz im Serial-Log ein Coredump-Fehler → dann `CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` senken. Danach Test-Code entfernen.
   Code: `src/system/coredump.cpp`, Routen in `src/web/web_server.cpp`.
+- [ ] **Web-Flash-Seite (M5):** https://nilsala.github.io/abfahrtstafel/ in Chrome/Edge öffnen, Board per USB, „Installieren“
+  → Port „USB JTAG/serial debug unit“ wählen → Fortschritt bis 100 %, Board startet mit der neuesten Version und öffnet
+  das Einrichtungs-WLAN (NVS leer, weil das Factory-Image den Bereich mit 0xFF überschreibt). Auch prüfen: Board im
+  Download-Modus (BOOT halten + RESET). Code: `flash/index.html`, `.github/workflows/pages.yml`.
+- [ ] **Kurzanleitung (M5):** `docs/ANLEITUNG.md` am fertigen Gerät gegenlesen (Texte, Knopf-Lage im Gehäuse), am besten
+  von jemandem ohne Vorwissen durchspielen lassen.
 - [ ] **Heap-Überwachung (M5):** Heartbeat alle 10 min zeigt `Heap … (min …, Block …), PSRAM … (min …)`. Im Normalbetrieb
   mit Display und 2 Haltestellen kein `Heap knapp` (Schwellen 40 KB frei / 24 KB Block, kritisch 20 / 10 KB). Falls doch:
   realistische Werte notieren und `HeapWatch::Limits` in `lib/heapwatch/src/heap_watch.h` anpassen. `/api/status` →

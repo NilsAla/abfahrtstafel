@@ -1,0 +1,59 @@
+name: Flash-Seite
+
+# Veröffentlicht flash/index.html mit firmware-factory.bin des neuesten Releases auf GitHub Pages.
+# Die Firmware wird kopiert, weil Release-Downloads keine CORS-Header senden (ESP Web Tools lädt per fetch).
+# Einmalig nötig: Settings → Pages → Source „GitHub Actions“.
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: [flash/**, .github/workflows/pages.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Seite mit neuestem Release zusammenstellen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _site
+          cp flash/index.html _site/
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern firmware-factory.bin --pattern manifest.json --dir rel
+          VERSION="$(python3 -c 'import json; print(json.load(open("rel/manifest.json"))["version"])')"
+          cp rel/firmware-factory.bin _site/
+          python3 - "$VERSION" <<'PY'
+          import json, sys
+          manifest = {
+              "name": "Abfahrtstafel",
+              "version": sys.argv[1],
+              "new_install_prompt_erase": False,
+              "builds": [{"chipFamily": "ESP32-S3", "parts": [{"path": "firmware-factory.bin", "offset": 0}]}],
+          }
+          json.dump(manifest, open("_site/manifest.json", "w"), indent=2)
+          PY
+          cat _site/manifest.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+      - id: deploy
+        uses: actions/deploy-pages@v4
