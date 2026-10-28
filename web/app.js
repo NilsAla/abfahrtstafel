@@ -300,6 +300,41 @@ $('restart-btn').addEventListener('click', async () => {
   setTimeout(() => { location.href = `http://${host}.local/#einstellungen`; }, 10000);
 });
 
+$('reboot-btn').addEventListener('click', async () => {
+  if (!confirm('Tafel jetzt neu starten?')) return;
+  $('reboot-btn').disabled = true;
+  try {
+    await api('/api/restart', { method: 'POST' });
+  } catch (e) {
+    // Gerät startet ggf. schon neu
+  }
+  const box = $('reset-box');
+  box.hidden = false;
+  box.textContent = 'Startet neu … Die Seite lädt in etwa 15 Sekunden neu.';
+  setTimeout(() => location.reload(), 15000);
+});
+
+$('reset-btn').addEventListener('click', async () => {
+  if (!confirm('Wirklich alles zurücksetzen?\n\nWLAN-Zugangsdaten, Haltestellen und Einstellungen werden gelöscht. '
+    + 'Danach muss die Tafel neu eingerichtet werden.')) return;
+  $('reset-btn').disabled = true;
+  const box = $('reset-box');
+  box.hidden = false;
+  try {
+    const data = await (await api('/api/factory-reset', { method: 'POST' })).json();
+    if (!data.ok) {
+      box.textContent = data.message || 'Zurücksetzen nicht möglich.';
+      $('reset-btn').disabled = false;
+      return;
+    }
+    box.textContent = `Wird zurückgesetzt. Diese Seite ist danach nicht mehr erreichbar. Zum Einrichten das WLAN `
+      + `„${data.ap}“ verbinden – die Tafel zeigt den Weg auf dem Display.`;
+  } catch (e) {
+    offline();
+    $('reset-btn').disabled = false;
+  }
+});
+
 // --- Abfahrten (Vorschau) --------------------------------------------------
 
 const MODE_LABEL = { train: 'Zug', subway: 'U-Bahn', tram: 'Straßenbahn', bus: 'Bus', ferry: 'Fähre', other: 'Sonstige' };

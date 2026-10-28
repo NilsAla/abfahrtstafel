@@ -23,6 +23,7 @@ abf::HoldButton sBoot(kFactoryResetHoldMs);
 std::atomic<bool> sRestartPending{false};
 std::atomic<uint32_t> sRestartRequested{0};
 std::atomic<uint32_t> sRestartDelay{0};
+std::atomic<bool> sFactoryResetPending{false};
 
 [[noreturn]] void factoryReset() {
   LOGW("reset", "Werksreset: lösche alle Einstellungen und WLAN-Zugangsdaten");
@@ -81,6 +82,11 @@ void scheduleRestart(uint32_t delayMs) {
   sRestartPending = true;
 }
 
+void scheduleFactoryReset(uint32_t delayMs) {
+  sFactoryResetPending = true;
+  scheduleRestart(delayMs);
+}
+
 void loop() {
   const uint32_t now = millis();
   switch (sBoot.update(board::bootButtonPressed(), now)) {
@@ -97,6 +103,7 @@ void loop() {
   }
 
   if (sRestartPending && now - sRestartRequested >= sRestartDelay) {
+    if (sFactoryResetPending) factoryReset();
     LOGI("sys", "Neustart");
     delay(100);
     esp_restart();

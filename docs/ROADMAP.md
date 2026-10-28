@@ -187,6 +187,10 @@ Phase B hakt ab oder notiert den Befund.
 - [ ] **Factory Reset (M1):** BOOT 10 s halten → Log `Werksreset`, Neustart, Portal-WLAN erscheint, Einstellungen auf
   Standard. Kurz drücken (< 10 s) löst nichts aus. Zur Laufzeit (nicht beim Einschalten) drücken, sonst Download-Modus.
   Code: `src/system/system.cpp`, Pin in `src/board/board.h`.
+- [ ] **Neustart/Werksreset in der Web-UI (M1):** Einstellungen → „Neu starten“ → Rückfrage, Neustart, Seite lädt nach
+  ~15 s neu. „Auf Werkseinstellungen zurücksetzen“ → Rückfrage, Hinweis mit WLAN-Namen, Log `Werksreset über Web-UI
+  angefordert` und `Werksreset: lösche …`, danach Erststart-Bildschirm. Während eines Updates → Meldung, kein Reset.
+  Code: `/api/factory-reset` in `src/web/web_server.cpp`, `sys::scheduleFactoryReset()`.
 - [ ] **Watchdog (M1):** Testweise `delay(40000)` in `loop()` → Neustart, Reset-Grund „Task-Watchdog“ in `/api/status`.
   Danach wieder entfernen. Code: `sys::watchdogBegin()`.
 - [ ] **Update per Knopf (M2):** Gerät per USB mit `v0.2.0` (`firmware-factory.bin`) flashen, einrichten. Reiter Update →
