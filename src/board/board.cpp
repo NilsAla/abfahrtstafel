@@ -168,12 +168,6 @@ const char *displayError() { return sError; }
 
 uint16_t *nativeFramebuffer() { return sFb; }
 
-void displayResync() {
-  // Setzt den RGB-DMA am nächsten VSYNC neu auf. Nach einem PSRAM-Engpass (z. B. TLS-Abruf) blieb das Bild am
-  // Board sonst dauerhaft seitlich versetzt; CONFIG_LCD_RGB_RESTART_IN_VSYNC fängt das mit Bounce-Buffer nicht ab.
-  if (sPanel) esp_lcd_rgb_panel_restart(sPanel);
-}
-
 void displayFlush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const uint16_t *pixels) {
   if (!sFb) return;
   const int32_t w = x2 - x1 + 1;
