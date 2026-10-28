@@ -316,16 +316,20 @@ static void test_display_defaults_and_roundtrip(void) {
   TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(d.theme));
   TEST_ASSERT_EQUAL_UINT32(4, d.rows);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Split), static_cast<int>(d.twoStops));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(d.stopName));
 
   Config c;
   c.theme = DisplayTheme::Night;
   c.rows = 3;
   c.twoStops = TwoStopLayout::Alternate;
+  c.stopName = StopNameStyle::Off;
   TEST_ASSERT_TRUE(saveConfig(s, c));
+  TEST_ASSERT_EQUAL_UINT32(2, s.u32["stopName"]);  // NVS-Wert ist eingefroren
   Config l = loadConfig(s);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Night), static_cast<int>(l.theme));
   TEST_ASSERT_EQUAL_UINT32(3, l.rows);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Alternate), static_cast<int>(l.twoStops));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Off), static_cast<int>(l.stopName));
 }
 
 static void test_display_invalid_nvs_values(void) {
@@ -333,9 +337,11 @@ static void test_display_invalid_nvs_values(void) {
   s.u32["theme"] = 7;
   s.u32["rows"] = 9;
   s.u32["twoStops"] = 2;
+  s.u32["stopName"] = 3;
   int invalid = 0;
   Config l = loadConfig(s, &invalid);
-  TEST_ASSERT_EQUAL_INT(3, invalid);
+  TEST_ASSERT_EQUAL_INT(4, invalid);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(l.stopName));
   TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(l.theme));
   TEST_ASSERT_EQUAL_UINT32(4, l.rows);
 }
@@ -344,18 +350,20 @@ static void test_display_json(void) {
   Config c;
   std::vector<FieldError> errors;
   JsonDocument ok;
-  deserializeJson(ok, R"({"theme": "night", "rows": 3, "two_stops": "alternate"})");
+  deserializeJson(ok, R"({"theme": "night", "rows": 3, "two_stops": "alternate", "stop_name": "large"})");
   TEST_ASSERT_TRUE(applyConfigJson(ok.as<JsonObjectConst>(), c, errors));
   JsonDocument out;
   configToJson(c, out.to<JsonObject>());
   TEST_ASSERT_EQUAL_STRING("night", out["theme"]);
   TEST_ASSERT_EQUAL_INT(3, out["rows"].as<int>());
   TEST_ASSERT_EQUAL_STRING("alternate", out["two_stops"]);
+  TEST_ASSERT_EQUAL_STRING("large", out["stop_name"]);
 
   JsonDocument bad;
-  deserializeJson(bad, R"({"theme": "hell", "rows": 5, "two_stops": 1})");
+  deserializeJson(bad, R"({"theme": "hell", "rows": 5, "two_stops": 1, "stop_name": "riesig"})");
   TEST_ASSERT_FALSE(applyConfigJson(bad.as<JsonObjectConst>(), c, errors));
-  TEST_ASSERT_EQUAL_size_t(3, errors.size());
+  TEST_ASSERT_EQUAL_size_t(4, errors.size());
+  TEST_ASSERT_EQUAL_STRING("stop_name", errors[3].field.c_str());
   TEST_ASSERT_EQUAL_UINT32(3, c.rows);  // unverändert
 }
 

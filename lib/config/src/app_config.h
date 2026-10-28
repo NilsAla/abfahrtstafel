@@ -24,6 +24,10 @@ enum class DisplayTheme : uint8_t { Dark = 0, Night = 1 };
 // Zwei Haltestellen: untereinander geteilt oder im Wechsel als Vollbild
 enum class TwoStopLayout : uint8_t { Split = 0, Alternate = 1 };
 
+// Haltestellenname in der Kopfzeile: Normal (klein), Groß (höhere Kopfzeile) oder Aus (nur Datum und Uhr,
+// z. B. mit Etikett am Gehäuse). Bei zwei Haltestellen bleibt der Name immer sichtbar.
+enum class StopNameStyle : uint8_t { Normal = 0, Large = 1, Off = 2 };
+
 struct Config {
   std::string hostname = "abfahrt";  // mDNS/DHCP-Name → http://abfahrt.local
   uint32_t brightness = 80;          // Prozent, 5..100
@@ -35,6 +39,7 @@ struct Config {
   DisplayTheme theme = DisplayTheme::Dark;  // ab M4
   uint32_t rows = 4;                 // Abfahrten pro Haltestelle im Vollbild: 3 (größer) oder 4
   TwoStopLayout twoStops = TwoStopLayout::Split;
+  StopNameStyle stopName = StopNameStyle::Normal;
   std::vector<StopConfig> stops;     // max. 2 Haltestellen (ab M3), in NVS als JSON
 };
 
@@ -48,6 +53,8 @@ const char *themeKey(DisplayTheme t);            // "dark", "night"
 bool themeFromKey(const std::string &key, DisplayTheme &out);
 const char *twoStopKey(TwoStopLayout l);         // "split", "alternate"
 bool twoStopFromKey(const std::string &key, TwoStopLayout &out);
+const char *stopNameKey(StopNameStyle s);        // "normal", "large", "off"
+bool stopNameFromKey(const std::string &key, StopNameStyle &out);
 
 // Schlüssel-Wert-Speicher (NVS). Keys max. 15 Zeichen.
 class KvStore {

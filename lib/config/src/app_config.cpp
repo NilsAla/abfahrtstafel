@@ -20,6 +20,7 @@ constexpr const char *kKeyStops = "stops";
 constexpr const char *kKeyTheme = "theme";
 constexpr const char *kKeyRows = "rows";
 constexpr const char *kKeyTwoStops = "twoStops";
+constexpr const char *kKeyStopName = "stopName";
 
 // Migrationsschritte: kSteps[n] hebt Schema n auf n+1.
 // Schema 1 ist das erste veröffentlichte, daher noch keine Schritte.
@@ -56,6 +57,7 @@ bool validNightBrightness(uint32_t v) { return v <= kBrightnessMax; }
 bool validMinutes(uint32_t v) { return v < kMinutesPerDay; }
 bool validRows(uint32_t v) { return v >= kRowsMin && v <= kRowsMax; }
 bool validEnum2(uint32_t v) { return v <= 1; }
+bool validEnum3(uint32_t v) { return v <= 2; }
 
 }  // namespace
 
@@ -99,6 +101,9 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   if (store.getU32(kKeyTwoStops, v)) {
     if (validEnum2(v)) cfg.twoStops = static_cast<TwoStopLayout>(v); else ++invalid;
   }
+  if (store.getU32(kKeyStopName, v)) {
+    if (validEnum3(v)) cfg.stopName = static_cast<StopNameStyle>(v); else ++invalid;
+  }
 
   std::string stops;
   if (store.getStr(kKeyStops, stops) && !stopsFromString(stops, cfg.stops)) {
@@ -122,6 +127,7 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyTheme, static_cast<uint32_t>(cfg.theme));
   ok &= store.putU32(kKeyRows, cfg.rows);
   ok &= store.putU32(kKeyTwoStops, static_cast<uint32_t>(cfg.twoStops));
+  ok &= store.putU32(kKeyStopName, static_cast<uint32_t>(cfg.stopName));
   return ok;
 }
 
@@ -149,6 +155,24 @@ bool twoStopFromKey(const std::string &key, TwoStopLayout &out) {
     return false;
   }
   return true;
+}
+
+const char *stopNameKey(StopNameStyle s) {
+  switch (s) {
+    case StopNameStyle::Large: return "large";
+    case StopNameStyle::Off:   return "off";
+    default:                   return "normal";
+  }
+}
+
+bool stopNameFromKey(const std::string &key, StopNameStyle &out) {
+  for (StopNameStyle s : {StopNameStyle::Normal, StopNameStyle::Large, StopNameStyle::Off}) {
+    if (key == stopNameKey(s)) {
+      out = s;
+      return true;
+    }
+  }
+  return false;
 }
 
 bool isValidHostname(const std::string &name) {
