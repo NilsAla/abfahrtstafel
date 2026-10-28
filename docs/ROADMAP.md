@@ -128,7 +128,14 @@ Phase B hakt ab oder notiert den Befund.
   im internen RAM (`src/display/display_task.cpp`, 32 KB). Ursache 2: Bounce-Buffer 10 Zeilen zu knapp, weil WLAN-/LWIP-
   Puffer im PSRAM liegen (`CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP`) → 41 Zeilen (2 × 26 KB). Danach ruhig. Heap frei nach
   Display-Start ≈ 118 KB. Versuch PCLK 14 MHz machte es deutlich schlimmer (zusammen mit dem alten Vollbild-Flush) → 18 MHz.
-  Offen: Langzeit-Beobachtung, Verhalten während OTA-Download (siehe „Update-Bild“) und Speicher nach TLS-Abruf.
+  Nach Update auf v0.5.0: Bild dauerhaft nach rechts versetzt (rechter Rand links sichtbar), vermutlich nach TLS-Abruf
+  → `board::displayResync()` (`esp_lcd_rgb_panel_restart`) alle 500 ms aus der Display-Task; 3 Update-Prüfungen
+  hintereinander danach ohne Versatz. Außerdem meldete jeder Software-Neustart (auch nach OTA) Reset-Grund „Watchdog“:
+  laufender RGB-DMA blockierte `esp_restart()` → Shutdown-Handler stoppt das Panel, jetzt „Neustart durch Software“.
+  Beides in `v0.5.1`. Offen: Langzeit-Beobachtung und Bild während des OTA-Downloads (siehe „Update-Bild“).
+- [ ] [A] **Update-Seite zeigt veraltetes Angebot:** Ergebnis der automatischen Prüfung (2 min nach Start) bleibt stehen,
+  bis jemand erneut prüft – am Board sah man `0.4.0`, obwohl `0.5.0` schon veröffentlicht war. Vorschlag: beim Öffnen
+  des Reiters „Update“ automatisch neu prüfen (höchstens alle paar Minuten). Code: `web/`, `src/ota/ota.cpp`.
 - Befund 2026-10-26 (DevKitC-1 N16R8 statt Waveshare, v0.2.0): Flash/PSRAM ok (8192 KB PSRAM, 229 KB Heap frei),
   Portal-Einrichtung ok, mDNS ok, NTP ok, automatische Update-Prüfung nach 2 min ok. Gefunden und im Branch behoben:
   AP hieß `Abfahrtstafel-0000` (MAC vor STA-Start leer → eFuse-MAC) und Web-UI nach dem Portal nicht erreichbar

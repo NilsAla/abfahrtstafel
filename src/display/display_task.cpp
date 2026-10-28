@@ -83,6 +83,7 @@ void taskMain(void *) {
       board::setBacklight(view.backlight);
       lastBacklight = view.backlight;
     }
+    board::displayResync();
     vTaskDelay(pdMS_TO_TICKS(kUpdateMs));
   }
 }

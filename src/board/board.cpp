@@ -7,6 +7,7 @@
 #include <esp_heap_caps.h>
 #include <esp_lcd_panel_ops.h>
 #include <esp_lcd_panel_rgb.h>
+#include <esp_system.h>
 #include <rom/ets_sys.h>
 
 #include "st7701_init.h"
@@ -90,6 +91,17 @@ void sendInitSequence() {
   pinMode(kLcdCs, INPUT_PULLUP);
 }
 
+// Vor esp_restart(): Panel-DMA stoppen. Läuft er weiter, hängt der Neustart und der RTC-Watchdog greift
+// (am Board: Reset-Grund „Watchdog“ statt „Software“, auch nach OTA).
+void shutdownPanel() {
+  if (sBacklightReady) ledcWrite(kBacklight, (1u << kBacklightBits) - 1);
+  if (sPanel) {
+    esp_lcd_panel_del(sPanel);
+    sPanel = nullptr;
+    sFb = nullptr;
+  }
+}
+
 bool fail(const char *msg) {
   sError = msg;
   return false;
@@ -147,6 +159,7 @@ bool displayBegin() {
   }
   sFb = static_cast<uint16_t *>(fb);
   memset(sFb, 0, static_cast<size_t>(kNativeWidth) * kNativeHeight * 2);
+  esp_register_shutdown_handler(shutdownPanel);
   sError = "";
   return true;
 }
@@ -154,6 +167,12 @@ bool displayBegin() {
 const char *displayError() { return sError; }
 
 uint16_t *nativeFramebuffer() { return sFb; }
+
+void displayResync() {
+  // Setzt den RGB-DMA am nächsten VSYNC neu auf. Nach einem PSRAM-Engpass (z. B. TLS-Abruf) blieb das Bild am
+  // Board sonst dauerhaft seitlich versetzt; CONFIG_LCD_RGB_RESTART_IN_VSYNC fängt das mit Bounce-Buffer nicht ab.
+  if (sPanel) esp_lcd_rgb_panel_restart(sPanel);
+}
 
 void displayFlush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const uint16_t *pixels) {
   if (!sFb) return;

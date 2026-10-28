@@ -26,6 +26,7 @@ bool displayBegin();       // false = kein Display (z. B. DevKit ohne Panel) →
 const char *displayError();  // Klartext zum letzten Fehlschlag von displayBegin(), sonst ""
 void displayFlush(int32_t x1, int32_t y1, int32_t x2, int32_t y2, const uint16_t *pixels);  // Querformat-Koordinaten
 void setBacklight(uint8_t percent);  // 0 = aus
+void displayResync();  // regelmäßig aufrufen: behebt seitlichen Bildversatz nach PSRAM-Engpässen
 
 // Nur für env:bringup: Panel-Framebuffer in nativer Ausrichtung (kNativeWidth × kNativeHeight, RGB565).
 // Schreibzugriffe sind sofort sichtbar (Bounce-Buffer liest über den Cache).
