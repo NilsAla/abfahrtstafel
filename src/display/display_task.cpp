@@ -83,7 +83,6 @@ void taskMain(void *) {
       board::setBacklight(view.backlight);
       lastBacklight = view.backlight;
     }
-    board::displayResync();
     vTaskDelay(pdMS_TO_TICKS(kUpdateMs));
   }
 }
@@ -96,6 +95,11 @@ void begin() {
     return;
   }
   sActive = true;
+#if defined(CONFIG_LCD_RGB_ISR_IRAM_SAFE) && defined(CONFIG_SPIRAM_XIP_FROM_PSRAM)
+  LOGI("disp", "RGB-ISR IRAM-sicher, XIP aus PSRAM: Bild bleibt bei Flash-Zugriffen synchron");
+#else
+  LOGW("disp", "RGB-ISR nicht IRAM-sicher: Bildversatz nach Flash-Zugriffen möglich");
+#endif
   const BaseType_t ok = xTaskCreatePinnedToCore(taskMain, "display", kStackBytes, nullptr, 1, nullptr, 1);
   if (ok != pdPASS) {
     sActive = false;

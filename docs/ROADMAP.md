@@ -136,6 +136,17 @@ Phase B hakt ab oder notiert den Befund.
   hintereinander danach ohne Versatz. Außerdem meldete jeder Software-Neustart (auch nach OTA) Reset-Grund „Watchdog“:
   laufender RGB-DMA blockierte `esp_restart()` → Shutdown-Handler stoppt das Panel, jetzt „Neustart durch Software“.
   Beides in `v0.5.1`. Offen: Langzeit-Beobachtung und Bild während des OTA-Downloads (siehe „Update-Bild“).
+- [ ] **Bildversatz nach Flash-Zugriffen (v0.6.1):** Befund 2026-10-28 an `v0.5.1`: Bild trotz Resync dauerhaft um genau
+  einen Bounce-Buffer (41 px quer) zyklisch versetzt („Gleis 1“ → rechts „Glei“, links „s1“; Uhr „21:56“ → „6“ links).
+  Ursache: Arduino-Core baut den S3 ohne `CONFIG_LCD_RGB_ISR_IRAM_SAFE`; bei abgeschaltetem Cache (NVS, WLAN-Daten, OTA)
+  gehen EOF-Interrupts verloren, die CPU füllt die Bounce-Buffer einen Chunk hinter dem DMA. Die Treiber-Resynchronisierung
+  (`lcd_rgb_panel_try_restart_transmission`, IDF 5.5) erkennt nur „CPU voraus“, nicht „CPU hinterher“; `RESTART_IN_VSYNC`
+  ist im Core ohnehin an → `displayResync()` entfernt. Fix: `custom_sdkconfig` mit `LCD_RGB_ISR_IRAM_SAFE` und
+  `SPIRAM_XIP_FROM_PSRAM` (Hybrid-Compile, `platformio.ini`).
+  Test: Log zeigt `RGB-ISR IRAM-sicher, XIP aus PSRAM`. In der Web-UI 10× Einstellungen speichern, Update suchen,
+  WLAN-Router kurz trennen → Bild bleibt deckungsgleich. Danach Update auf eine Folgeversion: Bild während Download/Flash
+  höchstens kurz gestört, danach ohne Versatz. `/api/status`: Heap frei notieren (IRAM-Bedarf steigt leicht).
+  Fehlerbild weiter vorhanden → Bounce-Buffer auf 20 Zeilen (Versatz halbiert sich?) zur Bestätigung der Diagnose.
 - [ ] [A] **Update-Seite zeigt veraltetes Angebot:** Ergebnis der automatischen Prüfung (2 min nach Start) bleibt stehen,
   bis jemand erneut prüft – am Board sah man `0.4.0`, obwohl `0.5.0` schon veröffentlicht war. Vorschlag: beim Öffnen
   des Reiters „Update“ automatisch neu prüfen (höchstens alle paar Minuten). Code: `web/`, `src/ota/ota.cpp`.
