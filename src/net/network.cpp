@@ -5,12 +5,15 @@
 #include <WiFi.h>
 #include <esp_mac.h>
 #include <esp_sntp.h>
+#include <http_date.h>
+#include <sys/time.h>
 #include <time.h>
 #include <time_berlin.h>
 
 #include <atomic>
 
 #include "../log/app_log.h"
+#include "https_client.h"
 #include "../system/system.h"
 #include "../web/web_server.h"
 #include "portal.h"
@@ -26,6 +29,21 @@ std::string sApName;
 bool sMdnsStarted = false;
 std::atomic<bool> sTimeSynced{false};   // Uhrzeit plausibel (NTP oder über Software-Reset erhalten)
 std::atomic<bool> sNtpEvent{false};
+std::atomic<bool> sHttpTimeEvent{false};
+std::atomic<bool> sTimeFetchRunning{false};
+uint32_t sOnlineSince = 0;
+uint32_t sLastTimeFetch = 0;
+constexpr uint32_t kTimeFetchAfterMs = 30 * 1000;   // so lange bekommt NTP Zeit
+constexpr uint32_t kTimeFetchEveryMs = 2 * 60 * 1000;
+// Kleine Antwort mit Date-Header; GitHub ist für Updates ohnehin erreichbar
+constexpr const char *kTimeUrl = "https://github.com/NilsAla/abfahrtstafel/releases/latest/download/manifest.json";
+
+void timeFetchTask(void *) {
+  https::Body body;
+  https::get(kTimeUrl, 4096, body);  // Date wird im Event-Handler übernommen
+  sTimeFetchRunning = false;
+  vTaskDelete(nullptr);
+}
 std::atomic<bool> sSetupRestart{false};
 bool sPortalSaved = false;  // im Portal gespeichert, Verbindung steht noch aus
 uint32_t sApCheck = 0;
@@ -80,6 +98,7 @@ void apply(const abf::WifiActions &a, bool fromPortal) {
   if (a.startWeb) web::begin();
   if (a.reconnect) reconnect();
   if (a.wentOnline) {
+    sOnlineSince = millis();
     LOGI("wifi", "Verbunden mit \"%s\", IP %s, RSSI %d dBm", WiFi.SSID().c_str(),
          WiFi.localIP().toString().c_str(), WiFi.RSSI());
     startMdns();
@@ -151,8 +170,20 @@ void loop() {
     sState = sSup.state();
   }
 
+  // Keine Uhrzeit trotz Verbindung: NTP (UDP 123) ist in manchen Gäste-WLANs gesperrt → Date-Header per HTTPS
+  if (!sTimeSynced && sSup.state() == abf::WifiState::Online && millis() - sOnlineSince >= kTimeFetchAfterMs &&
+      (sLastTimeFetch == 0 || millis() - sLastTimeFetch >= kTimeFetchEveryMs) && !sTimeFetchRunning) {
+    sLastTimeFetch = millis();
+    LOGW("time", "Noch keine Uhrzeit per NTP, hole sie per HTTPS");
+    sTimeFetchRunning = true;
+    if (xTaskCreatePinnedToCore(timeFetchTask, "time", 12 * 1024, nullptr, 1, nullptr, 1) != pdPASS) {
+      sTimeFetchRunning = false;
+    }
+  }
+
   // Die RTC läuft über einen Software-Reset weiter → Zeit kann schon vor dem ersten NTP-Sync gültig sein
   const bool ntp = sNtpEvent.exchange(false);
+  const bool http = sHttpTimeEvent.exchange(false);
   if (ntp || (!sTimeSynced && abf::isTimePlausible(time(nullptr)))) {
     const bool first = !sTimeSynced;
     sTimeSynced = true;
@@ -163,6 +194,8 @@ void loop() {
     strftime(buf, sizeof(buf), "%d.%m.%Y %H:%M:%S %Z", &tm);
     if (ntp) {
       LOGI("time", "Uhrzeit per NTP synchronisiert: %s", buf);
+    } else if (http) {
+      LOGI("time", "Uhrzeit per HTTPS übernommen (NTP nicht erreichbar): %s", buf);
     } else if (first) {
       LOGI("time", "Uhrzeit aus RTC übernommen (NTP folgt): %s", buf);
     }
@@ -180,5 +213,14 @@ std::string ip() {
 }
 
 bool setupRestart() { return sSetupRestart; }
+
+void offerHttpDate(const char *value) {
+  if (abf::isTimePlausible(time(nullptr))) return;  // NTP bzw. RTC haben Vorrang
+  int64_t epoch = 0;
+  if (!abf::parseHttpDate(value, epoch) || !abf::isTimePlausible(epoch)) return;
+  struct timeval tv = {static_cast<time_t>(epoch), 0};
+  settimeofday(&tv, nullptr);
+  sHttpTimeEvent = true;
+}
 
 }  // namespace net

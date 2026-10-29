@@ -15,6 +15,10 @@ const std::string &hostname();  // aktiver Hostname (Änderung wirkt nach Neusta
 const std::string &apName();
 bool timeSynced();
 std::string ip();     // IP im Heim-WLAN, leer ohne Verbindung
-bool setupRestart();  // WLAN eben eingerichtet, Neustart ist geplant (Hinweis auf dem Display)
+bool setupRestart();
+
+// Uhrzeit aus einem HTTP-Date-Header übernehmen, solange keine plausible Zeit vorliegt (NTP gesperrt).
+// Threadsicher, aus jedem Task aufrufbar.
+void offerHttpDate(const char *value);  // WLAN eben eingerichtet, Neustart ist geplant (Hinweis auf dem Display)
 
 }  // namespace net

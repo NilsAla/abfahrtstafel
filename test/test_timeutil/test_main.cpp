@@ -1,5 +1,6 @@
 // Zeitzone Europe/Berlin (POSIX-TZ-String) inkl. Sommerzeitwechsel
 #include <date_de.h>
+#include <http_date.h>
 #include <stdlib.h>
 #include <time.h>
 #include <time_berlin.h>
@@ -72,6 +73,36 @@ static void test_date_german(void) {
   TEST_ASSERT_EQUAL_STRING("Donnerstag, 1. Januar", formatDateLong(tm).c_str());
 }
 
+static void test_http_date(void) {
+  int64_t t = 0;
+  TEST_ASSERT_TRUE(parseHttpDate("Thu, 29 Oct 2026 08:12:45 GMT", t));
+  TEST_ASSERT_EQUAL_INT64(1793261565, t);
+  TEST_ASSERT_TRUE(parseHttpDate("Thu, 01 Jan 1970 00:00:00 GMT", t));
+  TEST_ASSERT_EQUAL_INT64(0, t);
+  TEST_ASSERT_TRUE(parseHttpDate("Thu, 29 Feb 2028 23:59:59 GMT", t));  // Schalttag
+  TEST_ASSERT_EQUAL_INT64(1835481599, t);
+  // gemeldete Werte aus time_t gegenprüfen
+  struct tm tm {};
+  const time_t tt = static_cast<time_t>(1793261565);
+  gmtime_r(&tt, &tm);
+  TEST_ASSERT_EQUAL_INT(2026 - 1900, tm.tm_year);
+  TEST_ASSERT_EQUAL_INT(9, tm.tm_mon);
+  TEST_ASSERT_EQUAL_INT(29, tm.tm_mday);
+  TEST_ASSERT_EQUAL_INT(8, tm.tm_hour);
+}
+
+static void test_http_date_invalid(void) {
+  int64_t t = 42;
+  TEST_ASSERT_FALSE(parseHttpDate(nullptr, t));
+  TEST_ASSERT_FALSE(parseHttpDate("", t));
+  TEST_ASSERT_FALSE(parseHttpDate("Thursday, 29-Oct-26 08:12:45 GMT", t));  // RFC 850
+  TEST_ASSERT_FALSE(parseHttpDate("Thu, 29 Okt 2026 08:12:45 GMT", t));
+  TEST_ASSERT_FALSE(parseHttpDate("Thu, 30 Feb 2026 08:12:45 GMT", t));
+  TEST_ASSERT_FALSE(parseHttpDate("Thu, 29 Oct 2026 24:12:45 GMT", t));
+  TEST_ASSERT_FALSE(parseHttpDate("Thu, 29 Oct 2026 08:12:45 UTC", t));
+  TEST_ASSERT_EQUAL_INT64(42, t);
+}
+
 int main(int, char **) {
   setenv("TZ", kTzBerlin, 1);
   tzset();
@@ -82,5 +113,7 @@ int main(int, char **) {
   RUN_TEST(test_fall_back_2026);
   RUN_TEST(test_plausibility);
   RUN_TEST(test_date_german);
+  RUN_TEST(test_http_date);
+  RUN_TEST(test_http_date_invalid);
   return UNITY_END();
 }

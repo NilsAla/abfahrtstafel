@@ -195,6 +195,13 @@ Phase B hakt ab oder notiert den Befund.
   ~15 s neu. „Auf Werkseinstellungen zurücksetzen“ → Rückfrage, Hinweis mit WLAN-Namen, Log `Werksreset über Web-UI
   angefordert` und `Werksreset: lösche …`, danach Erststart-Bildschirm. Während eines Updates → Meldung, kein Reset.
   Code: `/api/factory-reset` in `src/web/web_server.cpp`, `sys::scheduleFactoryReset()`.
+- [ ] **Uhrzeit ohne NTP (M1):** Befund: Im Gäste-WLAN blieb „Uhrzeit wird gestellt …“ stehen (NTP/UDP 123 vermutlich
+  gesperrt). Jetzt übernimmt jede HTTPS-Antwort ihren `Date`-Header, solange keine plausible Zeit da ist; zusätzlich holt
+  die Tafel 30 s nach dem Verbinden ohne Zeit alle 2 min das Release-Manifest. Test im Gäste-WLAN: Log `Noch keine
+  Uhrzeit per NTP, hole sie per HTTPS` → `Uhrzeit per HTTPS übernommen …`, Abfahrten erscheinen. Fehlerbild: HTTPS
+  scheitert mit Zertifikatsfehler → mbedTLS prüft Zertifikatsdaten gegen die Uhr (`CONFIG_MBEDTLS_HAVE_TIME_DATE`),
+  dann nur die Zeit-Anfrage ohne Prüfung zulassen bzw. RTC (PCF85063) nutzen. Code: `offerHttpDate()` in
+  `src/net/network.cpp`, `onEvent()` in `src/net/https_client.cpp`, Parser `lib/timeutil/src/http_date.cpp`.
 - [ ] **Watchdog (M1):** Testweise `delay(40000)` in `loop()` → Neustart, Reset-Grund „Task-Watchdog“ in `/api/status`.
   Danach wieder entfernen. Code: `sys::watchdogBegin()`.
 - [ ] **Update per Knopf (M2):** Gerät per USB mit `v0.2.0` (`firmware-factory.bin`) flashen, einrichten. Reiter Update →

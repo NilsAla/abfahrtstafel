@@ -4,9 +4,11 @@
 #include <esp_crt_bundle.h>
 #include <esp_heap_caps.h>
 #include <stdlib.h>
+#include <strings.h>
 
 #include "../log/app_log.h"
 #include "../version.h"
+#include "network.h"
 
 namespace https {
 
@@ -16,6 +18,15 @@ constexpr int kMaxRedirects = 5;
 
 bool isRedirect(int status) {
   return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
+}
+
+// Date-Header jeder Antwort als Ersatz-Zeitquelle, falls NTP gesperrt ist
+esp_err_t onEvent(esp_http_client_event_t *ev) {
+  if (ev->event_id == HTTP_EVENT_ON_HEADER && ev->header_key && ev->header_value &&
+      strcasecmp(ev->header_key, "Date") == 0) {
+    net::offerHttpDate(ev->header_value);
+  }
+  return ESP_OK;
 }
 
 void *allocLarge(size_t size) {
@@ -39,6 +50,7 @@ bool open(const char *url, Connection &conn, int64_t &contentLength, int *status
   cfg.url = url;
   cfg.crt_bundle_attach = esp_crt_bundle_attach;  // TLS nur über das eingebaute CA-Bundle
   cfg.user_agent = FW_USER_AGENT;
+  cfg.event_handler = onEvent;
   cfg.timeout_ms = 15000;
   cfg.buffer_size = 4096;     // GitHub-Redirect-Header (Location) sind > 512 Byte
   cfg.buffer_size_tx = 2048;  // lange Redirect-URLs in der Anfragezeile
