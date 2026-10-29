@@ -169,18 +169,42 @@ Phase B hakt ab oder notiert den Befund.
   Code: `include/wm_strings_de.h`.
   Nach Eingabe der Zugangsdaten: Portal schließt, Log zeigt `Zustand: provisioning → online`, `Web-UI gestartet`,
   `mDNS: http://abfahrt.local`. Code: `src/net/portal.cpp`, `src/net/network.cpp`.
+- [ ] **Neustart nach Einrichtung (M1):** Befund: Nach der Ersteinrichtung war ein Neustart nötig. Jetzt: sobald die
+  Tafel nach dem Portal (Erststart oder neue Zugangsdaten im Fallback-Portal) online ist, Log `WLAN eingerichtet, Neustart
+  in 4 s`, Display „WLAN verbunden! Die Tafel startet einmal neu …“, danach Neustart ohne Portal. Dann Bildschirm
+  „Fast geschafft!“: QR öffnet `http://<IP>`, Schritt 2 nennt `abfahrt.local` und die IP, unter dem QR steht die IP.
+  Router nur kurz weg (ohne neue Zugangsdaten) → kein Neustart. Code: `apply()` in `src/net/network.cpp`,
+  `setupRestart`/`ip` in `lib/dispmodel`.
 - [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
   WiFiManager-Problem: Port wird beim Schließen evtl. nicht freigegeben → dann bindet ESPAsyncWebServer nicht.
   Fehlerbild: Web-UI erst nach Neustart erreichbar. Code: `web::begin()` in `src/web/web_server.cpp`.
 - [ ] **Web-UI und API (M1):** Alle vier Reiter laden, Einstellungen speichern (Wert bleibt nach Neustart), ungültiger
   Gerätename zeigt Feldfehler, Namensänderung → Hinweis + Neustart → neuer Name per mDNS erreichbar.
   Zweiter Seitenaufruf liefert 304 (ETag). `curl -s abfahrt.local/api/status | jq` plausibel (PSRAM ≈ 8 MB).
-- [ ] **Router weg / Fallback (M1):** Router ausschalten → Log `online → connecting`, nach 3 min `fallback`, Portal-WLAN
+- [ ] **Router weg / Fallback (M1):** Befund: Bei nicht erreichbarem WLAN ging kein eigener AP auf. Vermutete Ursache:
+  Auto-Reconnect des Arduino-Cores (verbindet bei `NO_AP_FOUND` endlos neu) schaltet die Station wieder ein bzw. stört den
+  AP → im Fallback jetzt `setAutoReconnect(false)`, AP wird alle 15 s geprüft und notfalls neu gestartet. Erwartete Logzeilen:
+  `Einrichtungs-WLAN aktiv: "Abfahrtstafel-XXXX", 192.168.4.1`; Fehlerbild `ließ sich nicht öffnen (WLAN-Modus …)`.
+  Router ausschalten → Log `online → connecting`, nach 3 min `fallback`, Portal-WLAN
   sichtbar; nach 5 min ohne Client zurück zu `connecting`. Router wieder an → `online` ohne Neustart.
   Code: `lib/wifisup`, Timing in `WifiSupervisor::Timing`.
 - [ ] **Factory Reset (M1):** BOOT 10 s halten → Log `Werksreset`, Neustart, Portal-WLAN erscheint, Einstellungen auf
   Standard. Kurz drücken (< 10 s) löst nichts aus. Zur Laufzeit (nicht beim Einschalten) drücken, sonst Download-Modus.
   Code: `src/system/system.cpp`, Pin in `src/board/board.h`.
+- [ ] **Neustart/Werksreset in der Web-UI (M1):** Einstellungen → „Neu starten“ → Rückfrage, Neustart, Seite lädt nach
+  ~15 s neu. „Auf Werkseinstellungen zurücksetzen“ → Rückfrage, Hinweis mit WLAN-Namen, Log `Werksreset über Web-UI
+  angefordert` und `Werksreset: lösche …`, danach Erststart-Bildschirm. Während eines Updates → Meldung, kein Reset.
+  Code: `/api/factory-reset` in `src/web/web_server.cpp`, `sys::scheduleFactoryReset()`.
+- [ ] **Adresse auf Meldungsbildschirmen (M4):** Solange keine Abfahrten zu sehen sind (Uhrzeit wird gestellt, Laden,
+  Fehler, keine Abfahrten) steht unten klein `abfahrt.local · <IP>`, ohne WLAN nichts. Aus 1 m lesbar, kollidiert nicht
+  mit dem Hinweistext. Code: `drawMessage()` in `src/ui/ui.cpp`, `View::address` in `lib/dispmodel`.
+- [ ] **Uhrzeit ohne NTP (M1):** Befund: Im Gäste-WLAN blieb „Uhrzeit wird gestellt …“ stehen (NTP/UDP 123 vermutlich
+  gesperrt). Jetzt übernimmt jede HTTPS-Antwort ihren `Date`-Header, solange keine plausible Zeit da ist; zusätzlich holt
+  die Tafel 30 s nach dem Verbinden ohne Zeit alle 2 min das Release-Manifest. Test im Gäste-WLAN: Log `Noch keine
+  Uhrzeit per NTP, hole sie per HTTPS` → `Uhrzeit per HTTPS übernommen …`, Abfahrten erscheinen. Fehlerbild: HTTPS
+  scheitert mit Zertifikatsfehler → mbedTLS prüft Zertifikatsdaten gegen die Uhr (`CONFIG_MBEDTLS_HAVE_TIME_DATE`),
+  dann nur die Zeit-Anfrage ohne Prüfung zulassen bzw. RTC (PCF85063) nutzen. Code: `offerHttpDate()` in
+  `src/net/network.cpp`, `onEvent()` in `src/net/https_client.cpp`, Parser `lib/timeutil/src/http_date.cpp`.
 - [ ] **Watchdog (M1):** Testweise `delay(40000)` in `loop()` → Neustart, Reset-Grund „Task-Watchdog“ in `/api/status`.
   Danach wieder entfernen. Code: `sys::watchdogBegin()`.
 - [ ] **Update per Knopf (M2):** Gerät per USB mit `v0.2.0` (`firmware-factory.bin`) flashen, einrichten. Reiter Update →

@@ -6,6 +6,7 @@
 //   GET  /api/config             Einstellungen
 //   POST /api/config             Teil-Update (JSON), 400 mit Feldfehlern
 //   POST /api/restart            Neustart nach kurzer Verzögerung
+//   POST /api/factory-reset      Werkseinstellungen (wie BOOT 10 s), 409 während eines Updates
 //   GET  /api/log?since=N        Logzeilen > N als Text; Header X-Log-Last, X-Log-Gap
 //   GET  /api/update             Update-Zustand, Angebot, Fortschritt, Ergebnis des letzten Updates
 //   POST /api/update/check       Nach Update suchen (202, 409 wenn beschäftigt)
@@ -29,6 +30,7 @@
 #include "../config/config_service.h"
 #include "../generated/web_assets.h"
 #include "../log/app_log.h"
+#include "../net/network.h"
 #include "../ota/ota.h"
 #include "../provider/departure_service.h"
 #include "../system/coredump.h"
@@ -160,6 +162,21 @@ void registerRoutes() {
     sys::scheduleRestart(1000);
     JsonDocument doc;
     doc["ok"] = true;
+    sendJson(req, 202, doc);
+  });
+
+  sServer.on("/api/factory-reset", HTTP_POST, [](AsyncWebServerRequest *req) {
+    JsonDocument doc;
+    if (ota::busy()) {
+      doc["ok"] = false;
+      doc["message"] = "Gerade läuft ein Update. Bitte warten, bis es fertig ist.";
+      sendJson(req, 409, doc);
+      return;
+    }
+    LOGW("web", "Werksreset über Web-UI angefordert");
+    sys::scheduleFactoryReset(1500);  // Antwort soll noch beim Browser ankommen
+    doc["ok"] = true;
+    doc["ap"] = net::apName();
     sendJson(req, 202, doc);
   });
 

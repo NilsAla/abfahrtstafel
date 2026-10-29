@@ -125,6 +125,7 @@ button, a.button {
 }
 
 button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button.danger { color: var(--error); border-color: var(--error); }
 button:disabled { opacity: 0.6; cursor: default; }
 
 .banner { border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; }

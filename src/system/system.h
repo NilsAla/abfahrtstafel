@@ -11,6 +11,7 @@ void watchdogBegin(uint32_t timeoutMs);  // überwacht den Loop-Task
 void watchdogFeed();
 
 void scheduleRestart(uint32_t delayMs);  // aus jedem Task aufrufbar
+void scheduleFactoryReset(uint32_t delayMs);  // wie BOOT 10 s halten; läuft im Loop-Task, aus jedem Task aufrufbar
 
 // Im Loop aufrufen (≤ 50 ms Abstand): Taster, geplanter Neustart
 void loop();

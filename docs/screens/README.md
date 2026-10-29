@@ -37,9 +37,9 @@ Lange Namen werden gekürzt, Badges wachsen bis 170 px:
 | ![Kein WLAN](veraltet-kein-wlan.png) | ![API Nacht](veraltet-api-nacht.png) |
 
 ## Einrichtung
-| Erststart | Keine Haltestelle | WLAN nicht erreichbar |
-|---|---|---|
-| ![WLAN einrichten](einrichtung-wlan.png) | ![Haltestelle einrichten](einrichtung-haltestelle.png) | ![Fallback](wlan-nicht-erreichbar.png) |
+| Erststart | Nach dem Portal (Neustart) | Keine Haltestelle (QR auf die IP) | WLAN nicht erreichbar |
+|---|---|---|---|
+| ![WLAN einrichten](einrichtung-wlan.png) | ![Neustart](einrichtung-neustart.png) | ![Haltestelle einrichten](einrichtung-haltestelle.png) | ![Fallback](wlan-nicht-erreichbar.png) |
 
 ## Meldungen
 | | |

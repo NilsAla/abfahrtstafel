@@ -13,5 +13,6 @@ void start(const std::string &apName);
 void stop();
 bool active();
 void process();  // in jedem Loop-Durchlauf
+bool takeCredentialsSaved();  // true einmalig, nachdem im Portal neue Zugangsdaten gespeichert wurden
 
 }  // namespace portal
