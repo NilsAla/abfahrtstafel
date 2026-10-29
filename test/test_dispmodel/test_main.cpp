@@ -271,6 +271,25 @@ static void test_view_setup_and_nostops(void) {
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Icon::NoWifi), static_cast<int>(v.icon));
 }
 
+static void test_view_address_on_messages(void) {
+  ViewInputs in = boardInputs(1, 0);  // Haltestelle, aber noch nichts geladen
+  in.wifi = WifiState::Online;
+  in.timeValid = false;
+  in.ip = "192.168.178.23";
+  View v = buildView(in);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
+  TEST_ASSERT_EQUAL_STRING("abfahrt.local · 192.168.178.23", v.address.c_str());
+  // Ohne WLAN keine Adresse
+  in.ip.clear();
+  TEST_ASSERT_EQUAL_STRING("", buildView(in).address.c_str());
+  // Mit Abfahrten keine Adresse
+  ViewInputs b = boardInputs(1, 4);
+  b.ip = "192.168.178.23";
+  v = buildView(b);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Board), static_cast<int>(v.screen));
+  TEST_ASSERT_EQUAL_STRING("", v.address.c_str());
+}
+
 static void test_view_setup_restart(void) {
   ViewInputs in = boardInputs(0, 0);
   in.wifi = WifiState::Online;
@@ -410,6 +429,7 @@ int main(int, char **) {
   RUN_TEST(test_view_split_and_alternate);
   RUN_TEST(test_view_setup_and_nostops);
   RUN_TEST(test_view_setup_restart);
+  RUN_TEST(test_view_address_on_messages);
   RUN_TEST(test_view_stop_saved_but_not_loaded);
   RUN_TEST(test_view_fallback_only_without_data);
   RUN_TEST(test_view_messages);

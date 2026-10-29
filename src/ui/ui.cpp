@@ -404,9 +404,18 @@ void centeredStack(lv_obj_t *scr, const Palette &p, const Symbol &sym, const std
 }
 
 void drawMessage(lv_obj_t *scr, const View &v, const Palette &p) {
+  constexpr int32_t kAddressH = 44;
   const int32_t headH = headerHeight(v);
   header(scr, v, p, v.title, 0, headH, true);
-  centeredStack(scr, p, symbolFor(v.icon, p), v.heading, v.text, headH, kHeight, -1);
+  const int32_t bottom = v.address.empty() ? kHeight : kHeight - kAddressH;
+  centeredStack(scr, p, symbolFor(v.icon, p), v.heading, v.text, headH, bottom, -1);
+  if (!v.address.empty()) {
+    // Adresse der Web-UI, damit man die Tafel auch ohne funktionierendes .local findet
+    lv_obj_t *a = label(scr, v.address, &ui_font_small, p.dim);
+    singleLine(a, &ui_font_small, kWidth - 2 * kMargin);
+    lv_obj_set_style_text_align(a, LV_TEXT_ALIGN_CENTER, 0);
+    placeBaseline(a, &ui_font_small, kMargin, kHeight - (kAddressH - capHeight(&ui_font_small)) / 2);
+  }
 }
 
 void drawUpdate(lv_obj_t *scr, const View &v, const Palette &p) {

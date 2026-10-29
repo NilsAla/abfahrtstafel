@@ -214,6 +214,7 @@ std::vector<Scenario> scenarios() {
   out.push_back({"wlan-nicht-erreichbar", in});
 
   in = base();
+  in.ip = "192.168.178.23";
   in.timeValid = false;
   addStop(in, stop("Emsdetten, Bahnhof", {}, BoardStatus::NoTime));
   out.push_back({"meldung-uhrzeit", in});

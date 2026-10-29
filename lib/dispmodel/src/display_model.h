@@ -95,6 +95,7 @@ struct View {
   std::string qr;              // Inhalt des QR-Codes
   std::string qrCaption;
   int8_t progress = -1;        // 0..100, -1 = ohne Balken
+  std::string address;         // Message: Adresse der Web-UI („abfahrt.local · 192.168.178.23“), leer ohne WLAN
 
   bool operator==(const View &o) const;
   bool operator!=(const View &o) const { return !(*this == o); }

@@ -195,6 +195,9 @@ Phase B hakt ab oder notiert den Befund.
   ~15 s neu. „Auf Werkseinstellungen zurücksetzen“ → Rückfrage, Hinweis mit WLAN-Namen, Log `Werksreset über Web-UI
   angefordert` und `Werksreset: lösche …`, danach Erststart-Bildschirm. Während eines Updates → Meldung, kein Reset.
   Code: `/api/factory-reset` in `src/web/web_server.cpp`, `sys::scheduleFactoryReset()`.
+- [ ] **Adresse auf Meldungsbildschirmen (M4):** Solange keine Abfahrten zu sehen sind (Uhrzeit wird gestellt, Laden,
+  Fehler, keine Abfahrten) steht unten klein `abfahrt.local · <IP>`, ohne WLAN nichts. Aus 1 m lesbar, kollidiert nicht
+  mit dem Hinweistext. Code: `drawMessage()` in `src/ui/ui.cpp`, `View::address` in `lib/dispmodel`.
 - [ ] **Uhrzeit ohne NTP (M1):** Befund: Im Gäste-WLAN blieb „Uhrzeit wird gestellt …“ stehen (NTP/UDP 123 vermutlich
   gesperrt). Jetzt übernimmt jede HTTPS-Antwort ihren `Date`-Header, solange keine plausible Zeit da ist; zusätzlich holt
   die Tafel 30 s nach dem Verbinden ohne Zeit alle 2 min das Release-Manifest. Test im Gäste-WLAN: Log `Noch keine
