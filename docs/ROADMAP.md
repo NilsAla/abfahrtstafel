@@ -181,7 +181,11 @@ Phase B hakt ab oder notiert den Befund.
 - [ ] **Web-UI und API (M1):** Alle vier Reiter laden, Einstellungen speichern (Wert bleibt nach Neustart), ungültiger
   Gerätename zeigt Feldfehler, Namensänderung → Hinweis + Neustart → neuer Name per mDNS erreichbar.
   Zweiter Seitenaufruf liefert 304 (ETag). `curl -s abfahrt.local/api/status | jq` plausibel (PSRAM ≈ 8 MB).
-- [ ] **Router weg / Fallback (M1):** Router ausschalten → Log `online → connecting`, nach 3 min `fallback`, Portal-WLAN
+- [ ] **Router weg / Fallback (M1):** Befund: Bei nicht erreichbarem WLAN ging kein eigener AP auf. Vermutete Ursache:
+  Auto-Reconnect des Arduino-Cores (verbindet bei `NO_AP_FOUND` endlos neu) schaltet die Station wieder ein bzw. stört den
+  AP → im Fallback jetzt `setAutoReconnect(false)`, AP wird alle 15 s geprüft und notfalls neu gestartet. Erwartete Logzeilen:
+  `Einrichtungs-WLAN aktiv: "Abfahrtstafel-XXXX", 192.168.4.1`; Fehlerbild `ließ sich nicht öffnen (WLAN-Modus …)`.
+  Router ausschalten → Log `online → connecting`, nach 3 min `fallback`, Portal-WLAN
   sichtbar; nach 5 min ohne Client zurück zu `connecting`. Router wieder an → `online` ohne Neustart.
   Code: `lib/wifisup`, Timing in `WifiSupervisor::Timing`.
 - [ ] **Factory Reset (M1):** BOOT 10 s halten → Log `Werksreset`, Neustart, Portal-WLAN erscheint, Einstellungen auf

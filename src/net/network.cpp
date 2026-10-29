@@ -28,6 +28,27 @@ std::atomic<bool> sTimeSynced{false};   // Uhrzeit plausibel (NTP oder über Sof
 std::atomic<bool> sNtpEvent{false};
 std::atomic<bool> sSetupRestart{false};
 bool sPortalSaved = false;  // im Portal gespeichert, Verbindung steht noch aus
+uint32_t sApCheck = 0;
+constexpr uint32_t kApCheckMs = 15 * 1000;
+
+bool apRunning() { return (WiFi.getMode() & WIFI_MODE_AP) != 0; }
+
+void openPortal() {
+  if (sSup.state() == abf::WifiState::Fallback) {
+    // Der Arduino-Core verbindet bei „WLAN nicht gefunden“ von selbst endlos neu (Auto-Reconnect). Die Kanalsuche
+    // der Station stört den eigenen AP bzw. schaltet die Station nach dem Portalstart wieder ein → vorher abschalten.
+    WiFi.setAutoReconnect(false);
+    WiFi.disconnect(false, false);
+  }
+  portal::start(sApName);
+  sApCheck = millis();
+  if (apRunning()) {
+    LOGI("wifi", "Einrichtungs-WLAN aktiv: \"%s\", %s", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+  } else {
+    LOGE("wifi", "Einrichtungs-WLAN ließ sich nicht öffnen (WLAN-Modus %d), neuer Versuch in %lu s",
+         static_cast<int>(WiFi.getMode()), static_cast<unsigned long>(kApCheckMs / 1000));
+  }
+}
 constexpr uint32_t kSetupRestartMs = 4000;  // Zeit für den Hinweis auf dem Display
 
 void startMdns() {
@@ -51,8 +72,11 @@ void reconnect() {
 void apply(const abf::WifiActions &a, bool fromPortal) {
   // Erst stoppen, dann starten: Portal und Web-UI teilen sich Port 80
   if (a.stopWeb) web::end();
-  if (a.stopPortal) portal::stop();
-  if (a.startPortal) portal::start(sApName);
+  if (a.stopPortal) {
+    portal::stop();
+    WiFi.setAutoReconnect(true);
+  }
+  if (a.startPortal) openPortal();
   if (a.startWeb) web::begin();
   if (a.reconnect) reconnect();
   if (a.wentOnline) {
@@ -112,6 +136,16 @@ void loop() {
   const abf::WifiActions actions = sSup.update(in, millis());
   apply(actions, actions.wentOnline && (before == abf::WifiState::Provisioning || sPortalSaved));
   if (actions.wentOnline) sPortalSaved = false;
+
+  // Portal soll offen sein, AP läuft aber nicht (Start fehlgeschlagen oder vom WLAN-Stack wieder abgeschaltet)
+  if (sSup.portalOpen() && millis() - sApCheck >= kApCheckMs) {
+    sApCheck = millis();
+    if (!apRunning()) {
+      LOGW("wifi", "Einrichtungs-WLAN läuft nicht, starte es neu");
+      portal::stop();
+      openPortal();
+    }
+  }
   if (sSup.state() != before) {
     LOGI("wifi", "Zustand: %s → %s", abf::wifiStateName(before), abf::wifiStateName(sSup.state()));
     sState = sSup.state();
