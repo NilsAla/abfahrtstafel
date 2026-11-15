@@ -111,13 +111,15 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
   Ein/Aus-Schalter verdeckt bzw. auf ON fixiert
 
 ## Offen am Board
-- [ ] **Umbenennung wannbus (Schema 1 → 2):** Gerät mit gespeichertem Hostnamen `abfahrt` per Web-UI-Update auf diese Version:
-  `http://wannbus.local` ist erreichbar, Serial-Log `mDNS: http://wannbus.local`. Gerät mit eigenem Hostnamen behält ihn.
-  Werksreset: WLAN `wannbus-XXXX`, Portal-Titel „wannbus“. Rollback auf die Vorversion startet fehlerfrei (liest Hostname `wannbus`).
-  Code: `lib/config/src/app_config.cpp` (`migrateHostnameToWannbus`), `lib/wifisup/src/wifi_supervisor.cpp`, `src/net/portal.cpp`.
-  Hinweis: `docs/screens/` zeigt noch alte Texte (Sim lief nicht in der Cloud), bei nächster Gelegenheit neu rendern.
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Umbenennung wannbus (Schema 1 → 2):** (a) Gerät mit gespeichertem Hostnamen `abfahrt` per Web-UI-Update auf diese Version:
+  `http://wannbus.local` ist erreichbar, Serial-Log `=== wannbus <version> ===` und `mDNS: http://wannbus.local`.
+  (b) Gerät mit eigenem Hostnamen behält ihn. (c) Werksreset: WLAN `wannbus-XXXX`, Portal-Titel „wannbus“, Display-Setup-Screen
+  nennt `wannbus-XXXX`. (d) Rollback auf die Vorversion startet fehlerfrei (Log „neueres Schema (Rollback?)“, Hostname `wannbus`).
+  Web-UI: Logo und Wortmarke im Kopf, Favicon im Browser-Tab.
+  Code: `lib/config/src/app_config.cpp` (`migrateHostnameToWannbus`), `lib/wifisup/src/wifi_supervisor.cpp` (`apName`),
+  `src/net/portal.cpp`, `web/index.html`.
 - [ ] **Hardware-Check (M0):** Waveshare-Factory-Demo flashen bzw. vorinstallierte Demo starten. Revision (V1/Rev1.1) auf der
   Platine ablesen und in `docs/HARDWARE.md` eintragen. BOOT-Taster reagiert in der Demo. Strom: läuft am USB-C-Netzteil
   mit C-zu-C-Kabel? Maße mit Messschieber gegen `docs/HARDWARE.md` prüfen.
