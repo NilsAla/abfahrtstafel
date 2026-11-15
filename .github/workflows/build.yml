@@ -29,7 +29,7 @@ jobs:
           restore-keys: pio-${{ runner.os }}-
 
       - name: PlatformIO installieren
-        run: pip install --upgrade platformio
+        run: pip install "platformio==6.2.0"  # gepinnt: 6.2.0-post.1 erfüllt pioarduino (>=6.2.0) nicht
 
       - name: Unit-Tests (native)
         run: |
