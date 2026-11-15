@@ -119,9 +119,26 @@ Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge 
 - [ ] [A] 5 Bootanimation
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
 
+## v1.0 – erstes Vollrelease von wannbus
+Ziel: Redesign-Blöcke 2–5 fertig, „Offen am Board“ ohne offene Punkte zu Update, WLAN-Setup und Anzeige, dann `v1.0.0`.
+- [x] Repo in `NilsAla/wannbus` umbenannt (alte Adressen leiten weiter, Firmware akzeptiert beide Download-Pfade)
+- [x] Beta-Kanal: Einstellung „Beta-Versionen erhalten“, Sammel-Release `beta` mit `manifest.json` (gepflegt von `release.yml`)
+- [ ] Jeden Block erst als Beta (`vX.Y.Z-beta.N`) auf beide Tafeln, am Board prüfen, dann regulär releasen
+- [ ] Release-Kandidat `v1.0.0-rc.1` als Beta, 48 h auf beiden Tafeln ohne Auffälligkeiten, dann `v1.0.0`
+
+**Beta-Ablauf:** lokal bauen und testen → mergen → `git tag -a v0.9.0-beta.1 -m "Notiz" && git push origin v0.9.0-beta.1`.
+`release.yml` veröffentlicht eine Vorabversion (nicht „latest“) und setzt `beta/manifest.json` darauf. Nur Tafeln mit
+Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Release erreicht auch die Beta-Tafeln.
+
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Beta-Kanal:** Tafel auf v0.8.1 (oder neuer), in den Einstellungen „Beta-Versionen erhalten“ setzen, speichern.
+  Update-Seite zeigt „Beta-Kanal“; „Nach Update suchen“ bietet die neueste Beta an (Log `Update verfügbar: … → …-beta.N`),
+  Installation, Selbsttest und Rollback wie bei regulären Updates. Häkchen aus: keine Beta mehr angeboten
+  (Log `neueste im Kanal stabil`). Code: `src/ota/ota.cpp` (`kBetaManifestUrl`, `runCheck`), `release.yml` (Schritt „Beta-Kanal aktualisieren“).
+- [ ] **Neuer Repo-Name:** Tafel mit v0.8.0 (alter Repo-Name im Manifest) findet und installiert v0.8.1 über die Weiterleitung.
+  Code: `lib/ota/src/manifest.cpp` (`kLegacyReleaseDownloadPrefix`).
 - [ ] **Umbenennung wannbus (Schema 1 → 2):** (a) Gerät mit gespeichertem Hostnamen `abfahrt` per Web-UI-Update auf diese Version:
   `http://wannbus.local` ist erreichbar, Serial-Log `=== wannbus <version> ===` und `mDNS: http://wannbus.local`.
   (b) Gerät mit eigenem Hostnamen behält ihn. (c) Werksreset: WLAN `wannbus-XXXX`, Portal-Titel „wannbus“, Display-Setup-Screen
