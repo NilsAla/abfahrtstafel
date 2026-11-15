@@ -281,6 +281,22 @@ int main(int argc, char **argv) {
   lv_display_set_buffers(disp, buf, nullptr, sizeof(buf), LV_DISPLAY_RENDER_MODE_FULL);
   lv_display_set_flush_cb(disp, flush);
 
+  // Alle Bilder der Bootanimation (15/s) für das GIF in der README: program <dir> --boot-frames <nacht|tag>
+  if (argc > 3 && std::string(argv[2]) == "--boot-frames") {
+    ui::bootBegin(std::string(argv[3]) == "tag" ? DisplayTheme::Day : DisplayTheme::Night);
+    int n = 0;
+    for (float t = 0.0f; t <= boot::kEnd + 0.01f; t += 1.0f / 15.0f) {
+      ui::bootFrame(boot::frameAt(t));
+      sTick += 66;
+      lv_refr_now(disp);
+      char name[64];
+      snprintf(name, sizeof(name), "/frame-%03d.ppm", n++);
+      if (!writePpm(outDir + name)) return 1;
+    }
+    ui::bootEnd();
+    return 0;
+  }
+
   int failed = 0;
   for (const Scenario &s : scenarios()) {
     ui::show(buildView(s.in));
