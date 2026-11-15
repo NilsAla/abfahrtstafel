@@ -32,15 +32,18 @@ ICONS_BIG = "0xF1EB,0xF019,0xF071,0xF05A,0xF017,0xF021"
 
 # name: (Schrift, Größe px, Zeichen, Icons) – Kommentar: Versalhöhe
 FONTS = {
-    "ui_font_row4": (SEMIBOLD, 52, LATIN, None),      # Ziel, 4 Zeilen: 3,0 mm
-    "ui_font_row3": (SEMIBOLD, 64, LATIN, None),      # Ziel, 3 Zeilen: 3,7 mm
-    "ui_font_time4": (BOLD, 56, TIME, None),          # Minuten, 4 Zeilen: 3,2 mm
-    "ui_font_time3": (BOLD, 68, TIME, None),          # Minuten, 3 Zeilen: 3,9 mm
-    "ui_font_badge4": (BOLD, 36, LATIN, None),        # Linie, 4 Zeilen: 2,1 mm
-    "ui_font_badge3": (BOLD, 44, LATIN, None),        # Linie, 3 Zeilen: 2,5 mm
-    "ui_font_small": (MEDIUM, 28, LATIN, ICONS_SMALL),  # „min“, Gleis, Kopfzeile: 1,6 mm
-    "ui_font_body": (MEDIUM, 32, LATIN, None),        # Texte, 3 Zeilen klein: 1,8 mm
-    "ui_font_bold": (BOLD, 30, LATIN, None),          # Verspätung, Leiste, Nummern: 1,7 mm
+    # wannbus-Design (docs/branding/BRANDING.md, Abschnitt 5) mit am Gerät lesbaren Größen: keine kleine Unterzeile,
+    # Verspätung über die Farbe der Minuten. Versalhöhe in mm ≈ Größe × 0,7 × 0,0825.
+    "ui_font_dest3": (SEMIBOLD, 56, LATIN, None),     # Ziel, 3 Zeilen: 3,2 mm
+    "ui_font_dest4": (SEMIBOLD, 44, LATIN, None),     # Ziel, 4 Zeilen und geteilt: 2,5 mm
+    "ui_font_min3": (BOLD, 64, TIME, None),           # Minuten, 3 Zeilen: 3,7 mm
+    "ui_font_min4": (BOLD, 50, TIME, None),           # Minuten, 4 Zeilen: 2,9 mm
+    "ui_font_badge": (BOLD, 40, LATIN, None),         # Linie, 3 Zeilen: 2,3 mm
+    "ui_font_badge_s": (BOLD, 32, LATIN, None),       # Linie, 4 Zeilen und geteilt: 1,8 mm
+    "ui_font_ring": (BOLD, 18, "H", None),            # „H“ im Haltestellen-Ring
+    "ui_font_small": (MEDIUM, 28, LATIN, ICONS_SMALL),  # „min“, Gleis, Kopfzeile, Adresse: 1,6 mm
+    "ui_font_body": (MEDIUM, 32, LATIN, None),        # Texte, „min“ bei 3 Zeilen: 1,8 mm
+    "ui_font_bold": (BOLD, 30, LATIN, None),          # „fällt aus“, Nummern der Schritte: 1,7 mm
     "ui_font_clock": (BOLD, 36, TIME, None),          # Uhr: 2,1 mm
     "ui_font_title": (BOLD, 48, LATIN, None),         # Überschriften: 2,8 mm
     "ui_font_icon": (None, 64, None, ICONS_BIG),      # große Symbole

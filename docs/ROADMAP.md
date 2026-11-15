@@ -114,7 +114,8 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge dort). Jeder Block eine eigene Session und ein eigenes Release.
 - [x] [A] 1 Rebranding (Name, AP-Name, Hostname-Migration, Tokens) – PR #11, Board-Test siehe „Offen am Board“
 - [x] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration, Schema 3) – Board-Test siehe „Offen am Board“
-- [ ] [A] 3 Display-Redesign inkl. Marke bei Leerlauf/Restfläche
+- [x] [A] 3 Display-Redesign (Karten, Badges, Ring, Tag/Nacht), am Gerät abgenommen 2026-11-15: große Schriften, keine Unterzeile
+- [ ] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
 - [ ] [A] 4 Web-UI und WLAN-Portal im neuen Design
 - [ ] [A] 5 Bootanimation
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
@@ -133,6 +134,8 @@ Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Relea
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Display-Redesign:** am Gerät per USB (0.9.0-dev) abgenommen. Offen: 24 h laufen lassen, alle Zustände einmal sehen
+  (kein WLAN, Update, Einrichtung, zwei Haltestellen geteilt/Wechsel, Tag-Stil, 3 Zeilen). Code: `src/ui/ui.cpp`.
 - [ ] **Tag/Nacht (Schema 2 → 3):** (a) Update einer Tafel mit v0.8.x: bleibt dunkel (Schalter steht auf „Nacht“).
   (b) Status-Reiter: `Auto | Tag | Nacht` antippen → Display folgt innerhalb 2 s ohne Neustart, Vorschau und Hinweiszeile
   („Auto: gerade Tag, Nacht ab 20:00“) stimmen. (c) Auto über die Grenze: in den Einstellungen „Tag ab“ 1–2 min in die Zukunft

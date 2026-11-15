@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include <tokens.h>
+
 #include "ui_fonts.h"
 
 namespace ui {
@@ -25,51 +27,53 @@ using abf::StopNameStyle;
 using abf::View;
 using abf::WifiMark;
 
-constexpr int32_t kMargin = 16;
-constexpr int32_t kHeader = 44;       // Kopfzeile Vollbild
-constexpr int32_t kHeaderLarge = 66;  // mit großem Haltestellennamen
-constexpr int32_t kHeaderBare = 36;   // ohne Haltestellennamen, nur Datum und Uhr
-constexpr int32_t kSplitHeader = 32;  // Kopfzeile je Haltestelle (geteilt)
-constexpr int32_t kBanner = 40;       // Hinweisleiste unten
-constexpr int32_t kRight = kWidth - kMargin;
+// wannbus-Design (docs/branding/BRANDING.md, Abschnitt 5): Karten mit runden Ecken auf ruhigem Grund,
+// Linien-Badge in Creme bzw. Navy, Haltestellen-Ring im Kopf. Schriften bewusst groß (am Gerät geprüft):
+// keine kleine Unterzeile, Verspätung färbt die Minuten.
+constexpr int32_t kPadX = 12;
+constexpr int32_t kPadY = 8;
+constexpr int32_t kGap = 6;            // zwischen Kopf und Karten bzw. Karten untereinander
+constexpr int32_t kHead = 36;          // Kopfzeile Vollbild
+constexpr int32_t kHeadLarge = 50;     // mit großem Haltestellennamen
+constexpr int32_t kHeadSplit = 30;     // Kopf je Haltestelle (geteilt)
+constexpr int32_t kRing = 28;          // Haltestellen-Ring
+constexpr int32_t kBannerH = 40;       // Hinweis unten (veraltete Daten)
+constexpr int32_t kRight = kWidth - kPadX;
 
 struct Palette {
   uint32_t screen;     // Hintergrund
-  uint32_t header;     // Kopfzeile
-  uint32_t row;        // Zeilen abwechselnd
-  uint32_t rowAlt;
+  uint32_t card;
+  uint32_t cardHot;    // erste Abfahrt
   uint32_t text;
-  uint32_t dim;        // Nebentexte
-  uint32_t accent;     // Symbole, Leiste
-  uint32_t late;       // Verspätung: Minuten und neue Abfahrtszeit
-  uint32_t cancel;     // „fällt aus“
-  uint32_t struck;     // durchgestrichene Abfahrt
-  uint32_t bannerText;
-  uint32_t track;      // Hintergrund Fortschrittsbalken
-  uint32_t qrBox;      // Fläche hinter dem QR-Code
+  uint32_t muted;      // Nebentexte
+  uint32_t teal;       // „pünktlich“, Ring, Aktionsfarbe (Textkontrast)
+  uint32_t coral;      // Verspätung, Ausfall, Fehler (Textkontrast)
+  uint32_t border;     // Fortschrittsbalken-Hintergrund
+  uint32_t badgeBg;
+  uint32_t badgeText;
 };
 
-// Nacht: Nachtblau wie bisher. Tag: helle Flächen aus den wannbus-Tokens (lib/branding), Texte mit Kontrast ≥ 4,5:1.
-// Übergang bis zum Display-Redesign: gleiches Layout, nur die Farben wechseln.
-constexpr Palette kNight = {0x0b1a2e, 0x050f1e, 0x0b1a2e, 0x12243c, 0xf2f4f7, 0x9fb1c9,
-                            0xffb020, 0xff5a4a, 0xff7a6b, 0x8193ab, 0x1a1306, 0x1e3858, 0xffffff};
-constexpr Palette kDay = {0xEAF4FA, 0xD6E6F0, 0xEAF4FA, 0xFFFFFF, 0x1B1F3B, 0x4A5075,
-                          0xE89A00, 0xC81F33, 0xC81F33, 0x7A809F, 0x1A1306, 0xCFE3EE, 0xFFFFFF};
+Palette paletteFor(const abf::brand::ThemeTokens &t) {
+  return {t.bgDisplay, t.card, t.cardHot, t.text, t.muted, t.tealText, t.coralText, t.border, t.badgeBg, t.badgeText};
+}
+
+const Palette kNight = paletteFor(abf::brand::kNight);
+const Palette kDay = paletteFor(abf::brand::kDay);
 
 // Maße je Zeilen-Layout
 struct RowMetrics {
-  const lv_font_t *time;
-  const lv_font_t *unit;
-  const lv_font_t *badge;
   const lv_font_t *dest;
-  int32_t timeRight;  // rechte Kante der Zeitspalte
-  int32_t badgeW;
+  const lv_font_t *time;
+  const lv_font_t *badge;
+  const lv_font_t *unit;  // „min“, Gleis
   int32_t badgeH;
+  int32_t badgeMinW;
+  int32_t radius;
+  int32_t padX;
 };
 
-const RowMetrics kRows4 = {&ui_font_time4, &ui_font_small, &ui_font_badge4, &ui_font_row4, 140, 104, 46};
-const RowMetrics kRows3 = {&ui_font_time3, &ui_font_body, &ui_font_badge3, &ui_font_row3, 172, 132, 60};
-const RowMetrics kRowsSplit = {&ui_font_time4, &ui_font_small, &ui_font_badge4, &ui_font_row4, 140, 104, 44};
+const RowMetrics kRows3 = {&ui_font_dest3, &ui_font_min3, &ui_font_badge, &ui_font_body, 58, 80, 18, 18};
+const RowMetrics kRows4 = {&ui_font_dest4, &ui_font_min4, &ui_font_badge_s, &ui_font_small, 44, 64, 14, 14};
 
 View sLast;
 bool sValid = false;
@@ -155,185 +159,166 @@ void slash(lv_obj_t *parent, lv_point_precise_t *pts, int32_t x, int32_t y, int3
 
 // --- Kopfzeile -------------------------------------------------------------
 
-// Rechts: [WLAN] [Update] [1/2] Uhrzeit. Gibt die linke Kante des belegten Bereichs zurück.
+// Rechts: [WLAN] [Update] [1/2] [Datum] Uhrzeit. Gibt die linke Kante des belegten Bereichs zurück.
 int32_t headerRight(lv_obj_t *scr, const View &v, const Palette &p, int32_t top, int32_t height, bool icons) {
   int32_t x = kRight;
   const int32_t clockBase = top + (height + capHeight(&ui_font_clock)) / 2;
   const int32_t smallBase = top + (height + capHeight(&ui_font_small)) / 2;
   if (!v.clock.empty()) {
-    x = placeRight(label(scr, v.clock, &ui_font_clock, p.text), v.clock, &ui_font_clock, x, clockBase) - 20;
+    x = placeRight(label(scr, v.clock, &ui_font_clock, p.text), v.clock, &ui_font_clock, x, clockBase) - 18;
   }
   // Kurzes Datum neben der Uhr; ohne Haltestellennamen steht das lange Datum links (siehe header())
   if (!v.date.empty() && v.header != StopNameStyle::Off) {
-    x = placeRight(label(scr, v.date, &ui_font_small, p.dim), v.date, &ui_font_small, x, smallBase) - 20;
+    x = placeRight(label(scr, v.date, &ui_font_small, p.muted), v.date, &ui_font_small, x, smallBase) - 18;
   }
   if (!icons) return x;
   if (!v.page.empty()) {
-    x = placeRight(label(scr, v.page, &ui_font_small, p.dim), v.page, &ui_font_small, x, smallBase) - 18;
+    x = placeRight(label(scr, v.page, &ui_font_small, p.muted), v.page, &ui_font_small, x, smallBase) - 16;
   }
   if (v.updateAvailable) {
-    x = placeRight(label(scr, UI_ICON_DOWNLOAD, &ui_font_small, p.accent), UI_ICON_DOWNLOAD, &ui_font_small, x,
-                   smallBase) - 18;
+    x = placeRight(label(scr, UI_ICON_DOWNLOAD, &ui_font_small, p.teal), UI_ICON_DOWNLOAD, &ui_font_small, x,
+                   smallBase) - 16;
   }
   if (v.wifi != WifiMark::None) {
     const bool off = v.wifi == WifiMark::Off;
-    const int32_t left = placeRight(label(scr, UI_ICON_WIFI, &ui_font_small, off ? p.accent : p.dim), UI_ICON_WIFI,
-                                    &ui_font_small, x, smallBase);
+    const int32_t left = placeRight(label(scr, UI_ICON_WIFI, &ui_font_small, p.muted), UI_ICON_WIFI, &ui_font_small, x,
+                                    smallBase);
     if (off) {
       const int32_t s = textWidth(UI_ICON_WIFI, &ui_font_small);
-      slash(scr, sSlashSmall, left, smallBase - s + 2, s - 2, 3, p.accent);
+      slash(scr, sSlashSmall, left, smallBase - s + 2, s - 2, 3, p.coral);
     }
-    x = left - 18;
+    x = left - 16;
   }
   return x;
 }
 
-int32_t headerHeight(const View &v) {
-  switch (v.header) {
-    case StopNameStyle::Large: return kHeaderLarge;
-    case StopNameStyle::Off:   return kHeaderBare;
-    default:                   return kHeader;
-  }
-}
+int32_t headerHeight(const View &v) { return v.header == StopNameStyle::Large ? kHeadLarge : kHead; }
 
+// Links: Haltestellen-Ring + Name (bzw. bei ausgeblendetem Namen das lange Datum), rechts Symbole und Uhr
 void header(lv_obj_t *scr, const View &v, const Palette &p, const std::string &title, int32_t top, int32_t height,
             bool icons) {
-  box(scr, 0, top, kWidth, height, p.header);
   const int32_t rightEdge = headerRight(scr, v, p, top, height, icons);
-  // Links: Haltestelle (klein und grau oder groß und hell) bzw. bei ausgeblendetem Namen das lange Datum
   const bool bare = v.header == StopNameStyle::Off;
   const std::string &text = bare ? v.date : title;
   if (text.empty()) return;
-  const bool large = v.header == StopNameStyle::Large && height >= kHeaderLarge;
-  const lv_font_t *font = large ? &ui_font_title : &ui_font_small;
-  lv_obj_t *t = label(scr, text, font, large ? p.text : p.dim);
-  singleLine(t, font, std::max<int32_t>(40, rightEdge - 20 - (kMargin + 4)));
-  placeBaseline(t, font, kMargin + 4, top + (height + capHeight(font)) / 2);
+  int32_t x = kPadX;
+  if (!bare) {
+    const int32_t ring = std::min(kRing, height);
+    lv_obj_t *o = box(scr, x, top + (height - ring) / 2, ring, ring, p.screen, LV_RADIUS_CIRCLE);
+    lv_obj_set_style_border_color(o, c(abf::brand::kTeal), 0);
+    lv_obj_set_style_border_width(o, 3, 0);
+    lv_obj_t *h = label(o, "H", &ui_font_ring, p.text);
+    lv_obj_align(h, LV_ALIGN_CENTER, 0, 1);
+    x += ring + 12;
+  }
+  const bool large = v.header == StopNameStyle::Large && height >= kHeadLarge;
+  const lv_font_t *font = large ? &ui_font_dest4 : &ui_font_small;
+  lv_obj_t *t = label(scr, text, font, large ? p.text : p.muted);
+  singleLine(t, font, std::max<int32_t>(40, rightEdge - 16 - x));
+  placeBaseline(t, font, x, top + (height + capHeight(font)) / 2);
 }
 
-// --- Abfahrtszeile ---------------------------------------------------------
+// --- Abfahrtskarte ---------------------------------------------------------
 
-struct Line {
-  std::string text;
-  const lv_font_t *font;
-  uint32_t color;
-  bool struck = false;
-};
+// Badge-Breite einer Zeile; alle Karten einer Haltestelle nutzen die breiteste, damit die Ziele fluchten
+int32_t badgeWidth(const RowView &r, const RowMetrics &m) {
+  return std::min<int32_t>(170, std::max(m.badgeMinW, textWidth(r.line, m.badge) + 24));
+}
 
-void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p, int32_t top, int32_t height,
-         bool alt) {
-  box(scr, 0, top, kWidth, height, alt ? p.rowAlt : p.row);
-  const int32_t center = top + height / 2;
-  const int32_t base = center + capHeight(m.dest) / 2;
-  const uint32_t mainColor = r.cancelled ? p.struck : p.text;
+void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p, int32_t x, int32_t top, int32_t w,
+         int32_t height, int32_t badgeW, bool hot) {
+  box(scr, x, top, w, height, hot ? p.cardHot : p.card, m.radius);
   const bool late = r.noteKind == NoteKind::Delay;
+  const uint32_t mainColor = r.cancelled ? p.muted : p.text;
 
-  // Zeit: große Zahl + „min“ auf gemeinsamer Grundlinie, rechtsbündig. Rot bei Verspätung:
-  // die Minuten enthalten sie schon, nichts muss gerechnet werden.
-  int32_t timeRight = m.timeRight;
-  if (!r.unit.empty()) {
-    const uint32_t unitColor = r.cancelled ? p.struck : late ? p.late : p.dim;
-    timeRight = placeRight(label(scr, r.unit, m.unit, unitColor), r.unit, m.unit, timeRight, base) - 6;
+  // Rechts: Minuten + „min“ (bzw. Uhrzeit, „jetzt“) auf gemeinsamer Grundlinie, daneben Steig/Gleis.
+  // Verspätung: Minuten in Koralle (sie enthalten die Verspätung schon). Ausfall: Zeit durchgestrichen + „fällt aus“.
+  const int32_t timeBase = top + (height + capHeight(m.time)) / 2;
+  int32_t right = x + w - m.padX;
+  if (r.cancelled) {
+    right = placeRight(label(scr, "fällt aus", &ui_font_bold, p.coral), "fällt aus", &ui_font_bold, right, timeBase) -
+            14;
+  } else if (!r.track.empty()) {
+    right = placeRight(label(scr, r.track, m.unit, p.muted), r.track, m.unit, right, timeBase) - 14;
   }
-  lv_obj_t *time = label(scr, r.time, m.time, late ? p.late : mainColor);
-  placeRight(time, r.time, m.time, timeRight, base);
+  const uint32_t timeColor = late ? p.coral : mainColor;
+  if (!r.unit.empty()) {
+    right = placeRight(label(scr, r.unit, m.unit, late ? p.coral : p.muted), r.unit, m.unit, right, timeBase) - 6;
+  }
+  lv_obj_t *time = label(scr, r.time, m.time, timeColor);
+  const int32_t timeLeft = placeRight(time, r.time, m.time, right, timeBase);
   if (r.cancelled) lv_obj_set_style_text_decor(time, LV_TEXT_DECOR_STRIKETHROUGH, 0);
 
-  // Linie: farbiges Badge, wächst bei langen Namen bis 170 px
-  const int32_t badgeX = m.timeRight + 18;
-  const int32_t badgeW = std::min<int32_t>(170, std::max(m.badgeW, textWidth(r.line, m.badge) + 20));
-  lv_obj_t *badge = box(scr, badgeX, top + (height - m.badgeH) / 2, badgeW, m.badgeH, r.badgeBg, 7);
-  lv_obj_t *bl = label(badge, r.line, m.badge, r.badgeFg);
+  // Links: Linien-Badge (gemeinsame Breite der Haltestelle, siehe badgeWidth)
+  const int32_t badgeX = x + m.padX;
+  lv_obj_t *badge = box(scr, badgeX, top + (height - m.badgeH) / 2, badgeW, m.badgeH, p.badgeBg, 11);
+  lv_obj_t *bl = label(badge, r.line, m.badge, p.badgeText);
   lv_obj_align(bl, LV_ALIGN_CENTER, 0, 1);
 
-  // Rechte Spalte: Ausfall, Verspätung (Planzeit durchgestrichen über neuer Zeit) oder Gleis.
-  // Für Planzeit, neue Zeit und Gleis reicht die Zeilenhöhe nicht – bei Verspätung entfällt das Gleis.
-  std::vector<Line> lines;
-  if (r.noteKind == NoteKind::Cancelled) {
-    lines.push_back({"fällt", &ui_font_bold, p.cancel});
-    lines.push_back({"aus", &ui_font_bold, p.cancel});
-  } else if (late) {
-    lines.push_back({r.planned, &ui_font_small, p.dim, true});
-    lines.push_back({r.note, &ui_font_bold, p.late});
-  } else if (!r.track.empty()) {
-    lines.push_back({r.track, m.unit, p.dim});
-  }
-  int32_t rightW = 0;
-  int32_t stackH = 0;
-  constexpr int32_t kGap = 10;
-  for (const Line &l : lines) {
-    rightW = std::max(rightW, textWidth(l.text, l.font));
-    stackH += capHeight(l.font);
-  }
-  if (lines.size() > 1) stackH += kGap * static_cast<int32_t>(lines.size() - 1);
-  int32_t y = center - stackH / 2;
-  for (const Line &l : lines) {
-    y += capHeight(l.font);
-    lv_obj_t *t = label(scr, l.text, l.font, l.color);
-    if (l.struck) lv_obj_set_style_text_decor(t, LV_TEXT_DECOR_STRIKETHROUGH, 0);
-    placeRight(t, l.text, l.font, kRight, y);
-    y += kGap;
-  }
-
-  // Ziel: füllt den Rest, zu lange Namen enden mit …
-  const int32_t destX = badgeX + badgeW + 20;
-  const int32_t destW = kRight - (rightW > 0 ? rightW + 20 : 0) - destX;
+  // Mitte: Ziel, zu lange Namen enden mit …
+  const int32_t destX = badgeX + badgeW + 16;
   lv_obj_t *dest = label(scr, r.to, m.dest, mainColor);
-  singleLine(dest, m.dest, std::max<int32_t>(40, destW));
-  placeBaseline(dest, m.dest, destX, base);
+  singleLine(dest, m.dest, std::max<int32_t>(40, timeLeft - 16 - destX));
+  placeBaseline(dest, m.dest, destX, top + (height + capHeight(m.dest)) / 2);
   if (r.cancelled) lv_obj_set_style_text_decor(dest, LV_TEXT_DECOR_STRIKETHROUGH, 0);
+}
+
+// Karten untereinander zwischen top und bottom; erste Karte hervorgehoben
+void cards(lv_obj_t *scr, const SectionView &s, const RowMetrics &m, const Palette &p, int32_t top, int32_t bottom,
+           int32_t slots) {
+  const int32_t rowH = (bottom - top - (slots - 1) * kGap) / std::max<int32_t>(1, slots);
+  if (s.rows.empty()) {
+    lv_obj_t *msg = label(scr, s.message, &ui_font_body, p.muted);
+    singleLine(msg, &ui_font_body, kRight - kPadX);
+    lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
+    placeBaseline(msg, &ui_font_body, kPadX, top + (bottom - top + capHeight(&ui_font_body)) / 2);
+    return;
+  }
+  const size_t n = std::min(s.rows.size(), static_cast<size_t>(std::max<int32_t>(0, slots)));
+  int32_t badgeW = 0;
+  for (size_t i = 0; i < n; ++i) badgeW = std::max(badgeW, badgeWidth(s.rows[i], m));
+  for (size_t i = 0; i < n; ++i) {
+    row(scr, s.rows[i], m, p, kPadX, top + static_cast<int32_t>(i) * (rowH + kGap), kRight - kPadX, rowH, badgeW,
+        i == 0);
+  }
 }
 
 // --- Bildschirme -----------------------------------------------------------
 
 void drawBoard(lv_obj_t *scr, const View &v, const Palette &p) {
-  if (v.sections.size() >= 2) {  // geteilt: je Haltestelle Kopf + 2 Zeilen
-    const int32_t half = kHeight / 2;
-    const int32_t rowH = (half - kSplitHeader) / static_cast<int32_t>(abf::kSplitRows);
+  if (v.sections.size() >= 2) {  // geteilt: je Haltestelle Kopf + 2 Karten
+    const int32_t half = (kHeight - 2 * kPadY - kGap) / 2;
     for (size_t i = 0; i < v.sections.size() && i < 2; ++i) {
       const SectionView &s = v.sections[i];
-      const int32_t top = static_cast<int32_t>(i) * half;
+      const int32_t top = kPadY + static_cast<int32_t>(i) * (half + kGap);
       View head = v;
+      head.header = StopNameStyle::Normal;  // bei zwei Haltestellen immer mit Namen
       if (i > 0) {
         head.clock.clear();
         head.date.clear();
       }
-      header(scr, head, p, s.title, top, kSplitHeader, i == 0);
-      if (s.rows.empty()) {
-        box(scr, 0, top + kSplitHeader, kWidth, half - kSplitHeader, p.row);
-        lv_obj_t *m = label(scr, s.message, &ui_font_body, p.dim);
-        singleLine(m, &ui_font_body, kWidth - 2 * kMargin - 4);
-        placeBaseline(m, &ui_font_body, kMargin + 4,
-                      top + kSplitHeader + (half - kSplitHeader + capHeight(&ui_font_body)) / 2);
-        continue;
-      }
-      for (size_t r = 0; r < s.rows.size(); ++r) {
-        row(scr, s.rows[r], kRowsSplit, p, top + kSplitHeader + static_cast<int32_t>(r) * rowH, rowH, r % 2 == 1);
-      }
+      header(scr, head, p, s.title, top, kHeadSplit, i == 0);
+      cards(scr, s, kRows4, p, top + kHeadSplit + 6, top + half, static_cast<int32_t>(abf::kSplitRows));
     }
     return;
   }
 
   const int32_t headH = headerHeight(v);
-  header(scr, v, p, v.title, 0, headH, true);
+  header(scr, v, p, v.title, kPadY, headH, true);
   const RowMetrics &m = v.rows <= 3 ? kRows3 : kRows4;
-  const int32_t bottom = v.banner.empty() ? kHeight : kHeight - kBanner;
-  const int32_t slots = v.banner.empty() ? v.rows : v.rows - 1;
-  const int32_t rowH = (bottom - headH) / std::max<int32_t>(1, slots);
-  box(scr, 0, headH, kWidth, bottom - headH, p.row);
-  if (!v.sections.empty()) {
-    const SectionView &s = v.sections.front();
-    for (size_t r = 0; r < s.rows.size(); ++r) {
-      row(scr, s.rows[r], m, p, headH + static_cast<int32_t>(r) * rowH, rowH, r % 2 == 1);
-    }
-  }
+  int32_t bottom = kHeight - kPadY;
   if (!v.banner.empty()) {
-    box(scr, 0, bottom, kWidth, kBanner, p.accent);
-    lv_obj_t *b = label(scr, v.banner, &ui_font_bold, p.bannerText);
-    singleLine(b, &ui_font_bold, kWidth - 2 * kMargin);
+    // Veraltete Daten: ruhiger Hinweis in Koralle statt gelber Leiste
+    const int32_t y = bottom - kBannerH;
+    box(scr, kPadX, y, kRight - kPadX, kBannerH, p.card, 12);
+    lv_obj_t *b = label(scr, v.banner, &ui_font_small, p.coral);
+    singleLine(b, &ui_font_small, kRight - 3 * kPadX);
     lv_obj_set_style_text_align(b, LV_TEXT_ALIGN_CENTER, 0);
-    placeBaseline(b, &ui_font_bold, kMargin, bottom + (kBanner + capHeight(&ui_font_bold)) / 2);
+    placeBaseline(b, &ui_font_small, 2 * kPadX, y + (kBannerH + capHeight(&ui_font_small)) / 2);
+    bottom = y - kGap;
   }
+  const int32_t slots = v.banner.empty() ? v.rows : v.rows - 1;
+  if (!v.sections.empty()) cards(scr, v.sections.front(), m, p, kPadY + headH + kGap, bottom, slots);
 }
 
 const char *iconGlyph(Icon i) {
@@ -347,82 +332,97 @@ const char *iconGlyph(Icon i) {
   }
 }
 
-// Symbol, Überschrift und Text untereinander, vertikal zentriert zwischen top und bottom
-struct Symbol {
-  std::string glyph;
-  uint32_t color;
-  bool slashed;  // durchgestrichen (WLAN weg)
-};
-
-Symbol symbolFor(Icon icon, const Palette &p) {
-  const bool calm = icon == Icon::Info || icon == Icon::Loading || icon == Icon::Clock;
-  return {iconGlyph(icon), calm ? p.dim : p.accent, icon == Icon::NoWifi};
-}
-
-void centeredStack(lv_obj_t *scr, const Palette &p, const Symbol &sym, const std::string &heading,
-                   const std::string &text, int32_t top, int32_t bottom, int8_t progress) {
-  constexpr int32_t kTextW = kWidth - 4 * kMargin;
-  constexpr int32_t kBarH = 22;
-  const std::string &glyph = sym.glyph;
-  const int32_t iconH = glyph.empty() ? 0 : capHeight(&ui_font_icon);
-  const int32_t headH = heading.empty() ? 0 : textHeight(heading, &ui_font_title, kTextW);
-  const int32_t textH = text.empty() ? 0 : textHeight(text, &ui_font_body, kTextW);
-  const int32_t barH = progress >= 0 ? kBarH + 26 : 0;
-  int32_t total = iconH + headH + textH + barH;
-  if (iconH && headH) total += 22;
-  if (headH && textH) total += 10;
+// Symbol links, Überschrift und Text linksbündig daneben, vertikal zentriert zwischen top und bottom
+void messageBlock(lv_obj_t *scr, const Palette &p, Icon icon, const std::string &heading, const std::string &text,
+                  int32_t top, int32_t bottom) {
+  const std::string glyph = iconGlyph(icon);
+  constexpr int32_t kIconCol = 150;  // Spalte für das Symbol
+  const int32_t textX = glyph.empty() ? 3 * kPadX : kPadX + kIconCol;
+  const int32_t textW = kRight - kPadX - textX;
+  const int32_t headH = heading.empty() ? 0 : textHeight(heading, &ui_font_title, textW);
+  const int32_t bodyH = text.empty() ? 0 : textHeight(text, &ui_font_small, textW);
+  const int32_t total = headH + bodyH + (headH && bodyH ? 10 : 0);
   int32_t y = top + (bottom - top - total) / 2;
 
-  if (iconH) {
-    lv_obj_t *l = label(scr, glyph, &ui_font_icon, sym.color);
+  if (!glyph.empty()) {
+    const uint32_t color = icon == Icon::Warning ? p.coral : p.muted;
     const int32_t w = textWidth(glyph, &ui_font_icon);
-    placeBaseline(l, &ui_font_icon, (kWidth - w) / 2, y + iconH);
-    if (sym.slashed) slash(scr, sSlashBig, (kWidth - w) / 2 + 4, y + 2, iconH - 4, 7, p.accent);
-    y += iconH + (headH ? 22 : 0);
+    const int32_t ih = capHeight(&ui_font_icon);
+    const int32_t ix = kPadX + (kIconCol - w) / 2;
+    const int32_t iy = top + (bottom - top - ih) / 2;
+    placeBaseline(label(scr, glyph, &ui_font_icon, color), &ui_font_icon, ix, iy + ih);
+    if (icon == Icon::NoWifi) slash(scr, sSlashBig, ix + 4, iy + 2, ih - 4, 7, p.coral);
   }
   if (headH) {
     lv_obj_t *l = label(scr, heading, &ui_font_title, p.text);
     lv_label_set_long_mode(l, LV_LABEL_LONG_MODE_WRAP);
-    lv_obj_set_width(l, kTextW);
-    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_pos(l, 2 * kMargin, y);
-    y += headH + (textH || barH ? 10 : 0);
+    lv_obj_set_width(l, textW);
+    lv_obj_set_pos(l, textX, y);
+    y += headH + (bodyH ? 10 : 0);
   }
-  if (progress >= 0) {
-    y += 12;
-    const int32_t barW = kWidth - 120;
-    box(scr, 60, y, barW, kBarH, p.track, kBarH / 2);
-    if (progress > 0) box(scr, 60, y, std::max<int32_t>(kBarH, barW * progress / 100), kBarH, p.accent, kBarH / 2);
-    y += kBarH + 14;
-  }
-  if (textH) {
-    lv_obj_t *l = label(scr, text, &ui_font_body, p.dim);
+  if (bodyH) {
+    lv_obj_t *l = label(scr, text, &ui_font_small, p.muted);
     lv_label_set_long_mode(l, LV_LABEL_LONG_MODE_WRAP);
-    lv_obj_set_width(l, kTextW);
-    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
-    lv_obj_set_pos(l, 2 * kMargin, y);
+    lv_obj_set_width(l, textW);
+    lv_obj_set_pos(l, textX, y);
   }
 }
 
 void drawMessage(lv_obj_t *scr, const View &v, const Palette &p) {
-  constexpr int32_t kAddressH = 44;
+  constexpr int32_t kAddressH = 40;
   const int32_t headH = headerHeight(v);
-  header(scr, v, p, v.title, 0, headH, true);
-  const int32_t bottom = v.address.empty() ? kHeight : kHeight - kAddressH;
-  centeredStack(scr, p, symbolFor(v.icon, p), v.heading, v.text, headH, bottom, -1);
+  header(scr, v, p, v.title, kPadY, headH, true);
+  const int32_t bottom = v.address.empty() ? kHeight - kPadY : kHeight - kAddressH;
+  messageBlock(scr, p, v.icon, v.heading, v.text, kPadY + headH, bottom);
   if (!v.address.empty()) {
     // Adresse der Web-UI, damit man die Tafel auch ohne funktionierendes .local findet
-    lv_obj_t *a = label(scr, v.address, &ui_font_small, p.dim);
-    singleLine(a, &ui_font_small, kWidth - 2 * kMargin);
+    lv_obj_t *a = label(scr, v.address, &ui_font_small, p.muted);
+    singleLine(a, &ui_font_small, kRight - kPadX);
     lv_obj_set_style_text_align(a, LV_TEXT_ALIGN_CENTER, 0);
-    placeBaseline(a, &ui_font_small, kMargin, kHeight - (kAddressH - capHeight(&ui_font_small)) / 2);
+    placeBaseline(a, &ui_font_small, kPadX, kHeight - (kAddressH - capHeight(&ui_font_small)) / 2);
   }
 }
 
+// Update: Symbol, Überschrift, Fortschrittsbalken und Text mittig
 void drawUpdate(lv_obj_t *scr, const View &v, const Palette &p) {
+  constexpr int32_t kTextW = kWidth - 4 * kPadX;
+  constexpr int32_t kBarH = 18;
   std::string text = v.text;
   if (v.progress >= 0 && v.progress < 100) text = std::to_string(v.progress) + " % · " + text;
-  centeredStack(scr, p, {UI_ICON_DOWNLOAD, p.accent, false}, v.heading, text, 0, kHeight, v.progress);
+  const int32_t iconH = capHeight(&ui_font_icon);
+  const int32_t headH = v.heading.empty() ? 0 : textHeight(v.heading, &ui_font_title, kTextW);
+  const int32_t bodyH = text.empty() ? 0 : textHeight(text, &ui_font_small, kTextW);
+  const int32_t barH = v.progress >= 0 ? kBarH + 36 : 0;
+  int32_t y = (kHeight - (iconH + 22 + headH + barH + bodyH)) / 2;
+
+  const int32_t w = textWidth(UI_ICON_DOWNLOAD, &ui_font_icon);
+  placeBaseline(label(scr, UI_ICON_DOWNLOAD, &ui_font_icon, abf::brand::kTeal), &ui_font_icon, (kWidth - w) / 2,
+                y + iconH);
+  y += iconH + 22;
+  if (headH) {
+    lv_obj_t *l = label(scr, v.heading, &ui_font_title, p.text);
+    lv_label_set_long_mode(l, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_width(l, kTextW);
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_pos(l, 2 * kPadX, y);
+    y += headH;
+  }
+  if (v.progress >= 0) {
+    y += 18;
+    const int32_t barW = kWidth - 120;
+    box(scr, 60, y, barW, kBarH, p.border, kBarH / 2);
+    if (v.progress > 0) {
+      box(scr, 60, y, std::max<int32_t>(kBarH, barW * v.progress / 100), kBarH, abf::brand::kTeal, kBarH / 2);
+    }
+    y += kBarH + 18;
+  }
+  if (bodyH) {
+    lv_obj_t *l = label(scr, text, &ui_font_small, p.muted);
+    lv_label_set_long_mode(l, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_width(l, kTextW);
+    lv_obj_set_style_text_align(l, LV_TEXT_ALIGN_CENTER, 0);
+    lv_obj_set_pos(l, 2 * kPadX, y);
+  }
 }
 
 // QR links, nummerierte Schritte rechts
@@ -430,15 +430,15 @@ void drawSetup(lv_obj_t *scr, const View &v, const Palette &p) {
   constexpr int32_t kBox = 232;
   constexpr int32_t kBoxX = 28;
   constexpr int32_t kBoxY = 22;
-  lv_obj_t *qrBox = box(scr, kBoxX, kBoxY, kBox, kBox, p.qrBox, 14);
+  lv_obj_t *qrBox = box(scr, kBoxX, kBoxY, kBox, kBox, 0xFFFFFF, 18);
   lv_obj_t *qr = lv_qrcode_create(qrBox);
   lv_qrcode_set_size(qr, kBox - 28);
-  lv_qrcode_set_dark_color(qr, lv_color_black());
-  lv_qrcode_set_light_color(qr, c(p.qrBox));
+  lv_qrcode_set_dark_color(qr, c(abf::brand::kNavy));
+  lv_qrcode_set_light_color(qr, lv_color_white());
   lv_qrcode_update(qr, v.qr.data(), static_cast<uint32_t>(v.qr.size()));
   lv_obj_center(qr);
   if (!v.qrCaption.empty()) {
-    lv_obj_t *cap = label(scr, v.qrCaption, &ui_font_small, p.dim);
+    lv_obj_t *cap = label(scr, v.qrCaption, &ui_font_small, p.muted);
     singleLine(cap, &ui_font_small, kBox + 20);
     lv_obj_set_style_text_align(cap, LV_TEXT_ALIGN_CENTER, 0);
     placeBaseline(cap, &ui_font_small, kBoxX - 10, kBoxY + kBox + 8 + capHeight(&ui_font_small));
@@ -471,8 +471,8 @@ void drawSetup(lv_obj_t *scr, const View &v, const Palette &p) {
   for (const std::string &s : v.steps) {
     const int32_t sh = textHeight(s, font, kStepW);
     // Nummer mittig zur ersten Textzeile
-    lv_obj_t *num = box(scr, kTextX, y + (lineH - kNum) / 2, kNum, kNum, p.accent, LV_RADIUS_CIRCLE);
-    lv_obj_t *nl = label(num, std::to_string(n++), &ui_font_bold, p.bannerText);
+    lv_obj_t *num = box(scr, kTextX, y + (lineH - kNum) / 2, kNum, kNum, abf::brand::kTeal, LV_RADIUS_CIRCLE);
+    lv_obj_t *nl = label(num, std::to_string(n++), &ui_font_bold, abf::brand::kNavy);
     lv_obj_align(nl, LV_ALIGN_CENTER, 0, 1);
     lv_obj_t *t = label(scr, s, font, p.text);
     lv_label_set_long_mode(t, LV_LABEL_LONG_MODE_WRAP);
