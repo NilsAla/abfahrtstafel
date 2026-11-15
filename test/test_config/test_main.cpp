@@ -135,6 +135,7 @@ static void test_load_empty_gives_defaults(void) {
   TEST_ASSERT_EQUAL_UINT32(d.brightness, c.brightness);
   TEST_ASSERT_EQUAL_UINT32(d.nightStart, c.nightStart);
   TEST_ASSERT_TRUE(c.updateCheck);
+  TEST_ASSERT_FALSE(c.betaChannel);  // Bestandsgeräte ohne Key bleiben im stabilen Kanal
 }
 
 static void test_save_load_roundtrip(void) {
@@ -147,6 +148,7 @@ static void test_save_load_roundtrip(void) {
   c.nightEnd = 5 * 60 + 45;
   c.nightBrightness = 10;
   c.updateCheck = false;
+  c.betaChannel = true;
   TEST_ASSERT_TRUE(saveConfig(s, c));
 
   Config l = loadConfig(s);
@@ -157,6 +159,7 @@ static void test_save_load_roundtrip(void) {
   TEST_ASSERT_EQUAL_UINT32(5 * 60 + 45, l.nightEnd);
   TEST_ASSERT_EQUAL_UINT32(10, l.nightBrightness);
   TEST_ASSERT_FALSE(l.updateCheck);
+  TEST_ASSERT_TRUE(l.betaChannel);
 }
 
 static void test_load_invalid_values_fall_back(void) {
@@ -252,6 +255,24 @@ static void test_json_hostname_normalized(void) {
   std::vector<FieldError> errors;
   TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
   TEST_ASSERT_EQUAL_STRING("flur", c.hostname.c_str());
+}
+
+static void test_json_beta_channel(void) {
+  Config c;
+  JsonDocument out;
+  configToJson(c, out.to<JsonObject>());
+  TEST_ASSERT_FALSE(out["beta_channel"].as<bool>());
+
+  JsonDocument doc;
+  deserializeJson(doc, R"({"beta_channel": true})");
+  std::vector<FieldError> errors;
+  TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_TRUE(c.betaChannel);
+
+  deserializeJson(doc, R"({"beta_channel": "ja"})");
+  TEST_ASSERT_FALSE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_STRING("beta_channel", errors[0].field.c_str());
+  TEST_ASSERT_TRUE(c.betaChannel);
 }
 
 static void test_json_errors_are_atomic(void) {
@@ -420,6 +441,7 @@ int main(int, char **) {
   RUN_TEST(test_json_roundtrip);
   RUN_TEST(test_json_partial_update);
   RUN_TEST(test_json_hostname_normalized);
+  RUN_TEST(test_json_beta_channel);
   RUN_TEST(test_json_errors_are_atomic);
   RUN_TEST(test_json_brightness_type_and_range);
   RUN_TEST(test_stops_persist);

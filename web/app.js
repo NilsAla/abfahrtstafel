@@ -147,6 +147,7 @@ async function loadUpdate(opening = false) {
 
   if (updateRebooting && u.state !== 'rebooting') updateRebooting = false;
   setText('up-version', u.current);
+  $('up-channel').hidden = u.channel !== 'beta';
 
   const last = $('up-last');
   if (u.last_update) {

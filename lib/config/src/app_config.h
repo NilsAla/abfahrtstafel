@@ -36,6 +36,7 @@ struct Config {
   uint32_t nightEnd = 6 * 60;
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
+  bool betaChannel = false;          // Beta-Kanal: auch Vorabversionen anbieten (Test vor dem Release)
   DisplayTheme theme = DisplayTheme::Dark;  // ab M4
   uint32_t rows = 4;                 // Abfahrten pro Haltestelle im Vollbild: 3 (größer) oder 4
   TwoStopLayout twoStops = TwoStopLayout::Split;
