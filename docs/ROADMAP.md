@@ -110,9 +110,9 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [ ] [B] Gehäuse (3D-Druck, Schild-Look) nach Messung: Ausschnitt ≈ 27 × 68 mm, 4× M2, Zugang USB-C und BOOT,
   Ein/Aus-Schalter verdeckt bzw. auf ON fixiert
 
-## Redesign „wannbus“ (Entwurf, noch nicht begonnen)
+## Redesign „wannbus“
 Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge dort). Jeder Block eine eigene Session und ein eigenes Release.
-- [ ] [A] 1 Rebranding (Name, AP-Name, Hostname-Migration, Tokens)
+- [x] [A] 1 Rebranding (Name, AP-Name, Hostname-Migration, Tokens) – PR #11, Board-Test siehe „Offen am Board“
 - [ ] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration)
 - [ ] [A] 3 Display-Redesign inkl. Marke bei Leerlauf/Restfläche
 - [ ] [A] 4 Web-UI und WLAN-Portal im neuen Design
