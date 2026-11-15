@@ -44,7 +44,7 @@ jobs:
           python3 - "$VERSION" <<'PY'
           import json, sys
           manifest = {
-              "name": "Abfahrtstafel",
+              "name": "wannbus",
               "version": sys.argv[1],
               "new_install_prompt_erase": False,
               "builds": [{"chipFamily": "ESP32-S3", "parts": [{"path": "firmware-factory.bin", "offset": 0}]}],

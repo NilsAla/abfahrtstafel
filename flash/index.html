@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Abfahrtstafel flashen</title>
+<title>wannbus flashen</title>
 <!-- Recovery-Pfad: installiert firmware-factory.bin des neuesten Releases per USB (Web Serial).
      Wird von .github/workflows/pages.yml zusammen mit manifest.json und der Firmware auf GitHub Pages veröffentlicht. -->
 <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
@@ -35,7 +35,7 @@
 </head>
 <body>
 <main>
-  <h1>Abfahrtstafel flashen</h1>
+  <h1>wannbus flashen</h1>
   <p class="muted">Installiert die neueste Firmware <strong id="ver">…</strong> per USB-Kabel – für die Erstinstallation
     oder wenn die Tafel gar nicht mehr startet. Normale Updates laufen über die Weboberfläche der Tafel.</p>
 
@@ -44,7 +44,7 @@
       <li>Tafel mit einem <strong>USB-C-Datenkabel</strong> an diesen Computer anschließen.</li>
       <li>Auf <strong>Installieren</strong> klicken und im Fenster den Eintrag mit „USB“ bzw. „JTAG“ auswählen.</li>
       <li>Startet die Tafel nicht mehr: BOOT-Taster gedrückt halten, kurz RESET drücken, BOOT loslassen – dann erneut versuchen.</li>
-      <li>Nach etwa einer Minute ist die Tafel fertig und öffnet das WLAN <strong>Abfahrtstafel-XXXX</strong> zur Einrichtung.</li>
+      <li>Nach etwa einer Minute ist die Tafel fertig und öffnet das WLAN <strong>wannbus-XXXX</strong> zur Einrichtung.</li>
     </ol>
     <esp-web-install-button manifest="manifest.json">
       <button slot="activate">Installieren</button>
