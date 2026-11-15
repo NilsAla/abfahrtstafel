@@ -112,6 +112,7 @@ ViewInputs base() {
   in.wifi = WifiState::Online;
   in.apName = "wannbus-AB0C";
   in.hostname = "wannbus";
+  in.cfg.themeMode = ThemeMode::Night;  // Standard-Screens dunkel, „-tag“-Varianten hell
   in.timeValid = true;
   in.now = kNow;
   return in;
@@ -138,8 +139,8 @@ std::vector<Scenario> scenarios() {
   out.push_back({"board-4-zeilen", in});
 
   ViewInputs night = in;
-  night.cfg.theme = DisplayTheme::Night;
-  out.push_back({"board-4-zeilen-nacht", night});
+  night.cfg.themeMode = ThemeMode::Day;
+  out.push_back({"board-4-zeilen-tag", night});
 
   // Haltestellenname: groß bzw. ausgeblendet (nur Datum und Uhr)
   ViewInputs large = in;
@@ -150,15 +151,15 @@ std::vector<Scenario> scenarios() {
   ViewInputs bare = in;
   bare.cfg.stopName = StopNameStyle::Off;
   out.push_back({"kopfzeile-aus", bare});
-  bare.cfg.theme = DisplayTheme::Night;
-  out.push_back({"kopfzeile-aus-nacht", bare});
+  bare.cfg.themeMode = ThemeMode::Day;
+  out.push_back({"kopfzeile-aus-tag", bare});
 
   in = base();
   in.cfg.rows = 3;
   addStop(in, stop("Emsdetten · Richtung Münster", richtungMuenster()));
   out.push_back({"board-3-zeilen", in});
-  in.cfg.theme = DisplayTheme::Night;
-  out.push_back({"board-3-zeilen-nacht", in});
+  in.cfg.themeMode = ThemeMode::Day;
+  out.push_back({"board-3-zeilen-tag", in});
 
   in = base();
   addStop(in, stop("Bahnhof · Richtung Münster", richtungMuenster()));
@@ -188,8 +189,8 @@ std::vector<Scenario> scenarios() {
   out.push_back({"veraltet-kein-wlan", in});
   in.wifi = WifiState::Online;
   in.stops[0].status.offline = false;
-  in.cfg.theme = DisplayTheme::Night;
-  out.push_back({"veraltet-api-nacht", in});
+  in.cfg.themeMode = ThemeMode::Day;
+  out.push_back({"veraltet-api-tag", in});
 
   in = base();
   addStop(in, stop("Lübeck Hbf", langeNamen()));
@@ -235,17 +236,17 @@ std::vector<Scenario> scenarios() {
   in = base();
   addStop(in, stop("Emsdetten, Bahnhof", {}, BoardStatus::NoDepartures));
   out.push_back({"meldung-keine-abfahrten", in});
-  in.cfg.theme = DisplayTheme::Night;
-  out.push_back({"meldung-keine-abfahrten-nacht", in});
+  in.cfg.themeMode = ThemeMode::Day;
+  out.push_back({"meldung-keine-abfahrten-tag", in});
 
   in = base();
   addStop(in, stop("Emsdetten, Bahnhof", emsdetten()));
   in.update = UpdatePhase::Downloading;
   in.updatePercent = 64;
   out.push_back({"update-laeuft", in});
-  in.cfg.theme = DisplayTheme::Night;
+  in.cfg.themeMode = ThemeMode::Day;
   in.update = UpdatePhase::Rebooting;
-  out.push_back({"update-neustart-nacht", in});
+  out.push_back({"update-neustart-tag", in});
 
   return out;
 }

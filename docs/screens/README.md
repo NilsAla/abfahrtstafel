@@ -8,16 +8,16 @@ Automatisch gerendert aus `env:sim` (LVGL, RGB565 wie am Gerät, 820 × 320 px �
 Beispieldaten: Emsdetten, Bahnhof, Dienstag 12:20 Uhr. Szenarien in `src/sim/sim_main.cpp`.
 
 ## Abfahrten
-| Dunkel | Nacht |
+| Nacht (Standard) | Tag |
 |---|---|
-| ![4 Zeilen](board-4-zeilen.png) | ![4 Zeilen Nacht](board-4-zeilen-nacht.png) |
-| ![3 Zeilen](board-3-zeilen.png) | ![3 Zeilen Nacht](board-3-zeilen-nacht.png) |
+| ![4 Zeilen](board-4-zeilen.png) | ![4 Zeilen Tag](board-4-zeilen-tag.png) |
+| ![3 Zeilen](board-3-zeilen.png) | ![3 Zeilen Tag](board-3-zeilen-tag.png) |
 
 ## Haltestellenname (Einstellung)
 | Groß | Ausblenden (nur Datum und Uhr) |
 |---|---|
 | ![Groß](kopfzeile-gross.png) | ![Aus](kopfzeile-aus.png) |
-| ![Groß, 3 Zeilen](kopfzeile-gross-3-zeilen.png) | ![Aus, Nacht](kopfzeile-aus-nacht.png) |
+| ![Groß, 3 Zeilen](kopfzeile-gross-3-zeilen.png) | ![Aus, Tag](kopfzeile-aus-tag.png) |
 
 Verspätung ab +2 min: Minuten rot (enthalten die Verspätung), rechts Planzeit durchgestrichen und neue Zeit.
 
@@ -32,9 +32,9 @@ Lange Namen werden gekürzt, Badges wachsen bis 170 px:
 | ![Geteilt, eine veraltet](zwei-haltestellen-geteilt-veraltet.png) | ![Wechsel 2](zwei-haltestellen-wechsel-2.png) |
 
 ## Veraltete Daten
-| WLAN weg | Fahrplandaten weg (Nacht) |
+| WLAN weg | Fahrplandaten weg (Tag) |
 |---|---|
-| ![Kein WLAN](veraltet-kein-wlan.png) | ![API Nacht](veraltet-api-nacht.png) |
+| ![Kein WLAN](veraltet-kein-wlan.png) | ![API Tag](veraltet-api-tag.png) |
 
 ## Einrichtung
 | Erststart | Nach dem Portal (Neustart) | Keine Haltestelle (QR auf die IP) | WLAN nicht erreichbar |
@@ -46,9 +46,9 @@ Lange Namen werden gekürzt, Badges wachsen bis 170 px:
 |---|---|
 | ![Uhrzeit](meldung-uhrzeit.png) | ![Laden](meldung-laden.png) |
 | ![API-Fehler](meldung-api-fehler.png) | ![Kein WLAN](meldung-kein-wlan.png) |
-| ![Keine Abfahrten](meldung-keine-abfahrten.png) | ![Keine Abfahrten Nacht](meldung-keine-abfahrten-nacht.png) |
+| ![Keine Abfahrten](meldung-keine-abfahrten.png) | ![Keine Abfahrten Tag](meldung-keine-abfahrten-tag.png) |
 
 ## Update
-| Läuft | Neustart (Nacht) |
+| Läuft | Neustart (Tag) |
 |---|---|
-| ![Update](update-laeuft.png) | ![Neustart](update-neustart-nacht.png) |
+| ![Update](update-laeuft.png) | ![Neustart](update-neustart-tag.png) |

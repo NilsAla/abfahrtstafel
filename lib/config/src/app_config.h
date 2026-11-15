@@ -16,10 +16,15 @@ namespace abf {
 //  - Neue Felder bekommen neue Keys mit Default → kein Schema-Bump nötig.
 //  - Bump nur, wenn sich die Bedeutung bestehender Keys ändert; dann Migrationsschritt ergänzen.
 //  - Ältere Firmware (Rollback) muss ein neueres Schema lesen können: Keys nie umdeuten, sondern neu anlegen.
-constexpr uint32_t kConfigSchema = 2;
+constexpr uint32_t kConfigSchema = 3;
 
-// Farbstil des Displays. Nachts (Nachtzeitfenster aktiv) gilt immer Night.
-enum class DisplayTheme : uint8_t { Dark = 0, Night = 1 };
+// Gerade wirksamer Farbstil des Displays (aufgelöst aus ThemeMode, siehe resolveTheme in lib/dispmodel).
+enum class DisplayTheme : uint8_t { Day = 0, Night = 1 };
+
+// Einstellung „Anzeige“: Auto wechselt nach Uhrzeit (Tag von dayStart bis dayEnd), sonst fest.
+// Bis Schema 2 gab es nur den Key „theme“ (0 = Dunkel, 1 = Nacht/Bernstein); er wird für einen Rollback weiter
+// als 0 (Dunkel) geschrieben, aber nicht mehr gelesen.
+enum class ThemeMode : uint8_t { Auto = 0, Day = 1, Night = 2 };
 
 // Zwei Haltestellen: untereinander geteilt oder im Wechsel als Vollbild
 enum class TwoStopLayout : uint8_t { Split = 0, Alternate = 1 };
@@ -37,7 +42,9 @@ struct Config {
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
   bool betaChannel = false;          // Beta-Kanal: auch Vorabversionen anbieten (Test vor dem Release)
-  DisplayTheme theme = DisplayTheme::Dark;  // ab M4
+  ThemeMode themeMode = ThemeMode::Auto;  // Bestandsgeräte: Migration auf Night (sollen dunkel bleiben)
+  uint32_t dayStart = 6 * 60 + 30;   // Minuten ab Mitternacht, Ortszeit; nur bei Auto
+  uint32_t dayEnd = 20 * 60;
   uint32_t rows = 4;                 // Abfahrten pro Haltestelle im Vollbild: 3 (größer) oder 4
   TwoStopLayout twoStops = TwoStopLayout::Split;
   StopNameStyle stopName = StopNameStyle::Normal;
@@ -50,8 +57,9 @@ constexpr uint32_t kMinutesPerDay = 24 * 60;
 constexpr uint32_t kRowsMin = 3;
 constexpr uint32_t kRowsMax = 4;
 
-const char *themeKey(DisplayTheme t);            // "dark", "night"
-bool themeFromKey(const std::string &key, DisplayTheme &out);
+const char *themeKey(DisplayTheme t);            // "day", "night"
+const char *themeModeKey(ThemeMode m);           // "auto", "day", "night"
+bool themeModeFromKey(const std::string &key, ThemeMode &out);
 const char *twoStopKey(TwoStopLayout l);         // "split", "alternate"
 bool twoStopFromKey(const std::string &key, TwoStopLayout &out);
 const char *stopNameKey(StopNameStyle s);        // "normal", "large", "off"

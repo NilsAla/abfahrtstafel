@@ -113,7 +113,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 ## Redesign „wannbus“
 Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge dort). Jeder Block eine eigene Session und ein eigenes Release.
 - [x] [A] 1 Rebranding (Name, AP-Name, Hostname-Migration, Tokens) – PR #11, Board-Test siehe „Offen am Board“
-- [ ] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration)
+- [x] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration, Schema 3) – Board-Test siehe „Offen am Board“
 - [ ] [A] 3 Display-Redesign inkl. Marke bei Leerlauf/Restfläche
 - [ ] [A] 4 Web-UI und WLAN-Portal im neuen Design
 - [ ] [A] 5 Bootanimation
@@ -133,6 +133,13 @@ Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Relea
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Tag/Nacht (Schema 2 → 3):** (a) Update einer Tafel mit v0.8.x: bleibt dunkel (Schalter steht auf „Nacht“).
+  (b) Status-Reiter: `Auto | Tag | Nacht` antippen → Display folgt innerhalb 2 s ohne Neustart, Vorschau und Hinweiszeile
+  („Auto: gerade Tag, Nacht ab 20:00“) stimmen. (c) Auto über die Grenze: in den Einstellungen „Tag ab“ 1–2 min in die Zukunft
+  legen → Display wechselt zur Minute auf hell, „Tag bis“ genauso zurück auf dunkel. (d) Nachtfenster aktiv + „Tag“ → trotzdem dunkel.
+  (e) Werksreset → „Auto“. (f) Rollback auf v0.8.x startet fehlerfrei und ist dunkel (Key `theme` = 0).
+  Code: `lib/dispmodel/src/display_model.cpp` (`resolveTheme`, `backlightFor`), `lib/config/src/app_config.cpp` (`migrateThemeMode`),
+  `src/ui/ui.cpp` (`kDay`), `web/app.js` (`renderThemeToggle`).
 - [ ] **Beta-Kanal:** Tafel auf v0.8.1 (oder neuer), in den Einstellungen „Beta-Versionen erhalten“ setzen, speichern.
   Update-Seite zeigt „Beta-Kanal“; „Nach Update suchen“ bietet die neueste Beta an (Log `Update verfügbar: … → …-beta.N`),
   Installation, Selbsttest und Rollback wie bei regulären Updates. Häkchen aus: keine Beta mehr angeboten

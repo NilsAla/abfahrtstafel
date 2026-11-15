@@ -81,6 +81,50 @@ static void test_migrate_v1_hostname_write_failure_reports_failed(void) {
   TEST_ASSERT_EQUAL_INT(static_cast<int>(MigrationOutcome::Failed), static_cast<int>(r.outcome));
 }
 
+static void test_migrate_v2_existing_device_stays_dark(void) {
+  MemStore s;
+  s.u32["schema"] = 2;
+  s.u32["theme"] = 0;  // Dunkel
+  MigrationResult r = migrateConfig(s);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(MigrationOutcome::Migrated), static_cast<int>(r.outcome));
+  TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(ThemeMode::Night), s.u32["themeMode"]);
+  TEST_ASSERT_EQUAL_UINT32(0, s.u32["theme"]);  // alter Key bleibt für den Rollback
+}
+
+static void test_migrate_v1_amber_device_becomes_night(void) {
+  MemStore s;
+  s.u32["schema"] = 1;
+  s.u32["theme"] = 1;  // Nacht (Bernstein)
+  migrateConfig(s);
+  TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(ThemeMode::Night), s.u32["themeMode"]);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ThemeMode::Night), static_cast<int>(loadConfig(s).themeMode));
+}
+
+static void test_migrate_fresh_device_starts_auto(void) {
+  MemStore s;
+  migrateConfig(s);
+  TEST_ASSERT_TRUE(s.u32.find("themeMode") == s.u32.end());
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ThemeMode::Auto), static_cast<int>(loadConfig(s).themeMode));
+}
+
+static void test_migrate_keeps_existing_theme_mode(void) {
+  MemStore s;
+  s.u32["schema"] = 2;
+  s.u32["themeMode"] = static_cast<uint32_t>(ThemeMode::Day);
+  migrateConfig(s);
+  TEST_ASSERT_EQUAL_UINT32(static_cast<uint32_t>(ThemeMode::Day), s.u32["themeMode"]);
+}
+
+static void test_json_day_window_must_not_be_empty(void) {
+  Config c;
+  JsonDocument doc;
+  deserializeJson(doc, R"({"day_start": "08:00", "day_end": "08:00"})");
+  std::vector<FieldError> errors;
+  TEST_ASSERT_FALSE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
+  TEST_ASSERT_EQUAL_STRING("day_end", errors[0].field.c_str());
+  TEST_ASSERT_EQUAL_UINT32(6 * 60 + 30, c.dayStart);
+}
+
 static void test_migrate_fresh_writes_schema(void) {
   MemStore s;
   MigrationResult r = migrateConfig(s);
@@ -369,20 +413,28 @@ static void test_stops_json_api(void) {
 static void test_display_defaults_and_roundtrip(void) {
   MemStore s;
   Config d = loadConfig(s);
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(d.theme));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ThemeMode::Auto), static_cast<int>(d.themeMode));
+  TEST_ASSERT_EQUAL_UINT32(6 * 60 + 30, d.dayStart);
+  TEST_ASSERT_EQUAL_UINT32(20 * 60, d.dayEnd);
   TEST_ASSERT_EQUAL_UINT32(4, d.rows);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Split), static_cast<int>(d.twoStops));
   TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(d.stopName));
 
   Config c;
-  c.theme = DisplayTheme::Night;
+  c.themeMode = ThemeMode::Day;
+  c.dayStart = 7 * 60;
+  c.dayEnd = 19 * 60 + 30;
   c.rows = 3;
   c.twoStops = TwoStopLayout::Alternate;
   c.stopName = StopNameStyle::Off;
   TEST_ASSERT_TRUE(saveConfig(s, c));
   TEST_ASSERT_EQUAL_UINT32(2, s.u32["stopName"]);  // NVS-Wert ist eingefroren
+  TEST_ASSERT_EQUAL_UINT32(1, s.u32["themeMode"]);
+  TEST_ASSERT_EQUAL_UINT32(0, s.u32["theme"]);     // Rollback: Vorversion liest „Dunkel“
   Config l = loadConfig(s);
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Night), static_cast<int>(l.theme));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ThemeMode::Day), static_cast<int>(l.themeMode));
+  TEST_ASSERT_EQUAL_UINT32(7 * 60, l.dayStart);
+  TEST_ASSERT_EQUAL_UINT32(19 * 60 + 30, l.dayEnd);
   TEST_ASSERT_EQUAL_UINT32(3, l.rows);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(TwoStopLayout::Alternate), static_cast<int>(l.twoStops));
   TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Off), static_cast<int>(l.stopName));
@@ -390,7 +442,8 @@ static void test_display_defaults_and_roundtrip(void) {
 
 static void test_display_invalid_nvs_values(void) {
   MemStore s;
-  s.u32["theme"] = 7;
+  s.u32["theme"] = 7;      // alter Key wird nicht mehr gelesen
+  s.u32["themeMode"] = 3;
   s.u32["rows"] = 9;
   s.u32["twoStops"] = 2;
   s.u32["stopName"] = 3;
@@ -398,7 +451,7 @@ static void test_display_invalid_nvs_values(void) {
   Config l = loadConfig(s, &invalid);
   TEST_ASSERT_EQUAL_INT(4, invalid);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(StopNameStyle::Normal), static_cast<int>(l.stopName));
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(l.theme));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(ThemeMode::Auto), static_cast<int>(l.themeMode));
   TEST_ASSERT_EQUAL_UINT32(4, l.rows);
 }
 
@@ -406,19 +459,24 @@ static void test_display_json(void) {
   Config c;
   std::vector<FieldError> errors;
   JsonDocument ok;
-  deserializeJson(ok, R"({"theme": "night", "rows": 3, "two_stops": "alternate", "stop_name": "large"})");
+  deserializeJson(ok, R"({"theme_mode": "night", "day_start": "07:15", "day_end": "21:00", "rows": 3,
+                          "two_stops": "alternate", "stop_name": "large"})");
   TEST_ASSERT_TRUE(applyConfigJson(ok.as<JsonObjectConst>(), c, errors));
   JsonDocument out;
   configToJson(c, out.to<JsonObject>());
-  TEST_ASSERT_EQUAL_STRING("night", out["theme"]);
+  TEST_ASSERT_EQUAL_STRING("night", out["theme_mode"]);
+  TEST_ASSERT_EQUAL_STRING("07:15", out["day_start"]);
+  TEST_ASSERT_EQUAL_STRING("21:00", out["day_end"]);
   TEST_ASSERT_EQUAL_INT(3, out["rows"].as<int>());
   TEST_ASSERT_EQUAL_STRING("alternate", out["two_stops"]);
   TEST_ASSERT_EQUAL_STRING("large", out["stop_name"]);
 
   JsonDocument bad;
-  deserializeJson(bad, R"({"theme": "hell", "rows": 5, "two_stops": 1, "stop_name": "riesig"})");
+  deserializeJson(bad, R"({"theme_mode": "hell", "rows": 5, "two_stops": 1, "stop_name": "riesig"})");
   TEST_ASSERT_FALSE(applyConfigJson(bad.as<JsonObjectConst>(), c, errors));
   TEST_ASSERT_EQUAL_size_t(4, errors.size());
+  TEST_ASSERT_EQUAL_STRING("theme_mode", errors[0].field.c_str());
+  TEST_ASSERT_EQUAL_STRING("Bitte Auto, Tag oder Nacht wählen.", errors[0].message.c_str());
   TEST_ASSERT_EQUAL_STRING("stop_name", errors[3].field.c_str());
   TEST_ASSERT_EQUAL_UINT32(3, c.rows);  // unverändert
 }
@@ -432,6 +490,11 @@ int main(int, char **) {
   RUN_TEST(test_load_empty_gives_defaults);
   RUN_TEST(test_save_load_roundtrip);
   RUN_TEST(test_load_invalid_values_fall_back);
+  RUN_TEST(test_migrate_v2_existing_device_stays_dark);
+  RUN_TEST(test_migrate_v1_amber_device_becomes_night);
+  RUN_TEST(test_migrate_fresh_device_starts_auto);
+  RUN_TEST(test_migrate_keeps_existing_theme_mode);
+  RUN_TEST(test_json_day_window_must_not_be_empty);
   RUN_TEST(test_migrate_v1_default_hostname_becomes_wannbus);
   RUN_TEST(test_migrate_v1_custom_hostname_unchanged);
   RUN_TEST(test_migrate_v1_without_stored_hostname_uses_new_default);

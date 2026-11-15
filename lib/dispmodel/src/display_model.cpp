@@ -17,6 +17,15 @@ bool inWindow(uint32_t start, uint32_t end, uint32_t minuteOfDay) {
   return minuteOfDay >= start || minuteOfDay < end;  // über Mitternacht
 }
 
+DisplayTheme resolveTheme(ThemeMode mode, uint32_t dayStart, uint32_t dayEnd, uint32_t minuteOfDay, bool timeValid) {
+  switch (mode) {
+    case ThemeMode::Day:   return DisplayTheme::Day;
+    case ThemeMode::Night: return DisplayTheme::Night;
+    case ThemeMode::Auto:  break;
+  }
+  return timeValid && inWindow(dayStart, dayEnd, minuteOfDay) ? DisplayTheme::Day : DisplayTheme::Night;
+}
+
 Backlight backlightFor(const Config &cfg, bool timeValid, uint32_t minuteOfDay) {
   Backlight b;
   b.night = cfg.nightEnabled && timeValid && inWindow(cfg.nightStart, cfg.nightEnd, minuteOfDay);
@@ -28,7 +37,7 @@ Backlight backlightFor(const Config &cfg, bool timeValid, uint32_t minuteOfDay) 
     if (p < kBrightnessMin) p = kBrightnessMin;
     if (p > kBrightnessMax) p = kBrightnessMax;
     b.percent = static_cast<uint8_t>(p);
-    b.theme = cfg.theme;
+    b.theme = resolveTheme(cfg.themeMode, cfg.dayStart, cfg.dayEnd, minuteOfDay, timeValid);
   }
   return b;
 }

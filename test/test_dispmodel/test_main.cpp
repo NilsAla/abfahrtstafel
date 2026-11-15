@@ -74,23 +74,47 @@ static void test_window_over_midnight(void) {
   TEST_ASSERT_FALSE(inWindow(7 * 60, 7 * 60, 7 * 60));  // leeres Fenster
 }
 
+#define ASSERT_THEME(expected, actual) TEST_ASSERT_EQUAL_INT(static_cast<int>(expected), static_cast<int>(actual))
+
+static void test_resolve_theme_fixed_modes(void) {
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Day, 390, 1200, 2 * 60, true));
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Day, 390, 1200, 0, false));  // fest, auch ohne Uhrzeit
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Night, 390, 1200, 12 * 60, true));
+}
+
+static void test_resolve_theme_auto(void) {
+  const uint32_t start = 6 * 60 + 30, end = 20 * 60;
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Auto, start, end, start - 1, true));
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Auto, start, end, start, true));
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Auto, start, end, end - 1, true));
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Auto, start, end, end, true));
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Auto, start, end, 0, true));
+  // Ohne gültige Uhrzeit (NTP noch nicht da) dunkel
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Auto, start, end, 12 * 60, false));
+  // Tagfenster über Mitternacht (Schichtbetrieb)
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Auto, 22 * 60, 6 * 60, 23 * 60, true));
+  ASSERT_THEME(DisplayTheme::Day, resolveTheme(ThemeMode::Auto, 22 * 60, 6 * 60, 0, true));
+  ASSERT_THEME(DisplayTheme::Night, resolveTheme(ThemeMode::Auto, 22 * 60, 6 * 60, 12 * 60, true));
+}
+
 static void test_backlight_day_uses_theme(void) {
   Config c;
   c.brightness = 70;
-  c.theme = DisplayTheme::Night;
+  c.themeMode = ThemeMode::Night;
   Backlight b = backlightFor(c, true, 12 * 60);
   TEST_ASSERT_EQUAL_UINT8(70, b.percent);
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Night), static_cast<int>(b.theme));
+  ASSERT_THEME(DisplayTheme::Night, b.theme);
   TEST_ASSERT_FALSE(b.night);
 
-  c.theme = DisplayTheme::Dark;
+  c.themeMode = ThemeMode::Auto;
   c.nightEnabled = true;  // Tagsüber egal
   b = backlightFor(c, true, 12 * 60);
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(DisplayTheme::Dark), static_cast<int>(b.theme));
+  ASSERT_THEME(DisplayTheme::Day, b.theme);
 }
 
 static void test_backlight_night_forces_night_theme(void) {
   Config c;
+  c.themeMode = ThemeMode::Day;  // auch fest „Tag“ wird im Nachtfenster dunkel
   c.nightEnabled = true;
   c.nightStart = 22 * 60;
   c.nightEnd = 6 * 60;
@@ -417,6 +441,8 @@ int main(int, char **) {
   UNITY_BEGIN();
   RUN_TEST(test_window_same_day);
   RUN_TEST(test_window_over_midnight);
+  RUN_TEST(test_resolve_theme_fixed_modes);
+  RUN_TEST(test_resolve_theme_auto);
   RUN_TEST(test_backlight_day_uses_theme);
   RUN_TEST(test_backlight_night_forces_night_theme);
   RUN_TEST(test_local_time_dst);
