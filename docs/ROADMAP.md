@@ -126,8 +126,8 @@ Ziel: Redesign-Blöcke 2–5 fertig, „Offen am Board“ ohne offene Punkte zu 
 - [ ] Jeden Block erst als Beta (`vX.Y.Z-beta.N`) auf beide Tafeln, am Board prüfen, dann regulär releasen
 - [ ] Release-Kandidat `v1.0.0-rc.1` als Beta, 48 h auf beiden Tafeln ohne Auffälligkeiten, dann `v1.0.0`
 
-**Beta-Ablauf:** lokal bauen und testen → mergen → `git tag -a v0.9.0-beta.1 -m "Notiz" && git push origin v0.9.0-beta.1`.
-`release.yml` veröffentlicht eine Vorabversion (nicht „latest“) und setzt `beta/manifest.json` darauf. Nur Tafeln mit
+**Beta-Ablauf:** lokal bauen und testen → mergen → `scripts/release.sh 0.9.0-beta.1 "Notiz"` (~2 min, ohne GitHub-Build).
+Das Skript veröffentlicht eine Vorabversion (nicht „latest“) und setzt `beta/manifest.json` darauf. Nur Tafeln mit
 Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Release erreicht auch die Beta-Tafeln.
 
 ## Offen am Board

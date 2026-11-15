@@ -63,13 +63,14 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 ## Arbeitsweise
 - Commits klein, Message auf Deutsch, imperativ
 - `pio run -e esp32s3` und `pio test -e native` müssen grün sein – lokal bauen und testen, nicht auf GitHub Actions warten
-  (Wunsch des Nutzers). `build.yml` läuft nicht bei PRs, nur nach dem Merge auf `main` (ohne Doku-Änderungen) und manuell.
+  (Wunsch des Nutzers). `build.yml` startet nur manuell.
 - Cloud-Sandbox: PlatformIO-Registry, Toolchain-Downloads und api.transitous.org sind dort nicht erreichbar.
   Verifikation dort per manuellem `build.yml`-Lauf (`workflow_dispatch` auf den Branch; Status per `env -u GH_TOKEN gh api …`; Job-Logs sind nicht abrufbar, nur Step-Status),
   reine Logik lokal mit g++ + Unity testen. Transitous-Fixtures liefert der Nutzer per curl.
-- Releases aus der Cloud-Session: Tag-Pushes sind dort gesperrt → `release.yml` per `workflow_dispatch`
-  starten (`gh api -X POST …/actions/workflows/release.yml/dispatches -f ref=main -f 'inputs[version]=X.Y.Z' -f 'inputs[notes]=…'`).
-  Lokal geht auch `git tag -a vX.Y.Z -m "Notes" && git push origin vX.Y.Z`.
+- Releases lokal: `scripts/release.sh X.Y.Z "Notiz"` (testet, baut, taggt, lädt per `gh` hoch, pflegt Beta-Kanal,
+  stößt die Flash-Seite an). Nur nach ausdrücklichem OK des Nutzers.
+- Releases aus der Cloud-Session: `release.yml` per `workflow_dispatch` starten (`gh api -X POST …/actions/workflows/release.yml/dispatches
+  -f ref=main -f 'inputs[version]=X.Y.Z' -f 'inputs[notes]=…'`). Ein gepushter Tag startet `release.yml` nicht.
 - Beta zuerst: neue Blöcke als `vX.Y.Z-beta.N` taggen (Vorabversion, nur Tafeln im Beta-Kanal sehen sie), am Board prüfen,
   dann regulär releasen. `release.yml` pflegt das Sammel-Release `beta` (`manifest.json`); nie von Hand löschen.
 - Keine neuen Libraries ohne Begründung im Commit
