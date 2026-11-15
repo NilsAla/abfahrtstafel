@@ -29,7 +29,13 @@ jobs:
           restore-keys: pio-${{ runner.os }}-
 
       - name: PlatformIO installieren
-        run: pip install --upgrade platformio
+        run: |
+          pip install --upgrade platformio
+          # pioarduino baut im eigenen venv (~/.platformio/penv) ein zweites Mal und installiert dort
+          # "pioarduino>=6.2.0" – Version 6.2.0.post1 gilt als Semver-Vorabversion und lehnt die
+          # Plattform ab (IncompatiblePlatform). Vorab 6.2.0 einsetzen, dann wird nicht nachinstalliert.
+          python -m venv ~/.platformio/penv
+          ~/.platformio/penv/bin/pip install --quiet "pioarduino==6.2.0"
 
       - name: Unit-Tests (native)
         run: |
