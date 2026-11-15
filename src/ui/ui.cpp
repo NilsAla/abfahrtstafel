@@ -172,19 +172,34 @@ void logo(lv_obj_t *scr, int32_t x, int32_t y, int32_t size) {
   box(scr, x + s(83) - d / 2, y + s(90) - d / 2, d, d, abf::brand::kCream, LV_RADIUS_CIRCLE);
 }
 
-// Wortmarke „wann“ + „bus“ (Koralle) mit Grundlinie bei baseY; gibt die rechte Kante zurück
-int32_t wordmark(lv_obj_t *scr, const Palette &p, const lv_font_t *font, int32_t x, int32_t baseY) {
-  placeBaseline(label(scr, "wann", font, p.text), font, x, baseY);
+// Wortmarke „wann“ + „bus“ (Koralle) mit Grundlinie bei baseY; gibt die rechte Kante zurück.
+// Gedämpft (Leerlauf): „wann“ in muted, „bus“ in coral_text – nie stärker als eine Abfahrtszeile.
+int32_t wordmark(lv_obj_t *scr, const Palette &p, const lv_font_t *font, int32_t x, int32_t baseY, bool muted = false) {
+  placeBaseline(label(scr, "wann", font, muted ? p.muted : p.text), font, x, baseY);
   x += textWidth("wann", font);
-  placeBaseline(label(scr, "bus", font, abf::brand::kCoral), font, x, baseY);
+  placeBaseline(label(scr, "bus", font, muted ? p.coral : abf::brand::kCoral), font, x, baseY);
   return x + textWidth("bus", font);
+}
+
+int32_t brandWidth(const lv_font_t *font, int32_t iconSize) {
+  return iconSize + iconSize / 3 + textWidth("wann", font) + textWidth("bus", font);
 }
 
 // Logo + Wortmarke nebeneinander, Logo vertikal mittig zur Schrift
 void brandRow(lv_obj_t *scr, const Palette &p, const lv_font_t *font, int32_t iconSize, int32_t x, int32_t top,
-              int32_t height) {
+              int32_t height, bool muted = false) {
   logo(scr, x, top + (height - iconSize) / 2, iconSize);
-  wordmark(scr, p, font, x + iconSize + iconSize / 3, top + (height + capHeight(font)) / 2);
+  wordmark(scr, p, font, x + iconSize + iconSize / 3, top + (height + capHeight(font)) / 2, muted);
+}
+
+// Marke im freien Bereich [top, bottom) waagerecht und senkrecht mittig, gedämpft; gibt die Unterkante zurück
+int32_t brandCentered(lv_obj_t *scr, const Palette &p, abf::BrandMark mark, int32_t top, int32_t bottom) {
+  const bool large = mark == abf::BrandMark::Large;
+  const lv_font_t *font = large ? &ui_font_dest3 : &ui_font_dest4;
+  const int32_t icon = large ? 72 : 40;
+  const int32_t y = top + (bottom - top - icon) / 2;
+  brandRow(scr, p, font, icon, (kWidth - brandWidth(font, icon)) / 2, y, icon, true);
+  return y + icon;
 }
 
 // --- Kopfzeile -------------------------------------------------------------
@@ -298,15 +313,16 @@ void row(lv_obj_t *scr, const RowView &r, const RowMetrics &m, const Palette &p,
 }
 
 // Karten untereinander zwischen top und bottom; erste Karte hervorgehoben
-void cards(lv_obj_t *scr, const SectionView &s, const RowMetrics &m, const Palette &p, int32_t top, int32_t bottom,
-           int32_t slots) {
+// Gibt die Unterkante der letzten Karte zurück
+int32_t cards(lv_obj_t *scr, const SectionView &s, const RowMetrics &m, const Palette &p, int32_t top, int32_t bottom,
+              int32_t slots) {
   const int32_t rowH = (bottom - top - (slots - 1) * kGap) / std::max<int32_t>(1, slots);
   if (s.rows.empty()) {
     lv_obj_t *msg = label(scr, s.message, &ui_font_body, p.muted);
     singleLine(msg, &ui_font_body, kRight - kPadX);
     lv_obj_set_style_text_align(msg, LV_TEXT_ALIGN_CENTER, 0);
     placeBaseline(msg, &ui_font_body, kPadX, top + (bottom - top + capHeight(&ui_font_body)) / 2);
-    return;
+    return bottom;
   }
   const size_t n = std::min(s.rows.size(), static_cast<size_t>(std::max<int32_t>(0, slots)));
   int32_t badgeW = 0;
@@ -315,6 +331,7 @@ void cards(lv_obj_t *scr, const SectionView &s, const RowMetrics &m, const Palet
     row(scr, s.rows[i], m, p, kPadX, top + static_cast<int32_t>(i) * (rowH + kGap), kRight - kPadX, rowH, badgeW,
         i == 0);
   }
+  return n ? top + static_cast<int32_t>(n) * (rowH + kGap) - kGap : top;
 }
 
 // --- Bildschirme -----------------------------------------------------------
@@ -352,7 +369,10 @@ void drawBoard(lv_obj_t *scr, const View &v, const Palette &p) {
     bottom = y - kGap;
   }
   const int32_t slots = v.banner.empty() ? v.rows : v.rows - 1;
-  if (!v.sections.empty()) cards(scr, v.sections.front(), m, p, kPadY + headH + kGap, bottom, slots);
+  if (v.sections.empty()) return;
+  const int32_t used = cards(scr, v.sections.front(), m, p, kPadY + headH + kGap, bottom, slots);
+  // Weniger Abfahrten als Zeilen: Karten bleiben oben, im freien Rest die Marke (Größe entscheidet lib/dispmodel)
+  if (v.brandMark != abf::BrandMark::None) brandCentered(scr, p, v.brandMark, used, bottom);
 }
 
 const char *iconGlyph(Icon i) {
@@ -407,7 +427,18 @@ void drawMessage(lv_obj_t *scr, const View &v, const Palette &p) {
   const int32_t headH = headerHeight(v);
   header(scr, v, p, v.title, kPadY, headH, true);
   const int32_t bottom = v.address.empty() ? kHeight - kPadY : kHeight - kAddressH;
-  messageBlock(scr, p, v.icon, v.heading, v.text, kPadY + headH, bottom);
+  if (v.brandMark != abf::BrandMark::None) {
+    // Keine Abfahrten: ruhige Fläche mit Marke, darunter klein der Grund
+    const int32_t top = kPadY + headH;
+    const int32_t textH = capHeight(&ui_font_small) + 22;
+    const int32_t markBottom = brandCentered(scr, p, v.brandMark, top, bottom - textH);
+    lv_obj_t *t = label(scr, v.heading, &ui_font_small, p.muted);
+    singleLine(t, &ui_font_small, kRight - kPadX);
+    lv_obj_set_style_text_align(t, LV_TEXT_ALIGN_CENTER, 0);
+    placeBaseline(t, &ui_font_small, kPadX, markBottom + 22 + capHeight(&ui_font_small));
+  } else {
+    messageBlock(scr, p, v.icon, v.heading, v.text, kPadY + headH, bottom);
+  }
   if (!v.address.empty()) {
     // Adresse der Web-UI, damit man die Tafel auch ohne funktionierendes .local findet
     lv_obj_t *a = label(scr, v.address, &ui_font_small, p.muted);

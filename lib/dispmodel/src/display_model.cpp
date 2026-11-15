@@ -56,7 +56,7 @@ bool SectionView::operator==(const SectionView &o) const {
 
 bool View::operator==(const View &o) const {
   return screen == o.screen && theme == o.theme && backlight == o.backlight && header == o.header &&
-         title == o.title && brand == o.brand && clock == o.clock && date == o.date && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
+         title == o.title && brand == o.brand && brandMark == o.brandMark && clock == o.clock && date == o.date && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
          sections == o.sections && rows == o.rows && banner == o.banner && icon == o.icon &&
          heading == o.heading && text == o.text && steps == o.steps && qr == o.qr &&
          qrCaption == o.qrCaption && progress == o.progress && address == o.address;
@@ -108,6 +108,13 @@ std::string wifiQrPayload(const std::string &ssid) {
     esc += c;
   }
   return "WIFI:S:" + esc + ";T:nopass;;";
+}
+
+BrandMark brandForFreeSlots(size_t freeSlots, uint32_t rows) {
+  const uint32_t freePx = static_cast<uint32_t>(freeSlots) * (rows <= 3 ? kCardPx3 : kCardPx4);
+  if (freePx >= 150) return BrandMark::Large;
+  if (freePx >= 78) return BrandMark::Small;
+  return BrandMark::None;
 }
 
 RowView makeRow(const BoardRow &r, bool compactTrack) {
@@ -369,6 +376,7 @@ View buildScreen(const ViewInputs &in) {
   if (s.rows.empty()) {
     const BoardStatus st = s.status.status == BoardStatus::Ok ? BoardStatus::NoDepartures : s.status.status;
     messageScreen(v, statusIcon(st), boardStatusText(st), statusHint(st));
+    if (st == BoardStatus::NoDepartures) v.brandMark = BrandMark::Large;  // ruhige Fläche mit Marke statt Info-Symbol
     return v;
   }
 
@@ -380,6 +388,7 @@ View buildScreen(const ViewInputs &in) {
   }
   SectionView sec;
   for (size_t r = 0; r < s.rows.size() && r < rows; ++r) sec.rows.push_back(makeRow(s.rows[r], false));
+  v.brandMark = brandForFreeSlots(rows - sec.rows.size(), v.rows);
   v.sections.push_back(std::move(sec));
   return v;
 }

@@ -140,6 +140,19 @@ std::vector<Scenario> scenarios() {
   addStop(in, stop("Emsdetten, Bahnhof", emsdetten()));
   out.push_back({"board-4-zeilen", in});
 
+  // Marke im freien Rest (BRANDING.md, Abschnitt 5): 1 bzw. 2 Abfahrten bei 4 Zeilen
+  for (size_t n : {1, 2}) {
+    std::vector<BoardRow> few = emsdetten();
+    few.resize(n);
+    ViewInputs m = base();
+    addStop(m, stop("Emsdetten, Bahnhof", few));
+    out.push_back({n == 1 ? "marke-1-zeile" : "marke-2-zeilen", m});
+    if (n == 1) {
+      m.cfg.themeMode = ThemeMode::Day;
+      out.push_back({"marke-1-zeile-tag", m});
+    }
+  }
+
   ViewInputs night = in;
   night.cfg.themeMode = ThemeMode::Day;
   out.push_back({"board-4-zeilen-tag", night});
