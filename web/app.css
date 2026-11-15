@@ -15,6 +15,8 @@ header { max-width: 640px; margin: 0 auto; padding: 20px 16px 0; }
 header h1.brand { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 2rem; font-weight: 500; letter-spacing: -0.5px; }
 .brand-icon { width: 44px; height: 44px; flex: none; }
 .brand-bus { color: var(--coral); }
+.head-right { display: flex; align-items: center; gap: 8px; }
+.icon-btn { min-width: 44px; padding: 8px 10px; border-radius: 999px; font-size: 1.15rem; line-height: 1; }
 .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--border);
   border-radius: 999px; font-size: 0.95rem; color: var(--muted); white-space: nowrap; }
 .pill::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
@@ -25,7 +27,7 @@ nav { display: flex; gap: 4px; overflow-x: auto; margin: 16px 0 0; padding: 4px;
   border: 1px solid var(--border); border-radius: 16px; }
 nav a { flex: 1; text-align: center; color: var(--muted); text-decoration: none; padding: 10px 8px; border-radius: 12px;
   white-space: nowrap; min-height: 44px; }
-nav a.active { background: var(--seg-on); color: var(--text); font-weight: 600; }
+nav a.active { background: var(--seg-on); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
 
 main { max-width: 640px; margin: 0 auto; padding: 16px; }
 
