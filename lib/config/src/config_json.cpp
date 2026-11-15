@@ -53,7 +53,9 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["night_brightness"] = cfg.nightBrightness;
   out["update_check"] = cfg.updateCheck;
   out["beta_channel"] = cfg.betaChannel;
-  out["theme"] = themeKey(cfg.theme);
+  out["theme_mode"] = themeModeKey(cfg.themeMode);
+  out["day_start"] = formatHhMm(cfg.dayStart);
+  out["day_end"] = formatHhMm(cfg.dayEnd);
   out["rows"] = cfg.rows;
   out["two_stops"] = twoStopKey(cfg.twoStops);
   out["stop_name"] = stopNameKey(cfg.stopName);
@@ -83,9 +85,14 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   applyBool(in, "update_check", next.updateCheck, errors);
   applyBool(in, "beta_channel", next.betaChannel, errors);
 
-  JsonVariantConst theme = in["theme"];
-  if (!theme.isNull() && (!theme.is<const char *>() || !themeFromKey(theme.as<const char *>(), next.theme))) {
-    errors.push_back({"theme", "Bitte Dunkel oder Nacht wählen."});
+  JsonVariantConst mode = in["theme_mode"];
+  if (!mode.isNull() && (!mode.is<const char *>() || !themeModeFromKey(mode.as<const char *>(), next.themeMode))) {
+    errors.push_back({"theme_mode", "Bitte Auto, Tag oder Nacht wählen."});
+  }
+  applyTime(in, "day_start", next.dayStart, errors);
+  applyTime(in, "day_end", next.dayEnd, errors);
+  if (next.dayStart == next.dayEnd && (!in["day_start"].isNull() || !in["day_end"].isNull())) {
+    errors.push_back({"day_end", "Tag-Ende muss eine andere Uhrzeit sein als der Tag-Beginn."});
   }
   JsonVariantConst rows = in["rows"];
   if (!rows.isNull()) {

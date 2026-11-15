@@ -251,16 +251,16 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
 .tafel.rows3 .t-to { font-size: 56px; }
 .tafel.rows3 .t-info { font-size: 26px; }
 
-/* Nacht-Stil: Bernstein auf Schwarz */
-.tafel-wrap.night, .tafel.night { background: #000; }
-.tafel.night { color: #ffb000; }
-.tafel.night .t-head { background: #000; }
-.tafel.night .t-stop, .tafel.night .t-date, .tafel.night .t-min small, .tafel.night .t-info, .tafel.night .t-page { color: #c28a1c; }
-.tafel.night .t-row:nth-child(odd of .t-row) { background: #15110b; }
-.tafel.night .t-late, .tafel.night .t-row.late .t-min, .tafel.night .t-row.late .t-min small { color: #ff6a4a; }
-.tafel.night .t-head.large .t-stop { color: #ffb000; }
-.tafel.night .t-row.cancelled .t-min, .tafel.night .t-row.cancelled .t-to { color: #8f6a1e; }
-.tafel.night .t-banner { background: #ffb000; color: #000; }
+/* Tag-Stil: helle Flächen wie am Display (src/ui/ui.cpp, kDay) */
+.tafel-wrap.day, .tafel.day { background: #EAF4FA; }
+.tafel.day { color: #1B1F3B; }
+.tafel.day .t-head { background: #D6E6F0; }
+.tafel.day .t-stop, .tafel.day .t-date, .tafel.day .t-min small, .tafel.day .t-info, .tafel.day .t-page { color: #4A5075; }
+.tafel.day .t-row:nth-child(odd of .t-row) { background: #FFFFFF; }
+.tafel.day .t-late, .tafel.day .t-row.late .t-min, .tafel.day .t-row.late .t-min small, .tafel.day .t-cancel { color: #C81F33; }
+.tafel.day .t-head.large .t-stop { color: #1B1F3B; }
+.tafel.day .t-row.cancelled .t-min, .tafel.day .t-row.cancelled .t-to { color: #7A809F; }
+.tafel.day .t-banner { background: #E89A00; }
 .tafel.off * { visibility: hidden; }
 
 /* Umschalter (Segmente) */
@@ -270,7 +270,7 @@ h3 { margin: 12px 0 6px; font-size: 1rem; }
 .seg span { display: block; padding: 7px 14px; cursor: pointer; user-select: none; }
 .seg label + label span { border-left: 1px solid var(--line); }
 .seg input:checked + span { background: var(--accent); color: var(--accent-text); }
-.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+.seg input:focus-visible + span { outline: 2px solid #1FC8B5; outline-offset: -2px; }  /* Türkis = Aktionsfarbe */
 .seg-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
 
 .badge {

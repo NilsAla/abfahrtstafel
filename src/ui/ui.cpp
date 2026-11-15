@@ -49,11 +49,12 @@ struct Palette {
   uint32_t qrBox;      // Fläche hinter dem QR-Code
 };
 
-// Dunkel: Nachtblau wie die Mockups. Nacht: Bernstein auf Schwarz, kaum Blauanteil.
-constexpr Palette kDark = {0x0b1a2e, 0x050f1e, 0x0b1a2e, 0x12243c, 0xf2f4f7, 0x9fb1c9,
-                           0xffb020, 0xff5a4a, 0xff7a6b, 0x8193ab, 0x1a1306, 0x1e3858, 0xffffff};
-constexpr Palette kNight = {0x000000, 0x000000, 0x090806, 0x15110b, 0xffb000, 0xc28a1c,
-                            0xffe08a, 0xff6a4a, 0xff7a6b, 0x8f6a1e, 0x000000, 0x2a2010, 0xf2e2c0};
+// Nacht: Nachtblau wie bisher. Tag: helle Flächen aus den wannbus-Tokens (lib/branding), Texte mit Kontrast ≥ 4,5:1.
+// Übergang bis zum Display-Redesign: gleiches Layout, nur die Farben wechseln.
+constexpr Palette kNight = {0x0b1a2e, 0x050f1e, 0x0b1a2e, 0x12243c, 0xf2f4f7, 0x9fb1c9,
+                            0xffb020, 0xff5a4a, 0xff7a6b, 0x8193ab, 0x1a1306, 0x1e3858, 0xffffff};
+constexpr Palette kDay = {0xEAF4FA, 0xD6E6F0, 0xEAF4FA, 0xFFFFFF, 0x1B1F3B, 0x4A5075,
+                          0xE89A00, 0xC81F33, 0xC81F33, 0x7A809F, 0x1A1306, 0xCFE3EE, 0xFFFFFF};
 
 // Maße je Zeilen-Layout
 struct RowMetrics {
@@ -490,7 +491,7 @@ bool show(const View &v) {
   sLast = v;
   sValid = true;
 
-  const Palette &p = v.theme == DisplayTheme::Night ? kNight : kDark;
+  const Palette &p = v.theme == DisplayTheme::Day ? kDay : kNight;
   lv_obj_t *scr = lv_screen_active();
   lv_obj_clean(scr);
   lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);

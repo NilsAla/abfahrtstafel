@@ -228,8 +228,11 @@ void buildBoard(JsonObject out, size_t maxRows) {
   const abf::Config cfg = config::get();
   const abf::Backlight bl = abf::backlightFor(cfg, timeValid, timeValid ? abf::localMinuteOfDay(now) : 0);
   JsonObject disp = out["display"].to<JsonObject>();
-  disp["theme"] = abf::themeKey(bl.theme);         // wirksam (nachts immer „night“)
-  disp["theme_setting"] = abf::themeKey(cfg.theme);
+  disp["theme"] = abf::themeKey(bl.theme);         // wirksam: "day" | "night" (im Nachtfenster immer „night“)
+  disp["theme_mode"] = abf::themeModeKey(cfg.themeMode);
+  disp["day_start"] = abf::formatHhMm(cfg.dayStart);
+  disp["day_end"] = abf::formatHhMm(cfg.dayEnd);
+  disp["time_valid"] = timeValid;
   disp["night"] = bl.night;
   disp["night_end"] = abf::formatHhMm(cfg.nightEnd);
   disp["backlight"] = bl.percent;

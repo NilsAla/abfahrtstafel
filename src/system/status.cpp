@@ -2,11 +2,14 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <display_model.h>
 #include <esp_heap_caps.h>
 #include <esp_ota_ops.h>
 #include <esp_timer.h>
 #include <time.h>
+#include <time_berlin.h>
 
+#include "../config/config_service.h"
 #include "../display/display_task.h"
 #include "../net/network.h"
 #include "../provider/departure_service.h"
@@ -25,6 +28,14 @@ void build(JsonObject out) {
   out["partition"] = running ? running->label : "?";
   out["hostname"] = net::hostname();
   out["display"] = display::active();
+  {
+    const abf::Config cfg = config::get();
+    const int64_t now = time(nullptr);
+    const bool timeValid = abf::isTimePlausible(now);
+    out["theme_mode"] = abf::themeModeKey(cfg.themeMode);
+    out["theme_active"] =
+        abf::themeKey(abf::backlightFor(cfg, timeValid, timeValid ? abf::localMinuteOfDay(now) : 0).theme);
+  }
   out["coredump"] = coredump::present();
 
   JsonObject wifi = out["wifi"].to<JsonObject>();

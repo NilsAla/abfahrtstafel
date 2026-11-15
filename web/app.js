@@ -220,6 +220,7 @@ function fillForm(cfg) {
     if (el.type === 'checkbox') el.checked = value;
     else el.value = value;
   }
+  $('day-window').hidden = cfg.theme_mode !== 'auto';
   updateOutputs();
 }
 
@@ -423,9 +424,9 @@ function renderTafel(b) {
   // Bei zwei Haltestellen bleibt der Name sichtbar, damit klar ist, welche gezeigt wird
   const style = d.stop_name === 'off' && b.stops?.length > 1 ? 'normal' : (d.stop_name || 'normal');
   t.replaceChildren();
-  const night = d.theme === 'night';
-  t.classList.toggle('night', night);
-  $('tafel-wrap').classList.toggle('night', night);
+  const day = d.theme === 'day';
+  t.classList.toggle('day', day);
+  $('tafel-wrap').classList.toggle('day', day);
   t.classList.toggle('off', d.backlight === 0);
   t.classList.toggle('rows3', d.rows === 3);
   renderThemeToggle(d);
@@ -462,16 +463,23 @@ function renderTafel(b) {
   scaleTafel();
 }
 
-// Schneller Umschalter Dunkel/Nacht über der Vorschau: speichert sofort
+// Umschalter Auto/Tag/Nacht über der Vorschau: speichert sofort, Display folgt ohne Neustart
 let themeBusy = false;
 
+function themeHint(d) {
+  if (d.backlight === 0) return `Nachtzeit – Display ist bis ${d.night_end} Uhr aus.`;
+  if (d.night) return `Nachtzeit – bis ${d.night_end} Uhr gilt der Nacht-Stil.`;
+  if (d.theme_mode !== 'auto') return '';
+  if (!d.time_valid) return 'Auto: Nacht, bis die Uhrzeit bekannt ist.';
+  return d.theme === 'day' ? `Auto: gerade Tag, Nacht ab ${d.day_end}` : `Auto: gerade Nacht, Tag ab ${d.day_start}`;
+}
+
 function renderThemeToggle(d) {
-  if (themeBusy || !d.theme_setting) return;
-  for (const r of document.querySelectorAll('input[name="theme-toggle"]')) r.checked = r.value === d.theme_setting;
-  let hint = '';
-  if (d.backlight === 0) hint = `Nachtzeit – Display ist bis ${d.night_end} Uhr aus.`;
-  else if (d.night) hint = `Nachtzeit – bis ${d.night_end} Uhr gilt der Nacht-Stil.`;
-  setText('theme-hint', hint);
+  if (themeBusy || !d.theme_mode) return;
+  for (const r of document.querySelectorAll('input[name="theme-toggle"]')) r.checked = r.value === d.theme_mode;
+  setText('theme-hint', themeHint(d));
+  if (current) current.theme_mode = d.theme_mode;
+  $('day-window').hidden = d.theme_mode !== 'auto';
 }
 
 for (const r of document.querySelectorAll('input[name="theme-toggle"]')) {
@@ -481,7 +489,7 @@ for (const r of document.querySelectorAll('input[name="theme-toggle"]')) {
       const res = await api('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: r.value }),
+        body: JSON.stringify({ theme_mode: r.value }),
       });
       const data = await res.json();
       if (!data.ok) setText('theme-hint', data.message || 'Speichern fehlgeschlagen.');

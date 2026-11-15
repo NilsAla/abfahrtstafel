@@ -18,7 +18,10 @@ constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
 constexpr const char *kKeyBeta = "beta";
 constexpr const char *kKeyStops = "stops";
-constexpr const char *kKeyTheme = "theme";
+constexpr const char *kKeyTheme = "theme";  // bis Schema 2, nur noch für Rollback geschrieben
+constexpr const char *kKeyThemeMode = "themeMode";
+constexpr const char *kKeyDayStart = "dayStart";
+constexpr const char *kKeyDayEnd = "dayEnd";
 constexpr const char *kKeyRows = "rows";
 constexpr const char *kKeyTwoStops = "twoStops";
 constexpr const char *kKeyStopName = "stopName";
@@ -35,9 +38,18 @@ bool migrateHostnameToWannbus(KvStore &store) {
   return true;
 }
 
+// 2 → 3 (Tag/Nacht): Bestandsgeräte bekommen themeMode = Nacht, damit sie nach dem Update dunkel bleiben wie bisher
+// (Dunkel und Bernstein waren beide dunkel). Frische Geräte (noch kein Schema gespeichert) starten mit Auto.
+bool migrateThemeMode(KvStore &store) {
+  uint32_t schema = 0, mode = 0;
+  if (!store.getU32(kKeySchema, schema) || store.getU32(kKeyThemeMode, mode)) return true;
+  return store.putU32(kKeyThemeMode, static_cast<uint32_t>(ThemeMode::Night));
+}
+
 constexpr MigrationStep kSteps[] = {
     nullptr,                    // 0 → 1: Erststart, nur Schema schreiben
     migrateHostnameToWannbus,   // 1 → 2: Standard-Hostname abfahrt → wannbus
+    migrateThemeMode,           // 2 → 3: Bestandsgeräte auf Nacht
 };
 static_assert(sizeof(kSteps) / sizeof(kSteps[0]) == kConfigSchema,
               "Für jede Schema-Version einen Migrationsschritt eintragen");
@@ -107,9 +119,11 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readBool(store, kKeyBeta, cfg.betaChannel, invalid);
   readU32(store, kKeyRows, cfg.rows, validRows, invalid);
   uint32_t v = 0;
-  if (store.getU32(kKeyTheme, v)) {
-    if (validEnum2(v)) cfg.theme = static_cast<DisplayTheme>(v); else ++invalid;
+  if (store.getU32(kKeyThemeMode, v)) {
+    if (validEnum3(v)) cfg.themeMode = static_cast<ThemeMode>(v); else ++invalid;
   }
+  readU32(store, kKeyDayStart, cfg.dayStart, validMinutes, invalid);
+  readU32(store, kKeyDayEnd, cfg.dayEnd, validMinutes, invalid);
   if (store.getU32(kKeyTwoStops, v)) {
     if (validEnum2(v)) cfg.twoStops = static_cast<TwoStopLayout>(v); else ++invalid;
   }
@@ -137,20 +151,34 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
   ok &= store.putU32(kKeyBeta, cfg.betaChannel ? 1 : 0);
   ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
-  ok &= store.putU32(kKeyTheme, static_cast<uint32_t>(cfg.theme));
+  ok &= store.putU32(kKeyTheme, 0);  // Vorversion (Rollback) liest „Dunkel“
+  ok &= store.putU32(kKeyThemeMode, static_cast<uint32_t>(cfg.themeMode));
+  ok &= store.putU32(kKeyDayStart, cfg.dayStart);
+  ok &= store.putU32(kKeyDayEnd, cfg.dayEnd);
   ok &= store.putU32(kKeyRows, cfg.rows);
   ok &= store.putU32(kKeyTwoStops, static_cast<uint32_t>(cfg.twoStops));
   ok &= store.putU32(kKeyStopName, static_cast<uint32_t>(cfg.stopName));
   return ok;
 }
 
-const char *themeKey(DisplayTheme t) { return t == DisplayTheme::Night ? "night" : "dark"; }
+const char *themeKey(DisplayTheme t) { return t == DisplayTheme::Night ? "night" : "day"; }
 
-bool themeFromKey(const std::string &key, DisplayTheme &out) {
-  if (key == "dark") {
-    out = DisplayTheme::Dark;
+const char *themeModeKey(ThemeMode m) {
+  switch (m) {
+    case ThemeMode::Day:   return "day";
+    case ThemeMode::Night: return "night";
+    case ThemeMode::Auto:  break;
+  }
+  return "auto";
+}
+
+bool themeModeFromKey(const std::string &key, ThemeMode &out) {
+  if (key == "auto") {
+    out = ThemeMode::Auto;
+  } else if (key == "day") {
+    out = ThemeMode::Day;
   } else if (key == "night") {
-    out = DisplayTheme::Night;
+    out = ThemeMode::Night;
   } else {
     return false;
   }

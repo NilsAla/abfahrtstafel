@@ -22,13 +22,17 @@ namespace abf {
 // start == end → nie.
 bool inWindow(uint32_t start, uint32_t end, uint32_t minuteOfDay);
 
+// Welcher Farbstil gilt gerade? Auto: Tag im Fenster [dayStart, dayEnd), sonst Nacht.
+// Ohne gültige Uhrzeit Nacht – dunkel stört nachts am wenigsten.
+DisplayTheme resolveTheme(ThemeMode mode, uint32_t dayStart, uint32_t dayEnd, uint32_t minuteOfDay, bool timeValid);
+
 struct Backlight {
   uint8_t percent = 80;  // 0 = Display aus
-  DisplayTheme theme = DisplayTheme::Dark;
+  DisplayTheme theme = DisplayTheme::Night;
   bool night = false;    // Nachtzeitfenster aktiv
 };
 
-// Ohne gestellte Uhr gibt es keine Nacht (Gerät bleibt bedienbar).
+// Ohne gestellte Uhr gibt es kein Nachtfenster (Gerät bleibt bedienbar). Im Nachtfenster gilt immer Nacht.
 Backlight backlightFor(const Config &cfg, bool timeValid, uint32_t minuteOfDay);
 
 // --- Bildbeschreibung ------------------------------------------------------
@@ -70,7 +74,7 @@ struct SectionView {
 
 struct View {
   Screen screen = Screen::Message;
-  DisplayTheme theme = DisplayTheme::Dark;
+  DisplayTheme theme = DisplayTheme::Night;
   uint8_t backlight = 80;
 
   // Kopfzeile
