@@ -36,7 +36,7 @@ uint32_t sLastTimeFetch = 0;
 constexpr uint32_t kTimeFetchAfterMs = 30 * 1000;   // so lange bekommt NTP Zeit
 constexpr uint32_t kTimeFetchEveryMs = 2 * 60 * 1000;
 // Kleine Antwort mit Date-Header; GitHub ist für Updates ohnehin erreichbar
-constexpr const char *kTimeUrl = "https://github.com/NilsAla/abfahrtstafel/releases/latest/download/manifest.json";
+constexpr const char *kTimeUrl = "https://github.com/NilsAla/wannbus/releases/latest/download/manifest.json";
 
 void timeFetchTask(void *) {
   https::Body body;

@@ -1,7 +1,7 @@
 # Prompt 5 – Bootanimation
 
 ```
-Repo: NilsAla/abfahrtstafel. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md, docs/HARDWARE.md,
+Repo: NilsAla/wannbus. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md, docs/HARDWARE.md,
 docs/branding/BRANDING.md (Abschnitte 4, 5, 7), docs/branding/animation/ (GIFs und Generator-Skripte als Vorlage) und src/ui, src/display.
 Arbeite nur diesen Block ab: Bootanimation. Voraussetzung: Prompts 1–3 sind gemergt.
 Neuer Branch, kleine deutsche Commits, PR gegen main.

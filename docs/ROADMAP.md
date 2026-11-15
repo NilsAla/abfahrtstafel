@@ -279,7 +279,7 @@ Phase B hakt ab oder notiert den Befund.
   „Bericht löschen“ → Block verschwindet, auch nach Neustart. Passt das Image nicht in 64 KB (viele Tasks), steht beim
   Absturz im Serial-Log ein Coredump-Fehler → dann `CONFIG_ESP_COREDUMP_MAX_TASKS_NUM` senken. Danach Test-Code entfernen.
   Code: `src/system/coredump.cpp`, Routen in `src/web/web_server.cpp`.
-- [ ] **Web-Flash-Seite (M5):** https://nilsala.github.io/abfahrtstafel/ in Chrome/Edge öffnen, Board per USB, „Installieren“
+- [ ] **Web-Flash-Seite (M5):** https://nilsala.github.io/wannbus/ in Chrome/Edge öffnen, Board per USB, „Installieren“
   → Port „USB JTAG/serial debug unit“ wählen → Fortschritt bis 100 %, Board startet mit der neuesten Version und öffnet
   das Einrichtungs-WLAN (NVS leer, weil das Factory-Image den Bereich mit 0xFF überschreibt). Auch prüfen: Board im
   Download-Modus (BOOT halten + RESET). Code: `flash/index.html`, `.github/workflows/pages.yml`.

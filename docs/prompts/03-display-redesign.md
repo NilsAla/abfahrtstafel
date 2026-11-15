@@ -1,7 +1,7 @@
 # Prompt 3 – Display-Redesign
 
 ```
-Repo: NilsAla/abfahrtstafel. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
+Repo: NilsAla/wannbus. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
 docs/branding/BRANDING.md (Abschnitte 2, 3, 5), docs/branding/mockups/Display_*.png, lib/dispmodel, src/ui.
 Arbeite nur diesen Block ab: Display-UI im wannbus-Design. Voraussetzung: Prompts 1 und 2 sind gemergt.
 Neuer Branch, kleine deutsche Commits, PR gegen main.
