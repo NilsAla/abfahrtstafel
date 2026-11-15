@@ -191,6 +191,24 @@ static void test_view_brand_header_without_stop(void) {
   TEST_ASSERT_FALSE(buildView(boardInputs()).brand);  // mit Haltestelle: Ring + Name
 }
 
+static void test_brand_mark_in_free_space(void) {
+  // 4 Zeilen: 1 belegt → groß, 2 belegt → klein, 3–4 belegt → keine
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::Large), static_cast<int>(buildView(boardInputs(1, 1)).brandMark));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::Small), static_cast<int>(buildView(boardInputs(1, 2)).brandMark));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::None), static_cast<int>(buildView(boardInputs(1, 3)).brandMark));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::None), static_cast<int>(buildView(boardInputs(1, 4)).brandMark));
+  // 3 Zeilen: 1 belegt → groß, 2 belegt → klein
+  ViewInputs in = boardInputs(1, 2);
+  in.cfg.rows = 3;
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::Small), static_cast<int>(buildView(in).brandMark));
+  // geteilt: nie (zu wenig Platz)
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::None), static_cast<int>(buildView(boardInputs(2, 1)).brandMark));
+  // keine Abfahrten: Marke groß auf der Meldung
+  View v = buildView(boardInputs(1, 0));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(BrandMark::Large), static_cast<int>(v.brandMark));
+}
+
 static void test_row_track_and_colors(void) {
   BoardRow r = row("RE15", "Münster Hbf", 5);
   r.track = "1";
@@ -459,6 +477,7 @@ int main(int, char **) {
   RUN_TEST(test_row_minutes_and_clock);
   RUN_TEST(test_row_delay_and_cancel);
   RUN_TEST(test_view_brand_header_without_stop);
+  RUN_TEST(test_brand_mark_in_free_space);
   RUN_TEST(test_row_track_and_colors);
   RUN_TEST(test_wifi_qr_escaping);
   RUN_TEST(test_view_board_four_and_three_rows);

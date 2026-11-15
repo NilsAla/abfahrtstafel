@@ -49,6 +49,8 @@ enum class Screen : uint8_t {
 enum class Icon : uint8_t { None, Info, Warning, Clock, Loading, NoWifi };
 enum class WifiMark : uint8_t { None, Ok, Off };
 enum class NoteKind : uint8_t { None, Delay, Cancelled };
+// Marke (Logo + Wortmarke) auf sonst leerer Fläche (BRANDING.md, Abschnitt 5): groß oder klein je nach freiem Platz
+enum class BrandMark : uint8_t { None, Small, Large };
 
 struct RowView {
   std::string line;
@@ -81,6 +83,7 @@ struct View {
   StopNameStyle header = StopNameStyle::Normal;  // Off: Titel ausgeblendet, langes Datum links
   std::string title;           // Haltestelle bzw. Gerätename
   bool brand = false;          // Kopf zeigt Logo + „wannbus“ statt Haltestellen-Ring (noch keine Haltestelle)
+  BrandMark brandMark = BrandMark::None;  // Board: Marke im freien Rest; Message: Marke statt Symbol (keine Abfahrten)
   std::string clock;           // "12:20" oder leer
   std::string date;            // "Di 27.10." bzw. bei Off "Dienstag, 27. Oktober"; leer ohne Uhrzeit
   WifiMark wifi = WifiMark::None;
@@ -133,7 +136,10 @@ struct ViewInputs {
 
 constexpr uint32_t kAlternateSeconds = 10;    // Wechselanzeige: Sekunden je Haltestelle
 constexpr int32_t kClockFromMinutes = 60;      // ab hier Uhrzeit statt Minuten
-constexpr size_t kSplitRows = 2;               // geteilte Ansicht: Zeilen je Haltestelle
+constexpr size_t kSplitRows = 2;
+// Höhe einer Abfahrtskarte samt Abstand (src/ui/ui.cpp), für die Wahl der Markengröße im freien Rest
+constexpr uint32_t kCardPx3 = 85, kCardPx4 = 63;
+BrandMark brandForFreeSlots(size_t freeSlots, uint32_t rows);               // geteilte Ansicht: Zeilen je Haltestelle
 constexpr int32_t kLateMinutes = 2;            // ab hier gilt eine Abfahrt als verspätet (rot)
 
 // Wie viele Abfahrten je Haltestelle aufbereitet werden müssen
