@@ -80,6 +80,7 @@ struct View {
   // Kopfzeile
   StopNameStyle header = StopNameStyle::Normal;  // Off: Titel ausgeblendet, langes Datum links
   std::string title;           // Haltestelle bzw. Gerätename
+  bool brand = false;          // Kopf zeigt Logo + „wannbus“ statt Haltestellen-Ring (noch keine Haltestelle)
   std::string clock;           // "12:20" oder leer
   std::string date;            // "Di 27.10." bzw. bei Off "Dienstag, 27. Oktober"; leer ohne Uhrzeit
   WifiMark wifi = WifiMark::None;

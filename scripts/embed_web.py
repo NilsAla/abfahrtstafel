@@ -101,4 +101,14 @@ def main():
         print(f"embed_web: unverändert ({len(assets)} Dateien, {total} B gzip)")
 
 
+
 main()
+
+# Als PlatformIO-Skript: Abhängigkeit ausdrücklich setzen. PlatformIO cacht Header-Abhängigkeiten (implicit cache);
+# ohne diese Zeile bleibt web_server.cpp.o nach Änderungen an web/ alt und die Firmware liefert die vorige Web-UI aus.
+try:
+    Import("env")  # noqa: F821
+except NameError:  # direkt mit python3 aufgerufen
+    pass
+else:
+    env.Depends(os.path.join(env.subst("$BUILD_DIR"), "src", "web", "web_server.cpp.o"), OUT_FILE)  # noqa: F821
