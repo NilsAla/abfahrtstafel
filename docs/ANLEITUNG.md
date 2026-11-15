@@ -1,4 +1,4 @@
-# Abfahrtstafel – Kurzanleitung
+# wannbus – Kurzanleitung
 
 Die Tafel zeigt, wann Bus und Bahn an deiner Haltestelle abfahren. Sie läuft von allein, du musst sie nur einmal einrichten.
 
@@ -6,10 +6,10 @@ Die Tafel zeigt, wann Bus und Bahn an deiner Haltestelle abfahren. Sie läuft vo
 
 1. **Einstecken.** Netzteil in die Steckdose, Kabel in die Tafel. Auf dem Display steht „Hallo! Kurz einrichten“.
 2. **WLAN verbinden.** Den Code auf dem Display mit der Handy-Kamera scannen, oder in den WLAN-Einstellungen des Handys
-   das WLAN **Abfahrtstafel-…** wählen. Es öffnet sich eine Seite: **WLAN einrichten** antippen, dein WLAN antippen,
+   das WLAN **wannbus-…** wählen. Es öffnet sich eine Seite: **WLAN einrichten** antippen, dein WLAN antippen,
    dein WLAN-Passwort eingeben, **Verbinden**.
 3. **Haltestelle wählen.** Das Handy wieder mit deinem normalen WLAN verbinden. Den neuen Code auf dem Display scannen
-   (oder im Browser **abfahrt.local** eingeben). Unter **Einstellungen** die Haltestelle suchen, antippen, **Speichern**.
+   (oder im Browser **wannbus.local** eingeben). Unter **Einstellungen** die Haltestelle suchen, antippen, **Speichern**.
 
 Nach einer Minute erscheinen die Abfahrten. Fertig.
 
@@ -40,7 +40,7 @@ Hilft das alles nicht: **Stecker ziehen, 10 Sekunden warten, wieder einstecken.*
 
 ## Einstellungen ändern
 
-Im Browser **abfahrt.local** öffnen (Handy im selben WLAN). Dort lassen sich Haltestelle, Helligkeit, Nachtzeit und
+Im Browser **wannbus.local** öffnen (Handy im selben WLAN). Dort lassen sich Haltestelle, Helligkeit, Nachtzeit und
 Anzahl der Zeilen ändern. Unter **Update** gibt es neue Versionen – einfach auf „Update installieren“ tippen.
 
 ## Alles zurücksetzen

@@ -1,4 +1,4 @@
-# Abfahrtstafel – Projektregeln für Claude
+# wannbus – Projektregeln für Claude
 
 Standalone-Abfahrtsanzeige (Bus/Bahn) auf ESP32-S3. Läuft ohne Server, ohne Home Assistant.
 Endnutzerin ist technisch unerfahren: Alles muss ohne Hilfe funktionieren, jede Fehlersituation
@@ -48,7 +48,7 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 - Abfahrten: `GET /api/v6/stoptimes?stopId=…&n=…`
 - Felder: `place.scheduledDeparture`, `place.departure`, `place.track`, `realTime`,
   `cancelled`, `tripCancelled`, `displayName`/`routeShortName`, `headsign`, `mode`
-- User-Agent Pflicht: `abfahrtstafel/<version> (+https://github.com/NilsAla/abfahrtstafel)`
+- User-Agent Pflicht: `wannbus/<version> (+https://github.com/NilsAla/abfahrtstafel)`
 - Polling nicht schneller als alle 30 s, Backoff bei Fehlern
 - Provider hinter Interface `src/provider/` kapseln, damit er austauschbar bleibt
 - Attribution (Link auf https://transitous.org/sources/ und OpenStreetMap) sichtbar in der Web-UI

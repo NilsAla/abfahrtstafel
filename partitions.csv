@@ -1,4 +1,4 @@
-# Abfahrtstafel – Partitionstabelle 16 MB
+# wannbus – Partitionstabelle 16 MB
 # EINGEFROREN ab dem ersten Flash. Änderungen nur per USB-Neuflash möglich.
 # nvs/otadata/app0 bewusst auf den Arduino-Standard-Offsets (boot_app0.bin bei 0xe000).
 # Name,     Type, SubType,  Offset,   Size
