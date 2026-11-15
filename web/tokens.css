@@ -24,8 +24,9 @@
   color-scheme: light;
 }
 
+/* Nacht: nach Handy-Einstellung, außer die Web-UI ist per Schalter fest auf Hell gestellt (data-theme auf <html>) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #14162E;
     --card: #1B1F3B;
     --border: #2E3466;
@@ -41,4 +42,21 @@
     --info-bg: #202548;
     color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #14162E;
+  --card: #1B1F3B;
+  --border: #2E3466;
+  --text: #FFF6E5;
+  --muted: #A9ABC9;
+  --teal-text: #3DDCC9;
+  --coral-text: #FF6B78;
+
+  --input-bg: #14162E;
+  --seg-on: #2E3466;
+  --ok-bg: #163A44;
+  --error-bg: #3A1C2E;
+  --info-bg: #202548;
+  color-scheme: dark;
 }

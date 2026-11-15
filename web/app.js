@@ -42,6 +42,33 @@ function offline() {
   setPill('off', 'Nicht erreichbar');
 }
 
+// Hell/Dunkel der Weboberfläche (nur dieses Handy, unabhängig vom Display): Auto → Hell → Dunkel
+const UI_THEMES = [
+  { key: '', icon: '◐', label: 'Automatisch (wie das Handy)' },
+  { key: 'light', icon: '☀\uFE0E', label: 'Hell' },
+  { key: 'dark', icon: '☾', label: 'Dunkel' },
+];
+
+function applyUiTheme(key) {
+  const t = UI_THEMES.find((x) => x.key === key) || UI_THEMES[0];
+  if (t.key) document.documentElement.dataset.theme = t.key;
+  else delete document.documentElement.dataset.theme;
+  const b = $('ui-theme');
+  b.textContent = t.icon;
+  b.setAttribute('aria-label', `Darstellung: ${t.label}`);
+  b.title = `Darstellung: ${t.label}`;
+}
+
+$('ui-theme').addEventListener('click', () => {
+  const cur = document.documentElement.dataset.theme || '';
+  const next = UI_THEMES[(UI_THEMES.findIndex((x) => x.key === cur) + 1) % UI_THEMES.length].key;
+  applyUiTheme(next);
+  try {
+    if (next) localStorage.setItem('wb-ui-theme', next); else localStorage.removeItem('wb-ui-theme');
+  } catch (e) { /* ohne Speicher gilt die Wahl bis zum Neuladen */ }
+});
+applyUiTheme(document.documentElement.dataset.theme || '');
+
 // Status-Pille im Kopf: Online / WLAN-Zustand / nicht erreichbar
 function setPill(kind, text) {
   const p = $('pill');
