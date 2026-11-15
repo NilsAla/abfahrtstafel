@@ -41,6 +41,7 @@ struct Config {
   uint32_t nightEnd = 6 * 60;
   uint32_t nightBrightness = 0;      // Prozent, 0 = Display aus
   bool updateCheck = true;           // täglicher Update-Hinweis (ab M2)
+  bool bootAnimation = true;         // Bootanimation beim Kaltstart
   bool betaChannel = false;          // Beta-Kanal: auch Vorabversionen anbieten (Test vor dem Release)
   ThemeMode themeMode = ThemeMode::Auto;  // Bestandsgeräte: Migration auf Night (sollen dunkel bleiben)
   uint32_t dayStart = 6 * 60 + 30;   // Minuten ab Mitternacht, Ortszeit; nur bei Auto

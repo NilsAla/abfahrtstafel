@@ -53,6 +53,7 @@ void configToJson(const Config &cfg, JsonObject out) {
   out["night_brightness"] = cfg.nightBrightness;
   out["update_check"] = cfg.updateCheck;
   out["beta_channel"] = cfg.betaChannel;
+  out["boot_animation"] = cfg.bootAnimation;
   out["theme_mode"] = themeModeKey(cfg.themeMode);
   out["day_start"] = formatHhMm(cfg.dayStart);
   out["day_end"] = formatHhMm(cfg.dayEnd);
@@ -84,6 +85,7 @@ bool applyConfigJson(JsonObjectConst in, Config &cfg, std::vector<FieldError> &e
   applyPercent(in, "night_brightness", 0, kBrightnessMax, next.nightBrightness, errors);
   applyBool(in, "update_check", next.updateCheck, errors);
   applyBool(in, "beta_channel", next.betaChannel, errors);
+  applyBool(in, "boot_animation", next.bootAnimation, errors);
 
   JsonVariantConst mode = in["theme_mode"];
   if (!mode.isNull() && (!mode.is<const char *>() || !themeModeFromKey(mode.as<const char *>(), next.themeMode))) {

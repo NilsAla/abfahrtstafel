@@ -154,7 +154,10 @@ Wortmarke „wannbus“ wird mit der Busfront aufgedeckt (Kante = Busfront − 1
 Zeitachse (Sekunden): Einfahrt 0,4–2,7 (ease-out cubic, 0 → 726 px) · Tür öffnet 2,9–3,3 · Dame steht auf 3,7 · Gehen 3,9–5,2 ·
 Tür schließt 5,3–5,7 · Abfahrt 6,1–7,8 (ease-in cubic, bis 1080 px) · Ende 8,3.
 
-Zwei Varianten für den Gerätebetrieb:
+**Am Gerät abgenommen (2026-11-15):** gespielt wird die ganze Szene bis zur Abfahrt (~8 s), die Wortmarke bleibt beim Wegfahren
+stehen. „Boot-once“ (Schnitt bei 4,0 s) wirkte am Gerät wie abgebrochen. Maßgeblich: `lib/dispmodel/src/boot_anim.h`.
+
+Ursprünglich geplante Varianten für den Gerätebetrieb:
 - **Boot-once** (Standard): Schnitt bei 4,0 s, danach 1,5 s Halten auf dem Logo. Spielt einmal beim Start, dann Wechsel auf die Abfahrten.
 - **Loop**: nur für Web-Vorschau oder Demo, nicht beim Booten.
 Nacht/Tag richtet sich nach dem eingestellten Modus (Abschnitt 8).

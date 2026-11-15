@@ -2,11 +2,15 @@
 #include "display_task.h"
 
 #include <Arduino.h>
+#include <boot_anim.h>
 #include <display_model.h>
+#include <esp_system.h>
 #include <esp_heap_caps.h>
 #include <lvgl.h>
 #include <time.h>
 #include <time_berlin.h>
+
+#include <algorithm>
 
 #include "../board/board.h"
 #include "../config/config_service.h"
@@ -14,6 +18,7 @@
 #include "../net/network.h"
 #include "../ota/ota.h"
 #include "../provider/departure_service.h"
+#include "../ui/boot_scene.h"
 #include "../ui/ui.h"
 
 namespace display {
@@ -50,6 +55,50 @@ abf::ViewInputs collect() {
   return in;
 }
 
+// Bootanimation (BRANDING.md, Abschnitt 7): läuft nur hier im Display-Task, WLAN und Web-UI starten parallel.
+// Ganze Szene bis der Bus weggefahren ist (~8 s); WLAN und Web-UI starten derweil.
+void playBootAnimation(int &lastBacklight) {
+  const abf::View first = abf::buildView(collect());
+  const esp_reset_reason_t reason = esp_reset_reason();
+  const bool cold = reason == ESP_RST_POWERON || reason == ESP_RST_EXT || reason == ESP_RST_USB;
+  if (!abf::boot::shouldPlay(config::get().bootAnimation, cold, first.screen == abf::Screen::Setup,
+                             first.backlight)) {
+    return;
+  }
+  board::setBacklight(first.backlight);
+  lastBacklight = first.backlight;
+  ui::bootBegin(first.theme);  // ohne gültige Uhrzeit ist das Nacht
+
+  const uint32_t t0 = millis();
+  uint32_t frames = 0, slowest = 0, busy = 0, nextCheck = 0;
+  bool ready = false;
+  for (;;) {
+    const uint32_t start = millis();
+    const float t = (start - t0) / 1000.0f;
+    // Abfahrten schon da? Zählt erst nach der Abfahrt des Busses (finished()); die Abfrage kostet Zeit,
+    // die sonst den Bildern fehlt
+    if (t >= abf::boot::kDepart1 && start >= nextCheck) {
+      ready = abf::buildView(collect()).screen == abf::Screen::Board;
+      nextCheck = start + 250;
+    }
+    if (abf::boot::finished(t, ready)) break;
+    const uint32_t drawStart = millis();
+    ui::bootFrame(abf::boot::frameAt(t));
+    lv_refr_now(nullptr);
+    const uint32_t ms = millis() - drawStart;  // nur Zeichnen, ohne die Abfrage oben
+    ++frames;
+    busy += ms;
+    slowest = std::max(slowest, ms);
+    const uint32_t spent = millis() - start;
+    vTaskDelay(pdMS_TO_TICKS(spent < 33 ? 33 - spent : 1));  // ~30 Bilder/s, anderen Tasks Luft lassen
+  }
+  ui::bootEnd();
+  const uint32_t total = millis() - t0;
+  LOGI("disp", "Bootanimation: %u Bilder, Zeichnen im Schnitt %u ms, langsamstes %u ms, Ende nach %u ms%s",
+       static_cast<unsigned>(frames), static_cast<unsigned>(frames ? busy / frames : 0), static_cast<unsigned>(slowest), static_cast<unsigned>(total),
+       ready ? " (Abfahrten bereit)" : "");
+}
+
 void taskMain(void *) {
   lv_init();
   lv_tick_set_cb([]() -> uint32_t { return millis(); });
@@ -73,6 +122,7 @@ void taskMain(void *) {
        static_cast<unsigned>(board::kLogicalHeight));
 
   int lastBacklight = -1;
+  playBootAnimation(lastBacklight);
   abf::Screen lastScreen = abf::Screen::Off;
   for (;;) {
     const abf::View view = abf::buildView(collect());
