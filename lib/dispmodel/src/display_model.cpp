@@ -196,7 +196,8 @@ void setupScreen(View &v, const ViewInputs &in, bool fallback) {
                "Eigenes WLAN wählen, Passwort eingeben"};
   } else {
     v.heading = "Hallo! Kurz einrichten:";
-    v.steps = {"Code scannen oder WLAN „" + in.apName + "“ wählen",
+    // Fester Umbruch: LVGL trennt sonst am Bindestrich mitten im Namen („wannbus-“ / „AB0C“)
+    v.steps = {"Code scannen oder WLAN\n„" + in.apName + "“ wählen",
                "Eigenes WLAN wählen, Passwort eingeben",
                "Fertig – dann die Haltestelle einstellen"};
   }
