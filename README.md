@@ -58,17 +58,23 @@ Alle Display-Zustände (Fehler, Update, Einrichtung, Nacht): [`docs/screens/`](d
 | | |
 |---|---|
 | **Display** | [Waveshare ESP32-S3-LCD-3.16](https://www.waveshare.com/esp32-s3-lcd-3.16.htm) – ESP32-S3 mit 16 MB Flash, 8 MB PSRAM, 3,16″-IPS-Display (820 × 320) |
-| **Strom** | USB-Netzteil 5 V (ab 1 A) und ein USB-C-**Daten**kabel |
-| **Gehäuse** | 3D-Druck, Dateien in [`hardware/gehaeuse/`](hardware/gehaeuse/) – siehe unten |
-| **Computer** | einmalig zum Installieren: Chrome oder Edge am PC/Mac |
+| **Strom** | USB-Netzteil 5 V (ab 1 A) und ein USB-C-Kabel mit **rechtwinkligem Stecker** (passt ins Gehäuse) |
+| **Gehäuse** | 3 Teile aus dem 3D-Drucker, nur gesteckt – [`hardware/gehaeuse/`](hardware/gehaeuse/) |
+| **Computer** | einmalig zum Installieren: Chrome oder Edge am PC/Mac und ein USB-C-**Daten**kabel |
 
 ## Installation in 5 Schritten
 
 ### 1 · Gehäuse drucken
-Die Druckdateien liegen in [`hardware/gehaeuse/`](hardware/gehaeuse/). Das Display wird mit 4 Schrauben M2 befestigt;
-USB-C und BOOT-Taster bleiben von außen erreichbar. Den Ein/Aus-Schalter des Boards vor dem Einbau auf **ON** stellen.
+<img src="docs/readme/gehaeuse.png" alt="Gehäuse, Deckel und Fuß" width="100%">
+
+Drei Teile ([`hardware/gehaeuse/`](hardware/gehaeuse/)): Gehäuse, Deckel, Fuß. **Kein Support** nötig, und zusammengebaut
+wird nur durch **Stecken** – keine Schrauben, kein Kleber. Den Ein/Aus-Schalter des Boards vor dem Einbau auf **ON**
+stellen. Zum Betrieb braucht es ein USB-C-Kabel mit **rechtwinkligem Stecker**.
+[Zusammenbau](hardware/gehaeuse/README.md)
 
 ### 2 · Firmware aufspielen
+Am besten vor dem Einbau ins Gehäuse.
+
 <img src="docs/readme/flasher.png" alt="Flash-Seite" width="300" align="right">
 
 1. **[nilsala.github.io/wannbus](https://nilsala.github.io/wannbus/)** in Chrome oder Edge öffnen

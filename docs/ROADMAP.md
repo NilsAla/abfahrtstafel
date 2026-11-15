@@ -107,7 +107,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
   `flash/index.html`, `.github/workflows/pages.yml` (nach jedem Release). Einmalig: Settings → Pages → Source „GitHub Actions“
 - [x] [A] Kurzanleitung für die Endnutzerin (1 Seite, ohne Fachbegriffe): `docs/ANLEITUNG.md`
 - [ ] [B] 48-h-Dauertest, Übergabe-Test mit fremdem WLAN
-- [ ] [B] Gehäuse (3D-Druck, Schild-Look) nach Messung: Ausschnitt ≈ 27 × 68 mm, 4× M2, Zugang USB-C und BOOT,
+- [x] [B] Gehäuse (3D-Druck, gesteckt, ohne Support, `hardware/gehaeuse/`) – ursprünglich geplant: Gehäuse (3D-Druck, Schild-Look) nach Messung: Ausschnitt ≈ 27 × 68 mm, 4× M2, Zugang USB-C und BOOT,
   Ein/Aus-Schalter verdeckt bzw. auf ON fixiert
 
 ## Redesign „wannbus“
