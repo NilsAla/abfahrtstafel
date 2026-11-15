@@ -5,4 +5,4 @@
 #define FW_VERSION "0.0.0-dev"
 #endif
 
-#define FW_USER_AGENT "wannbus/" FW_VERSION " (+https://github.com/NilsAla/abfahrtstafel)"
+#define FW_USER_AGENT "abfahrtstafel/" FW_VERSION " (+https://github.com/NilsAla/abfahrtstafel)"
