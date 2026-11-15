@@ -157,6 +157,36 @@ void slash(lv_obj_t *parent, lv_point_precise_t *pts, int32_t x, int32_t y, int3
   lv_obj_set_style_line_rounded(line, true, 0);
 }
 
+// --- Marke -----------------------------------------------------------------
+
+// App-Icon aus docs/branding/logo/wannbus-icon.svg (120er-Raster), nachgebaut aus Flächen: Navy-Kachel, gelber Bus,
+// Scheibe, koralle Zierlinie, zwei Lichter. Kein Bild in der Firmware nötig.
+void logo(lv_obj_t *scr, int32_t x, int32_t y, int32_t size) {
+  auto s = [size](int32_t v) { return v * size / 120; };
+  box(scr, x, y, size, size, abf::brand::kNavy, s(28));
+  box(scr, x + s(22), y + s(20), s(76), s(78), abf::brand::kYellow, s(14));
+  box(scr, x + s(30), y + s(30), s(60), s(36), 0xBFEFE9, s(6));
+  box(scr, x + s(22), y + s(76), s(76), std::max<int32_t>(2, s(6)), abf::brand::kCoral);
+  const int32_t d = std::max<int32_t>(3, s(8));
+  box(scr, x + s(37) - d / 2, y + s(90) - d / 2, d, d, abf::brand::kCream, LV_RADIUS_CIRCLE);
+  box(scr, x + s(83) - d / 2, y + s(90) - d / 2, d, d, abf::brand::kCream, LV_RADIUS_CIRCLE);
+}
+
+// Wortmarke „wann“ + „bus“ (Koralle) mit Grundlinie bei baseY; gibt die rechte Kante zurück
+int32_t wordmark(lv_obj_t *scr, const Palette &p, const lv_font_t *font, int32_t x, int32_t baseY) {
+  placeBaseline(label(scr, "wann", font, p.text), font, x, baseY);
+  x += textWidth("wann", font);
+  placeBaseline(label(scr, "bus", font, abf::brand::kCoral), font, x, baseY);
+  return x + textWidth("bus", font);
+}
+
+// Logo + Wortmarke nebeneinander, Logo vertikal mittig zur Schrift
+void brandRow(lv_obj_t *scr, const Palette &p, const lv_font_t *font, int32_t iconSize, int32_t x, int32_t top,
+              int32_t height) {
+  logo(scr, x, top + (height - iconSize) / 2, iconSize);
+  wordmark(scr, p, font, x + iconSize + iconSize / 3, top + (height + capHeight(font)) / 2);
+}
+
 // --- Kopfzeile -------------------------------------------------------------
 
 // Rechts: [WLAN] [Update] [1/2] [Datum] Uhrzeit. Gibt die linke Kante des belegten Bereichs zurück.
@@ -198,6 +228,10 @@ int32_t headerHeight(const View &v) { return v.header == StopNameStyle::Large ? 
 void header(lv_obj_t *scr, const View &v, const Palette &p, const std::string &title, int32_t top, int32_t height,
             bool icons) {
   const int32_t rightEdge = headerRight(scr, v, p, top, height, icons);
+  if (v.brand) {  // noch keine Haltestelle: Marke statt Ring und Name
+    brandRow(scr, p, &ui_font_small, height - 4, kPadX, top, height);
+    return;
+  }
   const bool bare = v.header == StopNameStyle::Off;
   const std::string &text = bare ? v.date : title;
   if (text.empty()) return;
@@ -448,10 +482,12 @@ void drawSetup(lv_obj_t *scr, const View &v, const Palette &p) {
   constexpr int32_t kNum = 40;
   constexpr int32_t kStepX = kTextX + kNum + 16;
   constexpr int32_t kStepW = kRight - kStepX;
-  // Schritte in Fließtextgröße; passt das nicht, eine Nummer kleiner
+  // Oben Marke, darunter Überschrift und Schritte in Fließtextgröße; passt das nicht, eine Nummer kleiner
+  constexpr int32_t kBrandH = 44;
+  const lv_font_t *headFont = &ui_font_bold;
   const lv_font_t *font = &ui_font_body;
   auto measure = [&](const lv_font_t *f) {
-    int32_t t = capHeight(&ui_font_title) + 22;
+    int32_t t = kBrandH + 16 + capHeight(headFont) + 18;
     for (const std::string &s : v.steps) t += textHeight(s, f, kStepW) + 12;
     return t - 12;
   };
@@ -463,9 +499,11 @@ void drawSetup(lv_obj_t *scr, const View &v, const Palette &p) {
   const int32_t lineH = font->line_height;
   int32_t y = std::max<int32_t>(10, (kHeight - total) / 2);
 
-  lv_obj_t *h = label(scr, v.heading, &ui_font_title, p.text);
-  placeBaseline(h, &ui_font_title, kTextX, y + capHeight(&ui_font_title));
-  y += capHeight(&ui_font_title) + 22;
+  brandRow(scr, p, &ui_font_dest4, kBrandH, kTextX, y, kBrandH);
+  y += kBrandH + 16;
+  lv_obj_t *h = label(scr, v.heading, headFont, p.text);
+  placeBaseline(h, headFont, kTextX, y + capHeight(headFont));
+  y += capHeight(headFont) + 18;
 
   int n = 1;
   for (const std::string &s : v.steps) {

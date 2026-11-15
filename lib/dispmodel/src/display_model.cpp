@@ -56,7 +56,7 @@ bool SectionView::operator==(const SectionView &o) const {
 
 bool View::operator==(const View &o) const {
   return screen == o.screen && theme == o.theme && backlight == o.backlight && header == o.header &&
-         title == o.title && clock == o.clock && date == o.date && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
+         title == o.title && brand == o.brand && clock == o.clock && date == o.date && wifi == o.wifi && updateAvailable == o.updateAvailable && page == o.page &&
          sections == o.sections && rows == o.rows && banner == o.banner && icon == o.icon &&
          heading == o.heading && text == o.text && steps == o.steps && qr == o.qr &&
          qrCaption == o.qrCaption && progress == o.progress && address == o.address;
@@ -269,6 +269,7 @@ View buildScreen(const ViewInputs &in) {
     // Nach dem Einrichtungsportal startet die Tafel einmal neu, damit die Web-UI sicher erreichbar ist
     messageScreen(v, Icon::Loading, "WLAN verbunden!", "Die Tafel startet einmal neu – gleich geht es weiter.");
     v.title = "wannbus";
+    v.brand = true;
     v.wifi = WifiMark::Ok;
     if (v.backlight == 0) v.backlight = kBrightnessMin;
     return v;
@@ -314,6 +315,7 @@ View buildScreen(const ViewInputs &in) {
   }
   if (cfg.stops.empty()) {
     v.title = "wannbus";
+    v.brand = true;
     if (!online) {
       messageScreen(v, Icon::NoWifi, "Keine WLAN-Verbindung.", statusHint(BoardStatus::NoWifi));
       return v;

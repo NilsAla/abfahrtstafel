@@ -39,6 +39,14 @@ async function api(path, options = {}) {
 
 function offline() {
   $('offline').hidden = false;
+  setPill('off', 'Nicht erreichbar');
+}
+
+// Status-Pille im Kopf: Online / WLAN-Zustand / nicht erreichbar
+function setPill(kind, text) {
+  const p = $('pill');
+  p.className = `pill ${kind}`;
+  p.textContent = text;
 }
 
 function signalText(rssi) {
@@ -110,6 +118,9 @@ async function loadStatus() {
   setText('st-addr', `http://${s.hostname}.local · ${w.ip || '–'}`);
   setText('st-version', s.version);
   setText('up-version', s.version);
+  if (w.state === 'online') setPill('on', 'Online');
+  else setPill('', WIFI_STATE[w.state] || 'Offline');
+  setText('foot-host', `${s.hostname}.local · Version ${s.version}`);
   setText('st-uptime', duration(s.uptime_s));
   setText('st-reset', s.reset_reason);
   setText('st-fetch', s.last_fetch ? s.last_fetch.replace('T', ' ').slice(0, 19) : 'noch keine');
@@ -388,21 +399,18 @@ function hhmmMinus(now, seconds) {
 // Ab dieser Verspätung: Minuten rot, rechts Planzeit durchgestrichen + neue Zeit (wie kLateMinutes im Display)
 const LATE_MIN = 2;
 
-function tafelRow(r) {
+// Wie am Display: Badge, Ziel, Minuten (koralle bei Verspätung), rechts Gleis bzw. „fällt aus“
+function tafelRow(r, hot) {
   const min = r.cancelled ? r.scheduled
     : r.minutes <= 0 ? 'jetzt'
       : r.minutes < 60 ? [String(r.minutes), h('small', {}, 'min')] : r.time;
   const where = r.track ? `${r.mode === 'bus' ? 'Steig' : 'Gleis'} ${r.track}` : '';
   const late = !r.cancelled && r.realtime && r.delay >= LATE_MIN;
-  let info;
-  if (r.cancelled) info = h('span', { class: 't-cancel' }, 'fällt', h('br'), 'aus');
-  else if (late) info = [h('span', { class: 't-plan' }, r.scheduled), h('span', { class: 't-late' }, r.time)];
-  else info = where;
-  const style = r.color ? `background:${r.color};color:${r.text_color || '#fff'}` : null;
-  return h('div', { class: `t-row${r.cancelled ? ' cancelled' : ''}${late ? ' late' : ''}` },
-    h('div', { class: 't-min' }, min),
-    h('div', { class: `t-badge ${r.mode}`, style }, r.line),
+  const info = r.cancelled ? h('span', { class: 't-cancel' }, 'fällt aus') : where;
+  return h('div', { class: `t-row${hot ? ' hot' : ''}${r.cancelled ? ' cancelled' : ''}${late ? ' late' : ''}` },
+    h('div', { class: 't-badge' }, r.line),
     h('div', { class: 't-to' }, r.to),
+    h('div', { class: 't-min' }, min),
     h('div', { class: 't-info' }, info));
 }
 
@@ -413,7 +421,7 @@ function tafelHead(b, name, style, extra, withClock) {
       withClock ? h('div', { class: 't-clock' }, b.now || '--:--') : null);
   }
   const cls = style === 'large' ? ' large' : style === 'small' ? ' small' : '';
-  return h('div', { class: `t-head${cls}` }, h('div', { class: 't-stop' }, name), extra,
+  return h('div', { class: `t-head${cls}` }, h('div', { class: 't-ring' }, 'H'), h('div', { class: 't-stop' }, name), extra,
     withClock && b.date ? h('div', { class: 't-date' }, b.date) : null,
     withClock ? h('div', { class: 't-clock' }, b.now || '--:--') : null);
 }
@@ -454,7 +462,7 @@ function renderTafel(b) {
       t.append(h('div', { class: 't-msg' }, stop.text || 'Zurzeit keine Abfahrten.'));
       return;
     }
-    for (const r of stop.rows.slice(0, perStop)) t.append(tafelRow(r));
+    stop.rows.slice(0, perStop).forEach((r, k) => t.append(tafelRow(r, k === 0)));
   });
   if (stale && b.now) {
     t.append(h('div', { class: 't-banner' },

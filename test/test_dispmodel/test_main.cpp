@@ -181,6 +181,16 @@ static void test_row_delay_and_cancel(void) {
   TEST_ASSERT_EQUAL_STRING("fällt aus", v.note.c_str());
 }
 
+static void test_view_brand_header_without_stop(void) {
+  ViewInputs in = boardInputs(0);
+  in.cfg.stops.clear();
+  View v = buildView(in);
+  TEST_ASSERT_TRUE(v.brand);  // noch keine Haltestelle: Marke im Kopf
+  in.setupRestart = true;
+  TEST_ASSERT_TRUE(buildView(in).brand);
+  TEST_ASSERT_FALSE(buildView(boardInputs()).brand);  // mit Haltestelle: Ring + Name
+}
+
 static void test_row_track_and_colors(void) {
   BoardRow r = row("RE15", "Münster Hbf", 5);
   r.track = "1";
@@ -448,6 +458,7 @@ int main(int, char **) {
   RUN_TEST(test_local_time_dst);
   RUN_TEST(test_row_minutes_and_clock);
   RUN_TEST(test_row_delay_and_cancel);
+  RUN_TEST(test_view_brand_header_without_stop);
   RUN_TEST(test_row_track_and_colors);
   RUN_TEST(test_wifi_qr_escaping);
   RUN_TEST(test_view_board_four_and_three_rows);

@@ -1,41 +1,44 @@
 /* wannbus-Farben (Quelle: docs/branding/BRANDING.md, Abschnitt 2), Gegenstück zu lib/branding/src/tokens.h.
-   Noch nicht eingebunden; das Web-UI-Redesign nutzt sie. Nacht ist Standard, Tag per [data-theme="day"]. */
+   Web-UI: Tag als Standard, Nacht folgt prefers-color-scheme des Handys (getrennt vom Display-Modus). */
 :root {
   --navy: #1B1F3B;
-  --yellow: #FFC72C;
-  --coral: #FF4F5E;
-  --teal: #1FC8B5;
+  --yellow: #FFC72C;   /* nur im Logo */
+  --coral: #FF4F5E;    /* Wortmarke „bus“ */
+  --teal: #1FC8B5;     /* einzige Aktionsfarbe: Buttons, Schalter, Fokus */
   --cream: #FFF6E5;
 
-  --bg: #14162E;
-  --bg-display: #0E1024;
-  --bg-rest: #0A0B1A;
-  --card: #1B1F3B;
-  --card-hot: #163A44;
-  --border: #2E3466;
-  --text: #FFF6E5;
-  --muted: #A9ABC9;
-  --teal-text: #3DDCC9;
-  --coral-text: #FF6B78;
-  --teal-big: #1FC8B5;
-  --coral-big: #FF4F5E;
-  --badge-bg: #FFF6E5;
-  --badge-text: #1B1F3B;
-}
-
-[data-theme="day"] {
   --bg: #EEF7FC;
-  --bg-display: #EAF4FA;
-  --bg-rest: #E1ECF4;
   --card: #FFFFFF;
-  --card-hot: #DDF5F1;
   --border: #CFE3EE;
   --text: #1B1F3B;
   --muted: #4A5075;
   --teal-text: #0A7D71;
   --coral-text: #C81F33;
-  --teal-big: #0A8F80;
-  --coral-big: #E02D3C;
-  --badge-bg: #1B1F3B;
-  --badge-text: #FFF6E5;
+
+  /* abgeleitet für die Web-UI */
+  --input-bg: #F5FAFD;
+  --seg-on: #FFFFFF;
+  --ok-bg: #DDF5F1;
+  --error-bg: #FDE8EA;
+  --info-bg: #E6F1F8;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14162E;
+    --card: #1B1F3B;
+    --border: #2E3466;
+    --text: #FFF6E5;
+    --muted: #A9ABC9;
+    --teal-text: #3DDCC9;
+    --coral-text: #FF6B78;
+
+    --input-bg: #14162E;
+    --seg-on: #2E3466;
+    --ok-bg: #163A44;
+    --error-bg: #3A1C2E;
+    --info-bg: #202548;
+    color-scheme: dark;
+  }
 }
