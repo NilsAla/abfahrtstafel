@@ -85,7 +85,12 @@ Eigener Block, nicht Teil des Redesigns (siehe `docs/prompts/README.md`).
 
 Gerenderte Referenzen: `mockups/Display_{Nacht,Tag}.png`, `Display_Fehler_{Nacht,Tag}.png`, `Display_Ruhe_{Nacht,Tag}.png`.
 
-Hauptbildschirm (4 Zeilen, 3 Zeilen skaliert):
+**Am Gerät abgenommen (2026-11-15), weicht bewusst von den Maßen unten ab:** Die Mockup-Größen sind auf dem 68-mm-Display
+nicht lesbar. Umgesetzt sind Ziel 44 px (4 Zeilen) bzw. 56 px (3 Zeilen), Minuten 50/64 px, „min“ und Gleis 28/32 px,
+Kopf 28 px. Keine Unterzeile („pünktlich“, „+2 min verspätet“): Verspätung färbt Minuten und „min“ in `coral_text`,
+Ausfall zeigt Ziel und Zeit durchgestrichen plus „fällt aus“. Maßgeblich ist `src/ui/ui.cpp` mit `docs/screens/`.
+
+Hauptbildschirm laut Mockup (4 Zeilen, 3 Zeilen skaliert):
 - Wurzel 820×320, Innenabstand 12 / 16 px, Abstand zwischen Elementen 8 px
 - Kopf, Höhe 34: Haltestellen-Ring (28 px, Rahmen 2,5 px türkis, „H“ 15 px), Haltestellenname 23 px `muted`, Uhrzeit 30 px `text`
 - Zeile, Höhe 78, Radius 18, Innenabstand 0 / 20, Abstand 18. Zeile 1 mit `card_hot`, übrige `card`
