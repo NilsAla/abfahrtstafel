@@ -1,9 +1,11 @@
 name: Build
 
+# Getestet wird lokal vor dem Merge (pio test -e native, pio run -e esp32s3). Hier nur noch Sicherheitsnetz
+# nach dem Merge auf main, ohne reine Doku-Änderungen. Manuell startbar für die Cloud-Session ohne Toolchain.
 on:
   push:
     branches: [main]
-  pull_request:
+    paths-ignore: ["docs/**", "**.md"]
   workflow_dispatch:
 
 concurrency:
