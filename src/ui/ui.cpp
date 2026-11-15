@@ -417,21 +417,23 @@ void drawMessage(lv_obj_t *scr, const View &v, const Palette &p) {
   }
 }
 
-// Update: Symbol, Überschrift, Fortschrittsbalken und Text mittig
+// Update: Marke, Überschrift, Fortschrittsbalken und Text mittig
 void drawUpdate(lv_obj_t *scr, const View &v, const Palette &p) {
   constexpr int32_t kTextW = kWidth - 4 * kPadX;
   constexpr int32_t kBarH = 18;
   std::string text = v.text;
   if (v.progress >= 0 && v.progress < 100) text = std::to_string(v.progress) + " % · " + text;
-  const int32_t iconH = capHeight(&ui_font_icon);
+  constexpr int32_t kBrandH = 44;
+  const lv_font_t *wordFont = &ui_font_dest4;
+  const int32_t iconH = kBrandH;
   const int32_t headH = v.heading.empty() ? 0 : textHeight(v.heading, &ui_font_title, kTextW);
   const int32_t bodyH = text.empty() ? 0 : textHeight(text, &ui_font_small, kTextW);
   const int32_t barH = v.progress >= 0 ? kBarH + 36 : 0;
   int32_t y = (kHeight - (iconH + 22 + headH + barH + bodyH)) / 2;
 
-  const int32_t w = textWidth(UI_ICON_DOWNLOAD, &ui_font_icon);
-  placeBaseline(label(scr, UI_ICON_DOWNLOAD, &ui_font_icon, abf::brand::kTeal), &ui_font_icon, (kWidth - w) / 2,
-                y + iconH);
+  // Logo + Wortmarke mittig über der Überschrift
+  const int32_t brandW = kBrandH + kBrandH / 3 + textWidth("wann", wordFont) + textWidth("bus", wordFont);
+  brandRow(scr, p, wordFont, kBrandH, (kWidth - brandW) / 2, y, kBrandH);
   y += iconH + 22;
   if (headH) {
     lv_obj_t *l = label(scr, v.heading, &ui_font_title, p.text);
