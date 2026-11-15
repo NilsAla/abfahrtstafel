@@ -340,3 +340,5 @@ footer {
 
 a { color: var(--accent); }
 header a { color: inherit; }
+
+.badge-beta { margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; background: var(--info-bg); color: var(--text); border: 1px solid var(--line); }

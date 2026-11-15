@@ -132,6 +132,10 @@
         <p class="err" data-for="hostname"></p>
         <label class="check"><input type="checkbox" id="update_check" name="update_check"> Täglich nach Updates suchen (nur Hinweis, installiert nichts)</label>
         <p class="err" data-for="update_check"></p>
+        <label class="check"><input type="checkbox" id="beta_channel" name="beta_channel"> Beta-Versionen erhalten</label>
+        <p class="hint">Nur zum Testen: Vorabversionen können Fehler enthalten. Zurück zur stabilen Version geht es mit dem nächsten
+          regulären Update.</p>
+        <p class="err" data-for="beta_channel"></p>
       </fieldset>
 
       <div class="actions">
@@ -157,7 +161,8 @@
   <section id="tab-update" hidden>
     <h2>Update</h2>
     <div id="up-last" class="banner" hidden></div>
-    <p>Installierte Version: <strong id="up-version">–</strong></p>
+    <p>Installierte Version: <strong id="up-version">–</strong>
+      <span id="up-channel" class="badge-beta" hidden title="In den Einstellungen änderbar">Beta-Kanal</span></p>
     <p id="up-state" role="status"></p>
     <div id="up-offer" hidden>
       <p>Neue Version: <strong id="up-new"></strong></p>

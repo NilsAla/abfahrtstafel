@@ -16,6 +16,7 @@ constexpr const char *kKeyNightStart = "nightStart";
 constexpr const char *kKeyNightEnd = "nightEnd";
 constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
+constexpr const char *kKeyBeta = "beta";
 constexpr const char *kKeyStops = "stops";
 constexpr const char *kKeyTheme = "theme";
 constexpr const char *kKeyRows = "rows";
@@ -103,6 +104,7 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readU32(store, kKeyNightEnd, cfg.nightEnd, validMinutes, invalid);
   readU32(store, kKeyNightBright, cfg.nightBrightness, validNightBrightness, invalid);
   readBool(store, kKeyUpdateCheck, cfg.updateCheck, invalid);
+  readBool(store, kKeyBeta, cfg.betaChannel, invalid);
   readU32(store, kKeyRows, cfg.rows, validRows, invalid);
   uint32_t v = 0;
   if (store.getU32(kKeyTheme, v)) {
@@ -133,6 +135,7 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyNightEnd, cfg.nightEnd);
   ok &= store.putU32(kKeyNightBright, cfg.nightBrightness);
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
+  ok &= store.putU32(kKeyBeta, cfg.betaChannel ? 1 : 0);
   ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
   ok &= store.putU32(kKeyTheme, static_cast<uint32_t>(cfg.theme));
   ok &= store.putU32(kKeyRows, cfg.rows);

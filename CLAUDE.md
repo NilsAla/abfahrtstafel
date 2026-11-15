@@ -70,6 +70,8 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 - Releases aus der Cloud-Session: Tag-Pushes sind dort gesperrt → `release.yml` per `workflow_dispatch`
   starten (`gh api -X POST …/actions/workflows/release.yml/dispatches -f ref=main -f 'inputs[version]=X.Y.Z' -f 'inputs[notes]=…'`).
   Lokal geht auch `git tag -a vX.Y.Z -m "Notes" && git push origin vX.Y.Z`.
+- Beta zuerst: neue Blöcke als `vX.Y.Z-beta.N` taggen (Vorabversion, nur Tafeln im Beta-Kanal sehen sie), am Board prüfen,
+  dann regulär releasen. `release.yml` pflegt das Sammel-Release `beta` (`manifest.json`); nie von Hand löschen.
 - Keine neuen Libraries ohne Begründung im Commit
 - Nutzer kennt sich mit Git kaum aus: Git-Schritte selbst erledigen und kurz erklären, was passiert ist
 - Hardware-Tests nur in Phase B: `pio run -e esp32s3 -t upload`, Serial-Log in Datei

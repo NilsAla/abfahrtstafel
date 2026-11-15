@@ -30,6 +30,10 @@ namespace {
 
 constexpr const char *kManifestUrl =
     "https://github.com/NilsAla/wannbus/releases/latest/download/manifest.json";
+// Beta-Kanal: Sammel-Release „beta“, dessen manifest.json release.yml bei jedem Release auf die neueste Version
+// (Beta oder stabil) setzt. Die Firmware selbst kommt weiter aus dem versionierten Release (url-Feld).
+constexpr const char *kBetaManifestUrl =
+    "https://github.com/NilsAla/wannbus/releases/download/beta/manifest.json";
 constexpr size_t kManifestMax = 4096;
 constexpr size_t kChunk = 4096;
 constexpr uint32_t kSelfTestTimeoutMs = 5 * 60 * 1000;
@@ -88,7 +92,8 @@ void runCheck() {
   const uint32_t maxSize = target ? target->size : 0;
 
   https::Body body;
-  if (!https::get(kManifestUrl, kManifestMax, body)) {
+  const bool beta = config::get().betaChannel;
+  if (!https::get(beta ? kBetaManifestUrl : kManifestUrl, kManifestMax, body)) {
     setResult(abf::UpdateError::ManifestDownload);
     return;
   }
@@ -108,7 +113,7 @@ void runCheck() {
   } else if (sFlow.skippedBlocked()) {
     LOGI("ota", "Neueste Version %s wurde zurückgerollt und wird nicht angeboten", m.version.c_str());
   } else {
-    LOGI("ota", "Firmware aktuell (neueste: %s)", m.version.c_str());
+    LOGI("ota", "Firmware aktuell (neueste im Kanal %s: %s)", beta ? "beta" : "stabil", m.version.c_str());
   }
 }
 
@@ -395,6 +400,7 @@ void buildStatus(JsonObject out) {
   if (sChecked) out["checked_s"] = (millis() - sLastCheckMs) / 1000;
   out["selftest_running"] = sSelfTest.active();
   out["auto_check"] = config::get().updateCheck;
+  out["channel"] = config::get().betaChannel ? "beta" : "stable";
 }
 
 }  // namespace ota
