@@ -115,7 +115,7 @@ Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge 
 - [x] [A] 1 Rebranding (Name, AP-Name, Hostname-Migration, Tokens) – PR #11, Board-Test siehe „Offen am Board“
 - [x] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration, Schema 3) – Board-Test siehe „Offen am Board“
 - [x] [A] 3 Display-Redesign (Karten, Badges, Ring, Tag/Nacht), am Gerät abgenommen 2026-11-15: große Schriften, keine Unterzeile
-- [ ] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
+- [x] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
 - [x] [A] 4 Web-UI und WLAN-Portal im neuen Design, Display-Einrichtung mit Logo – am Gerät abgenommen 2026-11-15
 - [x] [A] 5 Bootanimation (LVGL aus Flächen, ganze Szene inkl. Abfahrt ~8 s, Tag/Nacht), am Gerät: ~16 Bilder/s (Zeichnen 46 ms, Rest WLAN/TLS-Start)
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
@@ -125,7 +125,7 @@ Ziel: Redesign-Blöcke 2–5 fertig, „Offen am Board“ ohne offene Punkte zu 
 - [x] Repo in `NilsAla/wannbus` umbenannt (alte Adressen leiten weiter, Firmware akzeptiert beide Download-Pfade)
 - [x] Beta-Kanal: Einstellung „Beta-Versionen erhalten“, Sammel-Release `beta` mit `manifest.json` (gepflegt von `release.yml`)
 - [ ] Jeden Block erst als Beta (`vX.Y.Z-beta.N`) auf beide Tafeln, am Board prüfen, dann regulär releasen
-- [ ] Release-Kandidat `v1.0.0-rc.1` als Beta, 48 h auf beiden Tafeln ohne Auffälligkeiten, dann `v1.0.0`
+- [ ] Release-Kandidat `v1.0.0-rc.1` als Beta (veröffentlicht 2026-11-15), 48 h auf beiden Tafeln ohne Auffälligkeiten, dann `v1.0.0`
 
 **Beta-Ablauf:** lokal bauen und testen → mergen → `scripts/release.sh 0.9.0-beta.1 "Notiz"` (~2 min, ohne GitHub-Build).
 Das Skript veröffentlicht eine Vorabversion (nicht „latest“) und setzt `beta/manifest.json` darauf. Nur Tafeln mit
