@@ -61,7 +61,7 @@ class WifiSupervisor {
   uint32_t lastReconnect_ = 0;
 };
 
-// Name des Einrichtungs-WLANs aus der MAC: "Abfahrtstafel-XXXX" (letzte zwei Bytes, hex).
+// Name des Einrichtungs-WLANs aus der MAC: "wannbus-XXXX" (letzte zwei Bytes, hex).
 std::string apName(const uint8_t mac[6]);
 
 }  // namespace abf
