@@ -4,6 +4,8 @@ Erste Entwürfe für Display und Web-UI, Stand 2026-10-26. Inhalte aus einem ech
 Bahnhof Emsdetten (12:20 Uhr). Die Bilder sind in doppelter Auflösung gerendert; das Display hat
 820 × 320 Pixel bei rund 68 × 26 mm, also etwa 0,08 mm pro Pixel.
 
+**Neues Design (wannbus, 2026-11-15):** siehe `docs/branding/` und `docs/prompts/`. Die Entwürfe unten sind der alte Stand (Bernstein/Hell).
+
 Umgesetzt in M4: Die echten Display-Screens liegen in `docs/screens/` (gerendert mit LVGL aus `env:sim`).
 Die Web-UI nutzt weiterhin das grüne Design aus M1.
 
