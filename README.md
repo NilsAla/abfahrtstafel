@@ -1,4 +1,4 @@
-# Abfahrtstafel
+# wannbus
 
 Kleine, eigenständige Abfahrtsanzeige für Bus und Bahn im Haltestellen-Look.
 Läuft komplett auf dem Gerät – kein Server, kein Home Assistant, keine App. Eingerichtet wird
@@ -33,9 +33,9 @@ Die fertige Firmware liegt unter [Releases](https://github.com/NilsAla/abfahrtst
 Bedienung für Endnutzer: [`docs/ANLEITUNG.md`](docs/ANLEITUNG.md)
 
 ## Einrichtung
-1. Gerät mit Strom verbinden. Beim ersten Start erscheint das WLAN **Abfahrtstafel-XXXX**.
+1. Gerät mit Strom verbinden. Beim ersten Start erscheint das WLAN **wannbus-XXXX**.
 2. Mit dem Handy verbinden, die Einrichtungsseite öffnet sich automatisch. Heim-WLAN auswählen, Passwort eingeben.
-3. Danach ist die Tafel im Heimnetz unter **http://abfahrt.local** erreichbar.
+3. Danach ist die Tafel im Heimnetz unter **http://wannbus.local** erreichbar.
 
 Zurücksetzen auf Werkseinstellungen: BOOT-Taster im laufenden Betrieb 10 Sekunden gedrückt halten.
 

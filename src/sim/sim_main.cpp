@@ -110,8 +110,8 @@ StopInput stop(const char *name, std::vector<BoardRow> rows, BoardStatus st = Bo
 ViewInputs base() {
   ViewInputs in;
   in.wifi = WifiState::Online;
-  in.apName = "Abfahrtstafel-AB0C";
-  in.hostname = "abfahrt";
+  in.apName = "wannbus-AB0C";
+  in.hostname = "wannbus";
   in.timeValid = true;
   in.now = kNow;
   return in;

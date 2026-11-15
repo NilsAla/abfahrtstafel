@@ -23,10 +23,20 @@ constexpr const char *kKeyTwoStops = "twoStops";
 constexpr const char *kKeyStopName = "stopName";
 
 // Migrationsschritte: kSteps[n] hebt Schema n auf n+1.
-// Schema 1 ist das erste veröffentlichte, daher noch keine Schritte.
 using MigrationStep = bool (*)(KvStore &);
+
+// 1 → 2 (Umbenennung zu wannbus): Ein noch gespeicherter alter Standard-Hostname „abfahrt“ wird zu „wannbus“,
+// damit die Tafel unter http://wannbus.local erreichbar ist. Eigene Namen bleiben unverändert. Der Key bleibt
+// derselbe, eine ältere Firmware (Rollback) liest den neuen Wert als gültigen Hostnamen.
+bool migrateHostnameToWannbus(KvStore &store) {
+  std::string host;
+  if (store.getStr(kKeyHostname, host) && host == "abfahrt") return store.putStr(kKeyHostname, "wannbus");
+  return true;
+}
+
 constexpr MigrationStep kSteps[] = {
-    nullptr,  // 0 → 1: Erststart, nur Schema schreiben
+    nullptr,                    // 0 → 1: Erststart, nur Schema schreiben
+    migrateHostnameToWannbus,   // 1 → 2: Standard-Hostname abfahrt → wannbus
 };
 static_assert(sizeof(kSteps) / sizeof(kSteps[0]) == kConfigSchema,
               "Für jede Schema-Version einen Migrationsschritt eintragen");

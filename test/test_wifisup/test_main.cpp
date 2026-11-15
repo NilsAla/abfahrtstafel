@@ -157,7 +157,7 @@ static void test_millis_overflow(void) {
 
 static void test_ap_name(void) {
   const uint8_t mac[6] = {0x24, 0x6f, 0x28, 0x01, 0xab, 0x0c};
-  TEST_ASSERT_EQUAL_STRING("Abfahrtstafel-AB0C", apName(mac).c_str());
+  TEST_ASSERT_EQUAL_STRING("wannbus-AB0C", apName(mac).c_str());
 }
 
 int main(int, char **) {

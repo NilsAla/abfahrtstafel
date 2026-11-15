@@ -1,4 +1,4 @@
-# Abfahrtstafel – Architekturentscheidungen
+# wannbus – Architekturentscheidungen
 
 Stand: 2026-10-26 (M1)
 

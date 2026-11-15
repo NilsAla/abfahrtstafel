@@ -75,7 +75,7 @@ WifiActions WifiSupervisor::update(const WifiInputs &in, uint32_t now) {
 
 std::string apName(const uint8_t mac[6]) {
   char buf[24];
-  snprintf(buf, sizeof(buf), "Abfahrtstafel-%02X%02X", mac[4], mac[5]);
+  snprintf(buf, sizeof(buf), "wannbus-%02X%02X", mac[4], mac[5]);
   return buf;
 }
 

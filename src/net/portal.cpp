@@ -19,7 +19,7 @@ std::atomic<bool> sSaved{false};
 
 void configure(const std::string &hostname) {
   sWm.setConfigPortalBlocking(false);
-  sWm.setTitle("Abfahrtstafel");
+  sWm.setTitle("wannbus");
   sWm.setMenu(sMenu, sizeof(sMenu) / sizeof(sMenu[0]));
   sWm.setShowInfoUpdate(false);
   sWm.setConnectTimeout(20);

@@ -95,7 +95,7 @@ struct View {
   std::string qr;              // Inhalt des QR-Codes
   std::string qrCaption;
   int8_t progress = -1;        // 0..100, -1 = ohne Balken
-  std::string address;         // Message: Adresse der Web-UI („abfahrt.local · 192.168.178.23“), leer ohne WLAN
+  std::string address;         // Message: Adresse der Web-UI („wannbus.local · 192.168.178.23“), leer ohne WLAN
 
   bool operator==(const View &o) const;
   bool operator!=(const View &o) const { return !(*this == o); }
@@ -113,7 +113,7 @@ enum class UpdatePhase : uint8_t { None, Downloading, Verifying, Rebooting };
 struct ViewInputs {
   Config cfg;
   WifiState wifi = WifiState::Connecting;
-  std::string apName;               // "Abfahrtstafel-AB0C"
+  std::string apName;               // "wannbus-AB0C"
   std::string hostname;             // aktiver Hostname (für http://<name>.local)
   std::string ip;                   // IP im Heim-WLAN, leer ohne Verbindung (Ersatz, wenn .local nicht geht)
   bool setupRestart = false;        // WLAN gerade eingerichtet, Neustart folgt gleich
