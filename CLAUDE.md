@@ -63,7 +63,7 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 ## Arbeitsweise
 - Commits klein, Message auf Deutsch, imperativ
 - `pio run -e esp32s3` und `pio test -e native` müssen grün sein – lokal bauen und testen, nicht auf GitHub Actions warten
-  (Wunsch des Nutzers). `build.yml` läuft nicht bei PRs, nur nach dem Merge auf `main` (ohne Doku-Änderungen) und manuell.
+  (Wunsch des Nutzers). `build.yml` startet nur manuell.
 - Cloud-Sandbox: PlatformIO-Registry, Toolchain-Downloads und api.transitous.org sind dort nicht erreichbar.
   Verifikation dort per manuellem `build.yml`-Lauf (`workflow_dispatch` auf den Branch; Status per `env -u GH_TOKEN gh api …`; Job-Logs sind nicht abrufbar, nur Step-Status),
   reine Logik lokal mit g++ + Unity testen. Transitous-Fixtures liefert der Nutzer per curl.
