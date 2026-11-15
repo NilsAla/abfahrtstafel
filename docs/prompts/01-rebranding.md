@@ -1,7 +1,7 @@
 # Prompt 1 – Rebranding zu „wannbus“
 
 ```
-Repo: NilsAla/abfahrtstafel. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
+Repo: NilsAla/wannbus. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
 docs/branding/BRANDING.md (Abschnitte 1–4) und docs/ROADMAP.md. Arbeite nur diesen Block ab: Rebranding zu „wannbus“.
 Neuer Branch, Commits klein und auf Deutsch im Imperativ, am Ende PR gegen main. Kein Push auf main.
 

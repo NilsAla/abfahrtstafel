@@ -8,8 +8,10 @@
 
 namespace abf {
 
-// Firmware darf nur aus den Releases dieses Repos kommen.
-constexpr const char *kReleaseDownloadPrefix = "https://github.com/NilsAla/abfahrtstafel/releases/download/";
+// Firmware darf nur aus den Releases dieses Repos kommen. Das Repo hieß bis v0.8.0 „abfahrtstafel“; GitHub leitet
+// den alten Namen weiter, daher bleibt er erlaubt (Manifeste älterer Releases, Geräte mit alter Firmware).
+constexpr const char *kReleaseDownloadPrefix = "https://github.com/NilsAla/wannbus/releases/download/";
+constexpr const char *kLegacyReleaseDownloadPrefix = "https://github.com/NilsAla/abfahrtstafel/releases/download/";
 constexpr size_t kMaxNotesLength = 1500;  // Bytes, gekürzt an UTF-8-Zeichengrenze
 
 struct Manifest {

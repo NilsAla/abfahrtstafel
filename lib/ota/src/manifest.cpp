@@ -54,8 +54,8 @@ ManifestError parseManifest(const char *json, size_t len, uint32_t maxSize, Mani
 
   if (!doc["url"].is<const char *>()) return ManifestError::Url;
   m.url = doc["url"].as<const char *>();
-  const std::string expectedUrl = std::string(kReleaseDownloadPrefix) + "v" + m.version + "/firmware.bin";
-  if (m.url != expectedUrl) return ManifestError::Url;
+  const std::string path = "v" + m.version + "/firmware.bin";
+  if (m.url != kReleaseDownloadPrefix + path && m.url != kLegacyReleaseDownloadPrefix + path) return ManifestError::Url;
 
   if (doc["notes"].is<const char *>()) m.notes = truncateUtf8(doc["notes"].as<const char *>(), kMaxNotesLength);
 

@@ -27,10 +27,10 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 - Fonts per lv_font_conv inkl. Umlaute/ß; Schriftgrößen in mm denken (~0,0825 mm/px)
 
 ## Update-Mechanismus (kritisch – nie brechen)
-- Updates kommen aus GitHub Releases dieses (öffentlichen) Repos `NilsAla/abfahrtstafel`
+- Updates kommen aus GitHub Releases dieses (öffentlichen) Repos `NilsAla/wannbus` (bis v0.8.0 `NilsAla/abfahrtstafel`, GitHub leitet weiter)
 - Release enthält `firmware.bin`, `manifest.json` (`version`, `sha256`, `size`, `url`, `notes`) und `firmware-factory.bin` (Erstflash, Offset 0x0),
   dazu `firmware.elf` nur zum Auswerten von Absturzberichten
-- Gerät lädt `https://github.com/NilsAla/abfahrtstafel/releases/latest/download/manifest.json`
+- Gerät lädt `https://github.com/NilsAla/wannbus/releases/latest/download/manifest.json`
   und danach die Firmware über das versionierte `url`-Feld (nicht über `latest`, sonst Race bei neuem Release)
 - Installation nur nach Klick auf „Update installieren“ in der Web-UI; optional täglicher Check,
   der nur einen Hinweis anzeigt
@@ -48,7 +48,7 @@ Hardware-Details: `docs/HARDWARE.md`, Entscheidungen: `docs/ARCHITEKTUR.md`.
 - Abfahrten: `GET /api/v6/stoptimes?stopId=…&n=…`
 - Felder: `place.scheduledDeparture`, `place.departure`, `place.track`, `realTime`,
   `cancelled`, `tripCancelled`, `displayName`/`routeShortName`, `headsign`, `mode`
-- User-Agent Pflicht: `abfahrtstafel/<version> (+https://github.com/NilsAla/abfahrtstafel)`
+- User-Agent Pflicht: `wannbus/<version> (+https://github.com/NilsAla/wannbus)`
 - Polling nicht schneller als alle 30 s, Backoff bei Fehlern
 - Provider hinter Interface `src/provider/` kapseln, damit er austauschbar bleibt
 - Attribution (Link auf https://transitous.org/sources/ und OpenStreetMap) sichtbar in der Web-UI

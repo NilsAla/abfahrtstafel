@@ -29,7 +29,7 @@ namespace ota {
 namespace {
 
 constexpr const char *kManifestUrl =
-    "https://github.com/NilsAla/abfahrtstafel/releases/latest/download/manifest.json";
+    "https://github.com/NilsAla/wannbus/releases/latest/download/manifest.json";
 constexpr size_t kManifestMax = 4096;
 constexpr size_t kChunk = 4096;
 constexpr uint32_t kSelfTestTimeoutMs = 5 * 60 * 1000;

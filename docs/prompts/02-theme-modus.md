@@ -1,7 +1,7 @@
 # Prompt 2 – Tag/Nacht-Modell und Schalter in der Web-UI
 
 ```
-Repo: NilsAla/abfahrtstafel. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
+Repo: NilsAla/wannbus. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/ARCHITEKTUR.md,
 docs/branding/BRANDING.md (Abschnitte 2 und 8) und lib/config/src/app_config.h. Arbeite nur diesen Block ab:
 Tag/Nacht-Modus mit Schalter in der Web-UI. Voraussetzung: Prompt 1 ist gemergt. Neuer Branch, kleine deutsche Commits, PR gegen main.
 

@@ -66,7 +66,7 @@ static ManifestError parse(const std::string &json, Manifest &m) {
 
 static std::string manifestWith(const std::string &field, const std::string &value) {
   std::string base = R"({"version":"0.2.0","sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",)"
-                     R"("size":1000,"url":"https://github.com/NilsAla/abfahrtstafel/releases/download/v0.2.0/firmware.bin",)"
+                     R"("size":1000,"url":"https://github.com/NilsAla/wannbus/releases/download/v0.2.0/firmware.bin",)"
                      R"("notes":"Hinweis"})";
   if (field.empty()) return base;
   const size_t key = base.find("\"" + field + "\":");
@@ -115,13 +115,15 @@ static void test_manifest_rejects(void) {
   ASSERT_ENUM(ManifestError::Size, parse(manifestWith("size", "\"1000\""), m));
   ASSERT_ENUM(ManifestError::Size, parse(manifestWith("size", std::to_string(kPartition + 1)), m));
   ASSERT_ENUM(ManifestError::None, parse(manifestWith("size", std::to_string(kPartition)), m));
-  // Fremde Quelle, falsche Version im Pfad, HTTP statt HTTPS, latest statt versioniert
+  // Fremde Quelle, falsche Version im Pfad (auch unter dem alten Repo-Namen), HTTP statt HTTPS, latest statt versioniert
   const char *badUrls[] = {
       "\"https://evil.example/firmware.bin\"",
+      "\"https://github.com/NilsAla/wannbus/releases/download/v0.1.9/firmware.bin\"",
+      "\"http://github.com/NilsAla/wannbus/releases/download/v0.2.0/firmware.bin\"",
+      "\"https://github.com/NilsAla/wannbus/releases/latest/download/firmware.bin\"",
+      "\"https://github.com/NilsAla/wannbus/releases/download/v0.2.0/firmware.bin?x=1\"",
+      "\"https://github.com/Other/wannbus/releases/download/v0.2.0/firmware.bin\"",
       "\"https://github.com/NilsAla/abfahrtstafel/releases/download/v0.1.9/firmware.bin\"",
-      "\"http://github.com/NilsAla/abfahrtstafel/releases/download/v0.2.0/firmware.bin\"",
-      "\"https://github.com/NilsAla/abfahrtstafel/releases/latest/download/firmware.bin\"",
-      "\"https://github.com/NilsAla/abfahrtstafel/releases/download/v0.2.0/firmware.bin?x=1\"",
       "\"https://github.com/Other/abfahrtstafel/releases/download/v0.2.0/firmware.bin\"",
   };
   for (const char *u : badUrls) ASSERT_ENUM(ManifestError::Url, parse(manifestWith("url", u), m));

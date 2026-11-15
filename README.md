@@ -21,9 +21,9 @@ Entwurf, noch nicht umgesetzt – weitere Mockups (Display-Zustände, Web-UI) in
 Details: [`docs/HARDWARE.md`](docs/HARDWARE.md), Entscheidungen: [`docs/ARCHITEKTUR.md`](docs/ARCHITEKTUR.md)
 
 ## Firmware flashen
-Die fertige Firmware liegt unter [Releases](https://github.com/NilsAla/abfahrtstafel/releases/latest):
+Die fertige Firmware liegt unter [Releases](https://github.com/NilsAla/wannbus/releases/latest):
 
-- **Am einfachsten:** [Flash-Seite](https://nilsala.github.io/abfahrtstafel/) in Chrome/Edge öffnen, Tafel per USB
+- **Am einfachsten:** [Flash-Seite](https://nilsala.github.io/wannbus/) in Chrome/Edge öffnen, Tafel per USB
   anschließen, „Installieren“ – spielt immer das neueste Release ein (auch als Notfall-Weg, wenn nichts mehr startet)
 - `firmware-factory.bin` – Erstinstallation per USB, ab Adresse `0x0` flashen
 - `firmware.bin` – wird vom Gerät selbst für Updates genutzt

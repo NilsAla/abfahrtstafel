@@ -4,7 +4,7 @@ Fertige Prompts für Claude-Sessions (Phase A, Cloud, ohne Board). Jede Session 
 arbeitet nur diesen Block ab und endet mit Push, PR und aktualisierter Liste „Offen am Board“ in `docs/ROADMAP.md`.
 Spezifikation: `docs/branding/BRANDING.md`. Mockups: `docs/branding/mockups/`.
 
-Verwendung: Neue Session starten, Repo `NilsAla/abfahrtstafel` mit Push-Rechten anhängen, Prompt aus der Datei einfügen.
+Verwendung: Neue Session starten, Repo `NilsAla/wannbus` mit Push-Rechten anhängen, Prompt aus der Datei einfügen.
 Nach jedem Block mergen (PR), Release per `release.yml`, am Board prüfen (Phase B), dann der nächste Block.
 
 ## Reihenfolge

@@ -13,8 +13,9 @@ Gerenderte Mockups: `docs/branding/mockups/` (2×, per `mockups/render_mockups.p
 - Hinweis: Es gibt eine App namens „Wann“. Kein Markenrecht-Check gemacht; vor einer öffentlichen Verbreitung prüfen.
 
 **Bewusst NICHT umbenennen** (OTA und Bestandsgeräte hängen daran):
-- GitHub-Repo `NilsAla/abfahrtstafel`, Manifest-URL, Release-Asset-Namen (`firmware.bin`, `manifest.json`, `firmware-factory.bin`)
-- User-Agent bleibt `abfahrtstafel/<version> (+https://github.com/NilsAla/abfahrtstafel)` (Transitous-Vorgabe, verweist aufs Repo)
+- Release-Asset-Namen (`firmware.bin`, `manifest.json`, `firmware-factory.bin`)
+- Nachtrag 2026-11-15: Repo heißt jetzt `NilsAla/wannbus` (GitHub leitet `abfahrtstafel` weiter, die Firmware akzeptiert beide
+  Download-Pfade). User-Agent `wannbus/<version> (+https://github.com/NilsAla/wannbus)`.
 - NVS-Namespace und -Keys, `partitions.csv`
 
 Umbenennen (sichtbar für Nutzer): Display-Texte, Web-UI-Titel/Header, WLAN-Portal-Titel, AP-Name

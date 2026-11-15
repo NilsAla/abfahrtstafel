@@ -1,7 +1,7 @@
 # Prompt 4 – Web-UI und WLAN-Portal im wannbus-Design
 
 ```
-Repo: NilsAla/abfahrtstafel. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/branding/BRANDING.md (Abschnitte 2, 3, 4, 6),
+Repo: NilsAla/wannbus. Hänge es mit Push-Rechten an die Session. Lies CLAUDE.md, docs/branding/BRANDING.md (Abschnitte 2, 3, 4, 6),
 docs/branding/mockups/WebUI_*.png, Main.png, WifiSetup_Tag.png sowie web/ und src/net/portal.cpp.
 Arbeite nur diesen Block ab: Web-UI und WLAN-Portal im neuen Design. Voraussetzung: Prompts 1 und 2 sind gemergt.
 Neuer Branch, kleine deutsche Commits, PR gegen main.
