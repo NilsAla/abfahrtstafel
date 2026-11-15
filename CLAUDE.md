@@ -1,4 +1,4 @@
-# Abfahrtstafel – Projektregeln für Claude
+# wannbus – Projektregeln für Claude
 
 Standalone-Abfahrtsanzeige (Bus/Bahn) auf ESP32-S3. Läuft ohne Server, ohne Home Assistant.
 Endnutzerin ist technisch unerfahren: Alles muss ohne Hilfe funktionieren, jede Fehlersituation

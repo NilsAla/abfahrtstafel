@@ -1,4 +1,4 @@
-// Abfahrtstafel – Einstiegspunkt
+// wannbus – Einstiegspunkt
 // M1: Logging, Konfiguration, WLAN-Einrichtung, Web-UI, Watchdog, Factory Reset.
 // M2: Firmware-Update per Knopfdruck, Selbsttest und Rollback.
 // M3: Abfahrten von Transitous, Haltestellen mit Richtungsfilter.
@@ -29,7 +29,7 @@ constexpr uint32_t kHeartbeatMs = 10 * 60 * 1000;
 
 void logBootInfo() {
   const esp_partition_t *running = esp_ota_get_running_partition();
-  LOGI("boot", "=== Abfahrtstafel %s ===", FW_VERSION);
+  LOGI("boot", "=== wannbus %s ===", FW_VERSION);
   LOGI("boot", "Reset-Grund: %s", sys::resetReasonText());
   LOGI("boot", "Partition: %s @ 0x%06lx", running ? running->label : "?",
        running ? static_cast<unsigned long>(running->address) : 0UL);

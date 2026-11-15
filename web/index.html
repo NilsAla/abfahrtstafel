@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Abfahrtstafel</title>
+<title>wannbus</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%231B1F3B'/%3E%3Crect x='22' y='20' width='76' height='78' rx='14' fill='%23FFC72C'/%3E%3Crect x='30' y='30' width='60' height='36' rx='6' fill='%23BFEFE9'/%3E%3Crect x='22' y='76' width='76' height='6' fill='%23FF4F5E'/%3E%3Ccircle cx='37' cy='90' r='4' fill='%23FFF6E5'/%3E%3Ccircle cx='83' cy='90' r='4' fill='%23FFF6E5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <header>
-  <h1>Abfahrtstafel</h1>
+  <h1 class="brand"><svg class="brand-icon" viewBox="0 0 120 120" aria-hidden="true"><rect width="120" height="120" rx="28" fill="#1B1F3B"/><rect x="22" y="20" width="76" height="78" rx="14" fill="#FFC72C"/><rect x="30" y="30" width="60" height="36" rx="6" fill="#BFEFE9"/><rect x="22" y="76" width="76" height="6" fill="#FF4F5E"/><circle cx="37" cy="90" r="4" fill="#FFF6E5"/><circle cx="83" cy="90" r="4" fill="#FFF6E5"/></svg><span class="brand-word">wann<span class="brand-bus">bus</span></span></h1>
   <nav>
     <a href="#status" data-tab="status">Status</a>
     <a href="#einstellungen" data-tab="einstellungen">Einstellungen</a>
@@ -18,7 +19,7 @@
 </header>
 
 <main>
-  <div id="offline" class="banner error" hidden>Die Abfahrtstafel antwortet gerade nicht. Neuer Versuch läuft …</div>
+  <div id="offline" class="banner error" hidden>wannbus antwortet gerade nicht. Neuer Versuch läuft …</div>
 
   <section id="tab-status" hidden>
     <h2>So zeigt die Tafel gerade</h2>

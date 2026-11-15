@@ -16,7 +16,7 @@ namespace abf {
 //  - Neue Felder bekommen neue Keys mit Default → kein Schema-Bump nötig.
 //  - Bump nur, wenn sich die Bedeutung bestehender Keys ändert; dann Migrationsschritt ergänzen.
 //  - Ältere Firmware (Rollback) muss ein neueres Schema lesen können: Keys nie umdeuten, sondern neu anlegen.
-constexpr uint32_t kConfigSchema = 1;
+constexpr uint32_t kConfigSchema = 2;
 
 // Farbstil des Displays. Nachts (Nachtzeitfenster aktiv) gilt immer Night.
 enum class DisplayTheme : uint8_t { Dark = 0, Night = 1 };
@@ -29,7 +29,7 @@ enum class TwoStopLayout : uint8_t { Split = 0, Alternate = 1 };
 enum class StopNameStyle : uint8_t { Normal = 0, Large = 1, Off = 2 };
 
 struct Config {
-  std::string hostname = "abfahrt";  // mDNS/DHCP-Name → http://abfahrt.local
+  std::string hostname = "wannbus";  // mDNS/DHCP-Name → http://wannbus.local
   uint32_t brightness = 80;          // Prozent, 5..100
   bool nightEnabled = false;         // Nachtmodus (Umsetzung ab M4)
   uint32_t nightStart = 22 * 60;     // Minuten ab Mitternacht, Ortszeit

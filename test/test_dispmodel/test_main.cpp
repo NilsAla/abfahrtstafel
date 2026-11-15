@@ -29,8 +29,8 @@ BoardRow row(const char *line, const char *to, int32_t minutes) {
 ViewInputs boardInputs(size_t stops = 1, size_t rows = 4) {
   ViewInputs in;
   in.wifi = WifiState::Online;
-  in.apName = "Abfahrtstafel-AB0C";
-  in.hostname = "abfahrt";
+  in.apName = "wannbus-AB0C";
+  in.hostname = "wannbus";
   in.timeValid = true;
   in.now = kNow;
   for (size_t i = 0; i < stops; ++i) {
@@ -180,7 +180,7 @@ static void test_row_track_and_colors(void) {
 }
 
 static void test_wifi_qr_escaping(void) {
-  TEST_ASSERT_EQUAL_STRING("WIFI:S:Abfahrtstafel-AB0C;T:nopass;;", wifiQrPayload("Abfahrtstafel-AB0C").c_str());
+  TEST_ASSERT_EQUAL_STRING("WIFI:S:wannbus-AB0C;T:nopass;;", wifiQrPayload("wannbus-AB0C").c_str());
   TEST_ASSERT_EQUAL_STRING("WIFI:S:a\\;b\\:c;T:nopass;;", wifiQrPayload("a;b:c").c_str());
 }
 
@@ -248,20 +248,20 @@ static void test_view_setup_and_nostops(void) {
   in.wifi = WifiState::Provisioning;
   View v = buildView(in);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Setup), static_cast<int>(v.screen));
-  TEST_ASSERT_EQUAL_STRING("WIFI:S:Abfahrtstafel-AB0C;T:nopass;;", v.qr.c_str());
+  TEST_ASSERT_EQUAL_STRING("WIFI:S:wannbus-AB0C;T:nopass;;", v.qr.c_str());
   TEST_ASSERT_EQUAL_size_t(3, v.steps.size());
 
   in.wifi = WifiState::Online;
   v = buildView(in);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::NoStops), static_cast<int>(v.screen));
-  TEST_ASSERT_EQUAL_STRING("http://abfahrt.local", v.qr.c_str());
+  TEST_ASSERT_EQUAL_STRING("http://wannbus.local", v.qr.c_str());
 
   // Mit IP: QR auf die IP, .local und IP im Text
   in.ip = "192.168.178.23";
   v = buildView(in);
   TEST_ASSERT_EQUAL_STRING("http://192.168.178.23", v.qr.c_str());
   TEST_ASSERT_EQUAL_STRING("192.168.178.23", v.qrCaption.c_str());
-  TEST_ASSERT_NOT_NULL(strstr(v.steps[1].c_str(), "abfahrt.local"));
+  TEST_ASSERT_NOT_NULL(strstr(v.steps[1].c_str(), "wannbus.local"));
   TEST_ASSERT_NOT_NULL(strstr(v.steps[1].c_str(), "192.168.178.23"));
   in.ip.clear();
 
@@ -278,7 +278,7 @@ static void test_view_address_on_messages(void) {
   in.ip = "192.168.178.23";
   View v = buildView(in);
   TEST_ASSERT_EQUAL_INT(static_cast<int>(Screen::Message), static_cast<int>(v.screen));
-  TEST_ASSERT_EQUAL_STRING("abfahrt.local · 192.168.178.23", v.address.c_str());
+  TEST_ASSERT_EQUAL_STRING("wannbus.local · 192.168.178.23", v.address.c_str());
   // Ohne WLAN keine Adresse
   in.ip.clear();
   TEST_ASSERT_EQUAL_STRING("", buildView(in).address.c_str());

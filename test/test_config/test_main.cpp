@@ -46,6 +46,41 @@ void tearDown() {}
 
 // --- Migration -------------------------------------------------------------
 
+static void test_migrate_v1_default_hostname_becomes_wannbus(void) {
+  MemStore s;
+  s.u32["schema"] = 1;
+  s.str["host"] = "abfahrt";
+  MigrationResult r = migrateConfig(s);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(MigrationOutcome::Migrated), static_cast<int>(r.outcome));
+  TEST_ASSERT_EQUAL_STRING("wannbus", s.str["host"].c_str());
+  TEST_ASSERT_EQUAL_UINT32(kConfigSchema, s.u32["schema"]);
+}
+
+static void test_migrate_v1_custom_hostname_unchanged(void) {
+  MemStore s;
+  s.u32["schema"] = 1;
+  s.str["host"] = "kueche";
+  migrateConfig(s);
+  TEST_ASSERT_EQUAL_STRING("kueche", s.str["host"].c_str());
+}
+
+static void test_migrate_v1_without_stored_hostname_uses_new_default(void) {
+  MemStore s;
+  s.u32["schema"] = 1;
+  migrateConfig(s);
+  TEST_ASSERT_TRUE(s.str.find("host") == s.str.end());
+  TEST_ASSERT_EQUAL_STRING("wannbus", loadConfig(s).hostname.c_str());
+}
+
+static void test_migrate_v1_hostname_write_failure_reports_failed(void) {
+  MemStore s;
+  s.u32["schema"] = 1;
+  s.str["host"] = "abfahrt";
+  s.failWrites = true;
+  MigrationResult r = migrateConfig(s);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(MigrationOutcome::Failed), static_cast<int>(r.outcome));
+}
+
 static void test_migrate_fresh_writes_schema(void) {
   MemStore s;
   MigrationResult r = migrateConfig(s);
@@ -145,7 +180,7 @@ static void test_load_invalid_values_fall_back(void) {
 // --- Hilfsfunktionen -------------------------------------------------------
 
 static void test_hostname_rules(void) {
-  TEST_ASSERT_TRUE(isValidHostname("abfahrt"));
+  TEST_ASSERT_TRUE(isValidHostname("wannbus"));
   TEST_ASSERT_TRUE(isValidHostname("tafel-2"));
   TEST_ASSERT_TRUE(isValidHostname("a"));
   TEST_ASSERT_FALSE(isValidHostname(""));
@@ -156,7 +191,7 @@ static void test_hostname_rules(void) {
   TEST_ASSERT_FALSE(isValidHostname("tafel.local"));
   TEST_ASSERT_FALSE(isValidHostname(std::string(33, 'a')));
   TEST_ASSERT_TRUE(isValidHostname(std::string(32, 'a')));
-  TEST_ASSERT_EQUAL_STRING("abfahrt-kueche", normalizeHostname("  Abfahrt-Kueche \t").c_str());
+  TEST_ASSERT_EQUAL_STRING("wannbus-kueche", normalizeHostname("  Wannbus-Kueche \t").c_str());
 }
 
 static void test_hhmm(void) {
@@ -188,7 +223,7 @@ static void test_json_roundtrip(void) {
   c.nightStart = 21 * 60 + 30;
   JsonDocument doc;
   configToJson(c, doc.to<JsonObject>());
-  TEST_ASSERT_EQUAL_STRING("abfahrt", doc["hostname"]);
+  TEST_ASSERT_EQUAL_STRING("wannbus", doc["hostname"]);
   TEST_ASSERT_EQUAL_STRING("21:30", doc["night_start"]);
   TEST_ASSERT_EQUAL_INT(80, doc["brightness"].as<int>());
 
@@ -207,7 +242,7 @@ static void test_json_partial_update(void) {
   std::vector<FieldError> errors;
   TEST_ASSERT_TRUE(applyConfigJson(doc.as<JsonObjectConst>(), c, errors));
   TEST_ASSERT_EQUAL_UINT32(40, c.brightness);
-  TEST_ASSERT_EQUAL_STRING("abfahrt", c.hostname.c_str());
+  TEST_ASSERT_EQUAL_STRING("wannbus", c.hostname.c_str());
 }
 
 static void test_json_hostname_normalized(void) {
@@ -376,6 +411,10 @@ int main(int, char **) {
   RUN_TEST(test_load_empty_gives_defaults);
   RUN_TEST(test_save_load_roundtrip);
   RUN_TEST(test_load_invalid_values_fall_back);
+  RUN_TEST(test_migrate_v1_default_hostname_becomes_wannbus);
+  RUN_TEST(test_migrate_v1_custom_hostname_unchanged);
+  RUN_TEST(test_migrate_v1_without_stored_hostname_uses_new_default);
+  RUN_TEST(test_migrate_v1_hostname_write_failure_reports_failed);
   RUN_TEST(test_hostname_rules);
   RUN_TEST(test_hhmm);
   RUN_TEST(test_json_roundtrip);

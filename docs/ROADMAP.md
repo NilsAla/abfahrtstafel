@@ -42,9 +42,9 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - Done (B): Testbild stimmt, Orientierung bekannt ✅ (2026-10-28, Board 1 = Rev1.1), Firmware zeigt UI ruhig, Release `v0.5.0`
 
 ## M1 – WLAN-Setup und Web-UI
-- [x] [A] Captive Portal beim Erststart (WiFiManager, nicht blockierend), AP `Abfahrtstafel-XXXX`; danach ESPAsyncWebServer
+- [x] [A] Captive Portal beim Erststart (WiFiManager, nicht blockierend), AP `wannbus-XXXX`; danach ESPAsyncWebServer
   (ESP32Async-Fork). Ablauf als Statemachine `lib/wifisup` inkl. Fallback-Portal nach 3 min ohne Verbindung
-- [x] [A] mDNS `abfahrt.local` (Hostname einstellbar), NTP mit Europe/Berlin
+- [x] [A] mDNS `wannbus.local` (Hostname einstellbar), NTP mit Europe/Berlin
 - [x] [A] Web-UI ohne Framework, beim Build gzip-komprimiert eingebettet (`scripts/embed_web.py`, ETag);
   Seiten: Status, Einstellungen, Update (Platzhalter bis M2), Protokoll
 - [x] [A] `/api/status` (Version, Uptime, RSSI, Heap/PSRAM, Reset-Grund, letzter API-Abruf), `/api/config` (GET/POST)
@@ -89,7 +89,7 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 - [x] [A] Eigene Fonts aus Barlow Semi Condensed (OFL) + Font-Awesome-Symbole, `scripts/gen_fonts.py`, Größen mit mm-Kommentar
 - [x] [A] 3 und 4 Zeilen per Einstellung (Web-UI): Linien-Badge in Linienfarbe, Ziel mit „…“, Minuten bzw. Uhrzeit ab 60 min,
   Verspätung farbig, Ausfälle durchgestrichen mit „fällt aus“, Gleis/Steig
-- [x] [A] Zustände: Erststart mit WLAN-QR, QR für `http://abfahrt.local`, WLAN-Fallback mit QR, Fehler im Klartext,
+- [x] [A] Zustände: Erststart mit WLAN-QR, QR für `http://wannbus.local`, WLAN-Fallback mit QR, Fehler im Klartext,
   Update läuft/Neustart, keine Abfahrten, Laden, Uhrzeit fehlt, Nachtabschaltung, 2 Haltestellen (untereinander oder im Wechsel)
 - [x] [A] Statuszeile (WLAN, Update verfügbar, Seite 1/2, Uhrzeit), Hinweisleiste mit Datenstand, Helligkeit und Nachtfenster als Logik
 - [x] [A] Farbstile Dunkel (Nachtblau) und Nacht (Bernstein), Umschalter in der Web-UI; im Nachtfenster immer Nacht-Stil
@@ -113,6 +113,13 @@ Jeder Meilenstein endet mit einem lauffähigen Build und getaggtem Release. „D
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Umbenennung wannbus (Schema 1 → 2):** (a) Gerät mit gespeichertem Hostnamen `abfahrt` per Web-UI-Update auf diese Version:
+  `http://wannbus.local` ist erreichbar, Serial-Log `=== wannbus <version> ===` und `mDNS: http://wannbus.local`.
+  (b) Gerät mit eigenem Hostnamen behält ihn. (c) Werksreset: WLAN `wannbus-XXXX`, Portal-Titel „wannbus“, Display-Setup-Screen
+  nennt `wannbus-XXXX`. (d) Rollback auf die Vorversion startet fehlerfrei (Log „neueres Schema (Rollback?)“, Hostname `wannbus`).
+  Web-UI: Logo und Wortmarke im Kopf, Favicon im Browser-Tab.
+  Code: `lib/config/src/app_config.cpp` (`migrateHostnameToWannbus`), `lib/wifisup/src/wifi_supervisor.cpp` (`apName`),
+  `src/net/portal.cpp`, `web/index.html`.
 - [ ] **Hardware-Check (M0):** Waveshare-Factory-Demo flashen bzw. vorinstallierte Demo starten. Revision (V1/Rev1.1) auf der
   Platine ablesen und in `docs/HARDWARE.md` eintragen. BOOT-Taster reagiert in der Demo. Strom: läuft am USB-C-Netzteil
   mit C-zu-C-Kabel? Maße mit Messschieber gegen `docs/HARDWARE.md` prüfen.
@@ -162,7 +169,7 @@ Phase B hakt ab oder notiert den Befund.
   nie wieder angeboten (NVS `ota/blocked`). Update 0.2.1 → 0.3.0: 1,44 MB in 28,5 s (~50 KB/s), Selbsttest nach 1,2 s
   bestanden. Kosmetik behoben: erste Logzeilen nach Software-Reset in UTC, „per NTP gestellt“ ohne NTP,
   NVS-Fehlerzeile für fehlenden Key.
-- [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `Abfahrtstafel-XXXX` (offen).
+- [ ] **Erststart/Portal (M1):** Nach Factory Reset bzw. leerem NVS erscheint das WLAN `wannbus-XXXX` (offen).
   Handy verbinden → Captive Portal öffnet sich (iOS + Android prüfen), nur Menüpunkt WLAN, kein Update-Menü.
   Portal komplett deutsch: Knopf „WLAN einrichten“, Hinweis „So geht es …“, Felder „WLAN-Name“/„WLAN-Passwort“,
   Knopf „Verbinden“, danach Meldung „Gespeichert.“; falsches Passwort → „Nicht verbunden … Passwort falsch“.
@@ -175,7 +182,7 @@ Phase B hakt ab oder notiert den Befund.
   „Fast geschafft!“: QR öffnet `http://<IP>`, Schritt 2 nennt `abfahrt.local` und die IP, unter dem QR steht die IP.
   Router nur kurz weg (ohne neue Zugangsdaten) → kein Neustart. Code: `apply()` in `src/net/network.cpp`,
   `setupRestart`/`ip` in `lib/dispmodel`.
-- [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://abfahrt.local` erreichbar. Bekanntes
+- [ ] **Port 80 nach Portal (M1):** Direkt nach der Einrichtung ist `http://wannbus.local` erreichbar. Bekanntes
   WiFiManager-Problem: Port wird beim Schließen evtl. nicht freigegeben → dann bindet ESPAsyncWebServer nicht.
   Fehlerbild: Web-UI erst nach Neustart erreichbar. Code: `web::begin()` in `src/web/web_server.cpp`.
 - [ ] **Web-UI und API (M1):** Alle vier Reiter laden, Einstellungen speichern (Wert bleibt nach Neustart), ungültiger
@@ -246,7 +253,7 @@ Phase B hakt ab oder notiert den Befund.
 - [ ] **Lesbarkeit (M4):** Aus 1 m und 2 m: 4 vs. 3 Zeilen (Einstellungen → Anzeige) und Nacht-Stil bei 5–15 % Helligkeit.
   Ergebnis → Standard für `Config::rows` in `lib/config/src/app_config.h`.
 - [ ] **QR-Codes (M4):** Erststart: WLAN-QR mit iOS- und Android-Kamera scannen → Handy verbindet sich mit
-  `Abfahrtstafel-XXXX`. Danach QR `http://abfahrt.local` öffnet die Web-UI. Auch im Nacht-Stil scannbar.
+  `wannbus-XXXX`. Danach QR `http://wannbus.local` öffnet die Web-UI. Auch im Nacht-Stil scannbar.
 - [ ] **Nachtabschaltung (M4):** Nachtfenster mit 0 % → Backlight wirklich aus (nicht nur schwarzes Bild).
   Während eines Updates in der Nacht geht das Display mit minimaler Helligkeit an.
 - [ ] **Update-Bild (M4/M2):** Während des Downloads aktualisiert sich der Fortschritt; Bild bleibt während Flash-Schreibzugriffen

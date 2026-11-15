@@ -430,7 +430,7 @@ function renderTafel(b) {
   renderThemeToggle(d);
   if (b.status !== 'ok' || !b.stops.length) {
     t.classList.remove('t-two');
-    t.append(tafelHead(b, 'Abfahrtstafel', style, null, true),
+    t.append(tafelHead(b, 'wannbus', style, null, true),
       h('div', { class: 't-msg' }, b.text || 'Noch keine Haltestelle eingerichtet.'));
     return;
   }

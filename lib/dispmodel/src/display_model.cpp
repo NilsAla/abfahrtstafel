@@ -196,7 +196,8 @@ void setupScreen(View &v, const ViewInputs &in, bool fallback) {
                "Eigenes WLAN wählen, Passwort eingeben"};
   } else {
     v.heading = "Hallo! Kurz einrichten:";
-    v.steps = {"Code scannen oder WLAN „" + in.apName + "“ wählen",
+    // Fester Umbruch: LVGL trennt sonst am Bindestrich mitten im Namen („wannbus-“ / „AB0C“)
+    v.steps = {"Code scannen oder WLAN\n„" + in.apName + "“ wählen",
                "Eigenes WLAN wählen, Passwort eingeben",
                "Fertig – dann die Haltestelle einstellen"};
   }
@@ -219,7 +220,7 @@ View buildView(const ViewInputs &in) {
   View v = buildScreen(in);
   // Solange keine Abfahrten zu sehen sind, steht die Adresse der Web-UI unten – sonst weiß niemand die IP
   if (v.screen == Screen::Message && !in.ip.empty()) {
-    v.address = (in.hostname.empty() ? std::string("abfahrt") : in.hostname) + ".local · " + in.ip;
+    v.address = (in.hostname.empty() ? std::string("wannbus") : in.hostname) + ".local · " + in.ip;
   }
   return v;
 }
@@ -258,7 +259,7 @@ View buildScreen(const ViewInputs &in) {
   if (in.setupRestart) {
     // Nach dem Einrichtungsportal startet die Tafel einmal neu, damit die Web-UI sicher erreichbar ist
     messageScreen(v, Icon::Loading, "WLAN verbunden!", "Die Tafel startet einmal neu – gleich geht es weiter.");
-    v.title = "Abfahrtstafel";
+    v.title = "wannbus";
     v.wifi = WifiMark::Ok;
     if (v.backlight == 0) v.backlight = kBrightnessMin;
     return v;
@@ -303,12 +304,12 @@ View buildScreen(const ViewInputs &in) {
     return v;
   }
   if (cfg.stops.empty()) {
-    v.title = "Abfahrtstafel";
+    v.title = "wannbus";
     if (!online) {
       messageScreen(v, Icon::NoWifi, "Keine WLAN-Verbindung.", statusHint(BoardStatus::NoWifi));
       return v;
     }
-    const std::string local = (in.hostname.empty() ? std::string("abfahrt") : in.hostname) + ".local";
+    const std::string local = (in.hostname.empty() ? std::string("wannbus") : in.hostname) + ".local";
     v.screen = Screen::NoStops;
     v.wifi = WifiMark::None;
     v.heading = "Fast geschafft!";
