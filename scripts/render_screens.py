@@ -45,13 +45,16 @@ def main():
     if not program.exists():
         sys.exit(f"{program} fehlt – zuerst `pio run -e sim` ausführen")
     OUT.mkdir(parents=True, exist_ok=True)
-    for old in OUT.glob("*.png"):  # README.md bleibt
+    BOOT = OUT / "boot"
+    BOOT.mkdir(exist_ok=True)
+    for old in list(OUT.glob("*.png")) + list(BOOT.glob("*.png")):  # README.md bleibt
         old.unlink()
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run([str(program), tmp], check=True, stdout=subprocess.DEVNULL)
         for ppm in sorted(pathlib.Path(tmp).glob("*.ppm")):
             w, h, rgb = read_ppm(ppm)
-            target = OUT / (ppm.stem + ".png")
+            # Schlüsselbilder der Bootanimation in eigenen Ordner
+            target = (BOOT if ppm.stem.startswith("boot-") else OUT) / (ppm.stem + ".png")
             write_png(target, w, h, rgb)
             print(f"{target.relative_to(ROOT)}  {target.stat().st_size // 1024} KB")
 

@@ -18,6 +18,7 @@ extern const lv_font_t ui_font_bold;     // „fällt aus“, Nummern der Einric
 extern const lv_font_t ui_font_clock;   // Uhrzeit (36 px, nur Ziffern)
 extern const lv_font_t ui_font_title;   // Überschriften (48 px)
 extern const lv_font_t ui_font_icon;    // große Symbole (64 px)
+extern const lv_font_t ui_font_brand;   // Wortmarke „wannbus“ der Bootanimation (76 px, nur diese Buchstaben)
 }
 
 // Font-Awesome-Codepunkte als UTF-8

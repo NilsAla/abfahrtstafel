@@ -47,6 +47,7 @@ FONTS = {
     "ui_font_clock": (BOLD, 36, TIME, None),          # Uhr: 2,1 mm
     "ui_font_title": (BOLD, 48, LATIN, None),         # Überschriften: 2,8 mm
     "ui_font_icon": (None, 64, None, ICONS_BIG),      # große Symbole
+    "ui_font_brand": (MEDIUM, 76, "wanbus", None),    # Wortmarke der Bootanimation: 4,4 mm
 }
 
 

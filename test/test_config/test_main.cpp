@@ -180,6 +180,7 @@ static void test_load_empty_gives_defaults(void) {
   TEST_ASSERT_EQUAL_UINT32(d.nightStart, c.nightStart);
   TEST_ASSERT_TRUE(c.updateCheck);
   TEST_ASSERT_FALSE(c.betaChannel);  // Bestandsgeräte ohne Key bleiben im stabilen Kanal
+  TEST_ASSERT_TRUE(c.bootAnimation);
 }
 
 static void test_save_load_roundtrip(void) {
@@ -193,6 +194,7 @@ static void test_save_load_roundtrip(void) {
   c.nightBrightness = 10;
   c.updateCheck = false;
   c.betaChannel = true;
+  c.bootAnimation = false;
   TEST_ASSERT_TRUE(saveConfig(s, c));
 
   Config l = loadConfig(s);
@@ -204,6 +206,7 @@ static void test_save_load_roundtrip(void) {
   TEST_ASSERT_EQUAL_UINT32(10, l.nightBrightness);
   TEST_ASSERT_FALSE(l.updateCheck);
   TEST_ASSERT_TRUE(l.betaChannel);
+  TEST_ASSERT_FALSE(l.bootAnimation);
 }
 
 static void test_load_invalid_values_fall_back(void) {

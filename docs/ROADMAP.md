@@ -117,7 +117,7 @@ Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge 
 - [x] [A] 3 Display-Redesign (Karten, Badges, Ring, Tag/Nacht), am Gerät abgenommen 2026-11-15: große Schriften, keine Unterzeile
 - [ ] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
 - [x] [A] 4 Web-UI und WLAN-Portal im neuen Design, Display-Einrichtung mit Logo – am Gerät abgenommen 2026-11-15
-- [ ] [A] 5 Bootanimation
+- [x] [A] 5 Bootanimation (LVGL aus Flächen, boot-once 4,0 s + 1,5 s Logo, Tag/Nacht) – Board-Test siehe „Offen am Board“
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
 
 ## v1.0 – erstes Vollrelease von wannbus
@@ -134,6 +134,12 @@ Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Relea
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Bootanimation:** Stecker ziehen und wieder rein → Bus fährt ein, Wortmarke wird aufgedeckt, Dame steigt ein, Logo steht,
+  dann Abfahrten. Flüssigkeit: Logzeile `Bootanimation: N Bilder …, langsamstes X ms` (Ziel ≥ 20 Bilder/s, kein sichtbares Ruckeln),
+  Bildruhe mit WLAN-Aufbau währenddessen. Startzeit bis erste Abfahrten nicht länger als ohne Animation + 1,5 s.
+  Tag/Nacht passend zum Modus (ohne Uhrzeit Nacht). Keine Animation nach OTA-Update, Rollback, Werksreset, Absturz und ohne WLAN-Daten
+  (Einrichtung). Schalter Einstellungen → Gerät → „Animation beim Einschalten zeigen“ aus → keine Animation.
+  Code: `src/display/display_task.cpp` (`playBootAnimation`), `src/ui/boot_scene.cpp`, `lib/dispmodel/src/boot_anim.cpp`.
 - [ ] **Web-UI/Portal im neuen Design:** auf echtem Handy (iOS Safari, Android Chrome) in Hell und Dunkel ansehen, Portal im
   Captive-Portal-Fenster (iOS/Android), Ladezeit über WLAN, freier Heap beim Seitenabruf (`/api/status`).
   Code: `web/`, `include/wm_strings_de.h`, `scripts/embed_web.py` (Abhängigkeit web_server.cpp.o).

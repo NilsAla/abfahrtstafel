@@ -17,6 +17,7 @@ constexpr const char *kKeyNightEnd = "nightEnd";
 constexpr const char *kKeyNightBright = "nightBright";
 constexpr const char *kKeyUpdateCheck = "updCheck";
 constexpr const char *kKeyBeta = "beta";
+constexpr const char *kKeyBootAnim = "bootAnim";
 constexpr const char *kKeyStops = "stops";
 constexpr const char *kKeyTheme = "theme";  // bis Schema 2, nur noch für Rollback geschrieben
 constexpr const char *kKeyThemeMode = "themeMode";
@@ -117,6 +118,7 @@ Config loadConfig(const KvStore &store, int *invalidCount) {
   readU32(store, kKeyNightBright, cfg.nightBrightness, validNightBrightness, invalid);
   readBool(store, kKeyUpdateCheck, cfg.updateCheck, invalid);
   readBool(store, kKeyBeta, cfg.betaChannel, invalid);
+  readBool(store, kKeyBootAnim, cfg.bootAnimation, invalid);
   readU32(store, kKeyRows, cfg.rows, validRows, invalid);
   uint32_t v = 0;
   if (store.getU32(kKeyThemeMode, v)) {
@@ -150,6 +152,7 @@ bool saveConfig(KvStore &store, const Config &cfg) {
   ok &= store.putU32(kKeyNightBright, cfg.nightBrightness);
   ok &= store.putU32(kKeyUpdateCheck, cfg.updateCheck ? 1 : 0);
   ok &= store.putU32(kKeyBeta, cfg.betaChannel ? 1 : 0);
+  ok &= store.putU32(kKeyBootAnim, cfg.bootAnimation ? 1 : 0);
   ok &= store.putStr(kKeyStops, stopsToString(cfg.stops));
   ok &= store.putU32(kKeyTheme, 0);  // Vorversion (Rollback) liest „Dunkel“
   ok &= store.putU32(kKeyThemeMode, static_cast<uint32_t>(cfg.themeMode));
