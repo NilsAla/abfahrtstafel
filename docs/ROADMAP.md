@@ -116,7 +116,7 @@ Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge 
 - [x] [A] 2 Tag/Nacht-Modell mit Schalter in der Web-UI (Konfig-Migration, Schema 3) – Board-Test siehe „Offen am Board“
 - [x] [A] 3 Display-Redesign (Karten, Badges, Ring, Tag/Nacht), am Gerät abgenommen 2026-11-15: große Schriften, keine Unterzeile
 - [ ] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
-- [ ] [A] 4 Web-UI und WLAN-Portal im neuen Design
+- [x] [A] 4 Web-UI und WLAN-Portal im neuen Design, Display-Einrichtung mit Logo – am Gerät abgenommen 2026-11-15
 - [ ] [A] 5 Bootanimation
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
 
@@ -134,6 +134,9 @@ Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Relea
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
+- [ ] **Web-UI/Portal im neuen Design:** auf echtem Handy (iOS Safari, Android Chrome) in Hell und Dunkel ansehen, Portal im
+  Captive-Portal-Fenster (iOS/Android), Ladezeit über WLAN, freier Heap beim Seitenabruf (`/api/status`).
+  Code: `web/`, `include/wm_strings_de.h`, `scripts/embed_web.py` (Abhängigkeit web_server.cpp.o).
 - [ ] **Display-Redesign:** am Gerät per USB (0.9.0-dev) abgenommen. Offen: 24 h laufen lassen, alle Zustände einmal sehen
   (kein WLAN, Update, Einrichtung, zwei Haltestellen geteilt/Wechsel, Tag-Stil, 3 Zeilen). Code: `src/ui/ui.cpp`.
 - [ ] **Tag/Nacht (Schema 2 → 3):** (a) Update einer Tafel mit v0.8.x: bleibt dunkel (Schalter steht auf „Nacht“).
