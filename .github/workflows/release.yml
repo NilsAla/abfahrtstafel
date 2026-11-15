@@ -1,8 +1,8 @@
 name: Release
 
+# Normalfall: lokal mit scripts/release.sh (baut auf dem Rechner, veröffentlicht per gh). Dieser Workflow ist der Weg
+# ohne Toolchain (Cloud-Session) und startet nur manuell. Ein lokal gepushter Tag löst ihn bewusst nicht aus.
 on:
-  push:
-    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
@@ -39,20 +39,13 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
           INPUT_NOTES: ${{ inputs.notes }}
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            VERSION="${INPUT_VERSION#v}"
-            NOTES="${INPUT_NOTES}"
-          else
-            VERSION="${GITHUB_REF_NAME#v}"
-            # checkout legt den Tag nur leichtgewichtig an → annotierten Tag nachladen, sonst kommt der Commit-Betreff
-            git fetch --force origin "refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}"
-            NOTES="$(git for-each-ref "refs/tags/${GITHUB_REF_NAME}" --format='%(contents:subject)')"
-          fi
+          VERSION="${INPUT_VERSION#v}"
+          NOTES="${INPUT_NOTES}"
           if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
             echo "::error::Ungültige Version '$VERSION'"; exit 1
           fi
           case "$VERSION" in *-*) PRE=true ;; *) PRE=false ;; esac
-          if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null && [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          if git rev-parse -q --verify "refs/tags/v${VERSION}" >/dev/null; then
             echo "::error::Tag v${VERSION} existiert bereits"; exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -99,28 +92,7 @@ jobs:
         env:
           VERSION: ${{ steps.ver.outputs.version }}
           NOTES: ${{ steps.ver.outputs.notes }}
-        run: |
-          mkdir -p dist
-          cp .pio/build/esp32s3/firmware.bin dist/firmware.bin
-          cp .pio/build/esp32s3/firmware.factory.bin dist/firmware-factory.bin
-          # Nur zum Auswerten von Absturzberichten (esp-coredump), das Gerät lädt es nie
-          cp .pio/build/esp32s3/firmware.elf dist/firmware.elf
-          python3 - <<'PY'
-          import hashlib, json, os
-          v = os.environ["VERSION"]
-          data = open("dist/firmware.bin", "rb").read()
-          manifest = {
-              "version": v,
-              "sha256": hashlib.sha256(data).hexdigest(),
-              "size": len(data),
-              "url": f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/v{v}/firmware.bin",
-              "notes": os.environ.get("NOTES", "").strip(),
-          }
-          json.dump(manifest, open("dist/manifest.json", "w"), indent=2, ensure_ascii=False)
-          print(json.dumps(manifest, indent=2, ensure_ascii=False))
-          PY
-          # Die App muss in eine OTA-Partition (6 MB) passen
-          test "$(stat -c%s dist/firmware.bin)" -lt 6291456
+        run: python3 scripts/release_files.py "$VERSION" "$GITHUB_REPOSITORY" "$NOTES"
 
       - name: GitHub-Release veröffentlichen
         uses: softprops/action-gh-release@v2
@@ -150,21 +122,8 @@ jobs:
             gh release create beta --prerelease --latest=false --target "$GITHUB_SHA" --title "Beta-Kanal" \
               --notes "Technisches Sammel-Release für Geräte im Beta-Kanal. Enthält nur manifest.json; die Firmware liegt im jeweiligen Versions-Release."
           fi
-          gh release download beta --pattern manifest.json --output beta-current.json 2>/dev/null || echo '{}' > beta-current.json
-          if python3 - "$VERSION" beta-current.json <<'PY'
-          import json, re, sys
-          def key(v):
-              m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?", v or "")
-              if not m:
-                  return None
-              pre = m.group(4)
-              # SemVer-Vorrang: Release > Vorabversion; Kennungen numerisch < alphanumerisch
-              ids = [(0, int(p), "") if p.isdigit() else (1, 0, p) for p in pre.split(".")] if pre else []
-              return (int(m.group(1)), int(m.group(2)), int(m.group(3)), 0 if pre else 1, ids)
-          new = key(sys.argv[1])
-          cur = key(json.load(open(sys.argv[2])).get("version"))
-          sys.exit(0 if cur is None or new > cur else 1)
-          PY
+          gh release download beta --pattern manifest.json --output beta-current.json 2>/dev/null || true
+          if python3 scripts/beta_newer.py "$VERSION" beta-current.json
           then
             gh release upload beta dist/manifest.json --clobber
             echo "Beta-Kanal zeigt jetzt auf $VERSION"
