@@ -12,11 +12,13 @@ constexpr float kEnter0 = 0.4f, kEnter1 = 2.7f;       // Einfahrt, ease-out cubi
 constexpr float kDoorOpen0 = 2.9f, kDoorOpen1 = 3.3f;
 constexpr float kStand = 3.7f;                          // Dame steht auf
 constexpr float kWalk0 = 3.9f, kWalk1 = 5.2f;
-constexpr float kOnceCut = 4.0f;                        // boot-once: hier anhalten …
-constexpr float kOnceHold = 1.5f;                       // … und so lange auf dem Logo stehen bleiben
-constexpr float kOnceEnd = kOnceCut + kOnceHold;
+constexpr float kDoorClose0 = 5.3f, kDoorClose1 = 5.7f;
+constexpr float kDepart0 = 6.1f, kDepart1 = 7.8f;       // Abfahrt, ease-in cubic
+constexpr float kEnd = 8.3f;
+// Am Gerät abgenommen (2026-11-15): ganze Szene inkl. Abfahrt statt „boot-once“ (Schnitt bei 4,0 s).
+// Die Wortmarke bleibt beim Wegfahren stehen, damit der Übergang auf die Abfahrten mit der Marke endet.
 
-constexpr float kBusStart = 0.0f, kBusStop = 726.0f;    // x der Busfront
+constexpr float kBusStart = 0.0f, kBusStop = 726.0f, kBusOut = 1080.0f;  // x der Busfront
 constexpr float kBusLength = 250.0f;
 constexpr float kRevealGap = 12.0f;                     // Wortmarke endet 12 px vor der Busfront
 
@@ -40,11 +42,12 @@ struct Frame {
 };
 
 float easeOutCubic(float u);
-float busX(float t);        // Busfront bei Zeit t (nur Einfahrt und Halt, boot-once)
+float easeInCubic(float u);
+float busX(float t);        // Busfront bei Zeit t
 float revealEdge(float t);  // Kante der Wortmarke; ≤ 0 vor der Einfahrt
 float doorOpen(float t);    // 0 … 1
 
-// Zustand der Szene bei Zeit t (boot-once: ab kOnceCut eingefroren)
+// Zustand der Szene bei Zeit t (ab kEnd unverändert)
 Frame frameAt(float t);
 
 // Nur bei echtem Kaltstart (Strom, Reset-Taste, USB) und wenn eingeschaltet. Nach Werksreset, Rollback,
@@ -52,7 +55,7 @@ Frame frameAt(float t);
 // Einrichtung ohne WLAN hat Vorrang; bei abgeschaltetem Display (Nachtfenster 0 %) lohnt es nicht.
 bool shouldPlay(bool enabled, bool coldStart, bool setupScreen, uint8_t backlight);
 
-// Fertig? Regulär nach kOnceEnd; sobald Abfahrten bereitstehen schon früher, aber nie vor Ende der Einfahrt.
+// Fertig? Regulär nach kEnd; sobald Abfahrten bereitstehen schon nach der Abfahrt des Busses.
 bool finished(float t, bool boardReady);
 
 }  // namespace boot

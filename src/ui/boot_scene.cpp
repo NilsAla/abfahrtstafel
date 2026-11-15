@@ -148,17 +148,20 @@ void buildWordmark(lv_obj_t *scr, const Scene &sc) {
   const int32_t left = (kWidth - total) / 2;
   s.textRight = left + total + 2;
 
-  s.reveal = group(scr, 0, 0, 0, kHeight);
-  lv_obj_t *tile = rect(s.reveal, left, kTop, left + kIcon, kTop + kIcon, abf::brand::kNavy, 28 * kIcon / 120);
+  // Nur das Band der Wortmarke: jede Breitenänderung lässt LVGL den ganzen Container neu zeichnen
+  constexpr int32_t kBandTop = kTop - 10, kBandH = kIcon + 24;
+  s.reveal = group(scr, 0, kBandTop, 0, kBandH);
+  const int32_t y0 = kTop - kBandTop;  // Icon-Oberkante im Band
+  lv_obj_t *tile = rect(s.reveal, left, y0, left + kIcon, y0 + kIcon, abf::brand::kNavy, 28 * kIcon / 120);
   lv_obj_set_style_border_color(tile, lv_color_hex(0x2A2F5A), 0);
   lv_obj_set_style_border_width(tile, 1, 0);
   auto u = [](int32_t v) { return v * kIcon / 120; };
-  rect(s.reveal, left + u(22), kTop + u(20), left + u(98), kTop + u(98), abf::brand::kYellow, u(14));
-  rect(s.reveal, left + u(30), kTop + u(30), left + u(90), kTop + u(66), kGlass, u(6));
-  rect(s.reveal, left + u(22), kTop + u(76), left + u(98), kTop + u(82), abf::brand::kCoral);
+  rect(s.reveal, left + u(22), y0 + u(20), left + u(98), y0 + u(98), abf::brand::kYellow, u(14));
+  rect(s.reveal, left + u(30), y0 + u(30), left + u(90), y0 + u(66), kGlass, u(6));
+  rect(s.reveal, left + u(22), y0 + u(76), left + u(98), y0 + u(82), abf::brand::kCoral);
 
-  // Grundlinie so, dass die Schrift mittig zum Icon steht
-  const int32_t base = kTop + kIcon / 2 + 3 + (font->line_height - font->base_line) / 2;
+  // Grundlinie so, dass die Schrift mittig zum Icon steht (Koordinaten im Band)
+  const int32_t base = y0 + kIcon / 2 + 3 + (font->line_height - font->base_line) / 2;
   const int32_t x = left + kIcon + kGap;
   lv_obj_t *a = lv_label_create(s.reveal);
   lv_obj_remove_style_all(a);

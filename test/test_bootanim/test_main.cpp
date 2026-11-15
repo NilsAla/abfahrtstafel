@@ -11,7 +11,9 @@ static void test_bus_edges(void) {
   TEST_ASSERT_EQUAL_FLOAT(kBusStart, busX(0.0f));
   TEST_ASSERT_EQUAL_FLOAT(kBusStart, busX(kEnter0));
   TEST_ASSERT_EQUAL_FLOAT(kBusStop, busX(kEnter1));
-  TEST_ASSERT_EQUAL_FLOAT(kBusStop, busX(kOnceCut));
+  TEST_ASSERT_EQUAL_FLOAT(kBusStop, busX(kDepart0));  // steht, solange die Dame einsteigt
+  TEST_ASSERT_EQUAL_FLOAT(kBusOut, busX(kDepart1));
+  TEST_ASSERT_TRUE(busX(7.0f) > kBusStop && busX(7.0f) < kBusOut);
 }
 
 static void test_bus_monotonic_and_decelerating(void) {
@@ -30,21 +32,24 @@ static void test_bus_monotonic_and_decelerating(void) {
 static void test_reveal_follows_bus(void) {
   TEST_ASSERT_TRUE(revealEdge(0.0f) <= 0.0f);  // vor der Einfahrt nichts sichtbar
   TEST_ASSERT_EQUAL_FLOAT(busX(1.5f) - kRevealGap, revealEdge(1.5f));
-  TEST_ASSERT_EQUAL_FLOAT(kBusStop - kRevealGap, revealEdge(kOnceEnd));
+  TEST_ASSERT_EQUAL_FLOAT(kBusStop - kRevealGap, revealEdge(kDepart0));
 }
 
 static void test_door(void) {
   TEST_ASSERT_EQUAL_FLOAT(0.0f, doorOpen(kDoorOpen0 - 0.1f));
   TEST_ASSERT_EQUAL_FLOAT(1.0f, doorOpen(kDoorOpen1));
   TEST_ASSERT_TRUE(doorOpen(3.1f) > 0.0f && doorOpen(3.1f) < 1.0f);
+  TEST_ASSERT_EQUAL_FLOAT(1.0f, doorOpen(kDoorClose0 - 0.01f));
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, doorOpen(kDoorClose1));  // zu, bevor der Bus losfährt
 }
 
-static void test_frame_frozen_after_cut(void) {
-  const Frame a = frameAt(kOnceCut);
-  const Frame b = frameAt(kOnceEnd);
+static void test_frame_end(void) {
+  const Frame a = frameAt(kEnd);
+  const Frame b = frameAt(kEnd + 5.0f);  // danach unverändert
   TEST_ASSERT_EQUAL_FLOAT(a.busFront, b.busFront);
-  TEST_ASSERT_EQUAL_FLOAT(a.lady.yHip, b.lady.yHip);
-  TEST_ASSERT_EQUAL_INT(static_cast<int>(LadyMode::Walk), static_cast<int>(b.lady.mode));
+  TEST_ASSERT_EQUAL_FLOAT(kBusOut, b.busFront);
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(LadyMode::Hidden), static_cast<int>(b.lady.mode));  // eingestiegen
+  TEST_ASSERT_EQUAL_INT(static_cast<int>(LadyMode::Walk), static_cast<int>(frameAt(4.5f).lady.mode));
 }
 
 static void test_lady_phases(void) {
@@ -63,10 +68,10 @@ static void test_should_play(void) {
 }
 
 static void test_finished(void) {
-  TEST_ASSERT_FALSE(finished(1.0f, true));    // nie mitten in der Einfahrt abbrechen
-  TEST_ASSERT_TRUE(finished(kEnter1, true));  // Abfahrten da: nach der Einfahrt weiter
-  TEST_ASSERT_FALSE(finished(4.5f, false));
-  TEST_ASSERT_TRUE(finished(kOnceEnd, false));
+  TEST_ASSERT_FALSE(finished(4.0f, true));     // Szene läuft bis zur Abfahrt
+  TEST_ASSERT_TRUE(finished(kDepart1, true));  // Abfahrten da: direkt nach der Abfahrt weiter
+  TEST_ASSERT_FALSE(finished(kDepart1, false));
+  TEST_ASSERT_TRUE(finished(kEnd, false));
 }
 
 int main(int, char **) {
@@ -75,7 +80,7 @@ int main(int, char **) {
   RUN_TEST(test_bus_monotonic_and_decelerating);
   RUN_TEST(test_reveal_follows_bus);
   RUN_TEST(test_door);
-  RUN_TEST(test_frame_frozen_after_cut);
+  RUN_TEST(test_frame_end);
   RUN_TEST(test_lady_phases);
   RUN_TEST(test_should_play);
   RUN_TEST(test_finished);

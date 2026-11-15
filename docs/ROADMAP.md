@@ -117,7 +117,7 @@ Spezifikation `docs/branding/BRANDING.md`, Prompts `docs/prompts/` (Reihenfolge 
 - [x] [A] 3 Display-Redesign (Karten, Badges, Ring, Tag/Nacht), am Gerät abgenommen 2026-11-15: große Schriften, keine Unterzeile
 - [ ] [A] 3b Marke (Logo + Wortmarke) bei Leerlauf/Restfläche
 - [x] [A] 4 Web-UI und WLAN-Portal im neuen Design, Display-Einrichtung mit Logo – am Gerät abgenommen 2026-11-15
-- [x] [A] 5 Bootanimation (LVGL aus Flächen, boot-once 4,0 s + 1,5 s Logo, Tag/Nacht) – Board-Test siehe „Offen am Board“
+- [x] [A] 5 Bootanimation (LVGL aus Flächen, ganze Szene inkl. Abfahrt ~8 s, Tag/Nacht), am Gerät: ~16 Bilder/s (Zeichnen 46 ms, Rest WLAN/TLS-Start)
 - [ ] [A] Später: Gehzeit-Feature (Minuten-Farben), zweite Datenquelle hinter `src/provider/`
 
 ## v1.0 – erstes Vollrelease von wannbus
@@ -134,8 +134,8 @@ Häkchen „Beta-Versionen erhalten“ sehen sie. Ein späteres reguläres Relea
 ## Offen am Board
 Wird von Phase-A-Sessions gepflegt. Pro Eintrag: was testen, erwartetes Ergebnis, betroffene Code-Stelle.
 Phase B hakt ab oder notiert den Befund.
-- [ ] **Bootanimation:** Stecker ziehen und wieder rein → Bus fährt ein, Wortmarke wird aufgedeckt, Dame steigt ein, Logo steht,
-  dann Abfahrten. Flüssigkeit: Logzeile `Bootanimation: N Bilder …, langsamstes X ms` (Ziel ≥ 20 Bilder/s, kein sichtbares Ruckeln),
+- [ ] **Bootanimation:** Stecker ziehen und wieder rein → Bus fährt ein, Wortmarke wird aufgedeckt, Dame steigt ein, Bus fährt weg,
+  Wortmarke bleibt, dann Abfahrten. Flüssigkeit: Logzeile `Bootanimation: N Bilder …, langsamstes X ms` (Ziel ≥ 20 Bilder/s, kein sichtbares Ruckeln),
   Bildruhe mit WLAN-Aufbau währenddessen. Startzeit bis erste Abfahrten nicht länger als ohne Animation + 1,5 s.
   Tag/Nacht passend zum Modus (ohne Uhrzeit Nacht). Keine Animation nach OTA-Update, Rollback, Werksreset, Absturz und ohne WLAN-Daten
   (Einrichtung). Schalter Einstellungen → Gerät → „Animation beim Einschalten zeigen“ aus → keine Animation.

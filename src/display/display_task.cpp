@@ -56,7 +56,7 @@ abf::ViewInputs collect() {
 }
 
 // Bootanimation (BRANDING.md, Abschnitt 7): läuft nur hier im Display-Task, WLAN und Web-UI starten parallel.
-// Bricht ab, sobald Abfahrten bereitstehen (frühestens nach der Einfahrt), spätestens nach 5,5 s.
+// Ganze Szene bis der Bus weggefahren ist (~8 s); WLAN und Web-UI starten derweil.
 void playBootAnimation(int &lastBacklight) {
   const abf::View first = abf::buildView(collect());
   const esp_reset_reason_t reason = esp_reset_reason();
@@ -70,30 +70,33 @@ void playBootAnimation(int &lastBacklight) {
   ui::bootBegin(first.theme);  // ohne gültige Uhrzeit ist das Nacht
 
   const uint32_t t0 = millis();
-  uint32_t frames = 0, slowest = 0, nextCheck = 0;
+  uint32_t frames = 0, slowest = 0, busy = 0, nextCheck = 0;
   bool ready = false;
   for (;;) {
     const uint32_t start = millis();
     const float t = (start - t0) / 1000.0f;
-    if (start >= nextCheck) {  // Abfahrten schon da? Nicht in jedem Bild nachsehen
+    // Abfahrten schon da? Zählt erst nach der Abfahrt des Busses (finished()); die Abfrage kostet Zeit,
+    // die sonst den Bildern fehlt
+    if (t >= abf::boot::kDepart1 && start >= nextCheck) {
       ready = abf::buildView(collect()).screen == abf::Screen::Board;
       nextCheck = start + 250;
     }
     if (abf::boot::finished(t, ready)) break;
-    if (t <= abf::boot::kOnceCut + 0.1f) {  // danach steht das Bild, nur noch warten
-      ui::bootFrame(abf::boot::frameAt(t));
-      lv_refr_now(nullptr);
-      ++frames;
-      slowest = std::max(slowest, millis() - start);
-    }
+    const uint32_t drawStart = millis();
+    ui::bootFrame(abf::boot::frameAt(t));
+    lv_refr_now(nullptr);
+    const uint32_t ms = millis() - drawStart;  // nur Zeichnen, ohne die Abfrage oben
+    ++frames;
+    busy += ms;
+    slowest = std::max(slowest, ms);
     const uint32_t spent = millis() - start;
     vTaskDelay(pdMS_TO_TICKS(spent < 33 ? 33 - spent : 1));  // ~30 Bilder/s, anderen Tasks Luft lassen
   }
   ui::bootEnd();
   const uint32_t total = millis() - t0;
-  LOGI("disp", "Bootanimation: %u Bilder bis %.1f s, langsamstes %u ms, Ende nach %u ms%s",
-       static_cast<unsigned>(frames), static_cast<double>(abf::boot::kOnceCut), static_cast<unsigned>(slowest),
-       static_cast<unsigned>(total), ready ? " (Abfahrten bereit)" : "");
+  LOGI("disp", "Bootanimation: %u Bilder, Zeichnen im Schnitt %u ms, langsamstes %u ms, Ende nach %u ms%s",
+       static_cast<unsigned>(frames), static_cast<unsigned>(frames ? busy / frames : 0), static_cast<unsigned>(slowest), static_cast<unsigned>(total),
+       ready ? " (Abfahrten bereit)" : "");
 }
 
 void taskMain(void *) {

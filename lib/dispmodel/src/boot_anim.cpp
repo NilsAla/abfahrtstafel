@@ -19,17 +19,27 @@ float easeOutCubic(float u) {
   return 1.0f - v * v * v;
 }
 
+float easeInCubic(float u) {
+  u = clamp01(u);
+  return u * u * u;
+}
+
 float busX(float t) {
   if (t < kEnter0) return kBusStart;
-  return lerp(kBusStart, kBusStop, easeOutCubic(lin(t, kEnter0, kEnter1)));
+  if (t < kDepart0) return lerp(kBusStart, kBusStop, easeOutCubic(lin(t, kEnter0, kEnter1)));
+  return lerp(kBusStop, kBusOut, easeInCubic(lin(t, kDepart0, kDepart1)));
 }
 
 float revealEdge(float t) { return t < kEnter0 ? 0.0f : busX(t) - kRevealGap; }
 
-float doorOpen(float t) { return t < kDoorOpen0 ? 0.0f : easeOutCubic(lin(t, kDoorOpen0, kDoorOpen1)); }
+float doorOpen(float t) {
+  if (t < kDoorOpen0) return 0.0f;
+  if (t < kDoorClose0) return easeOutCubic(lin(t, kDoorOpen0, kDoorOpen1));
+  return 1.0f - easeOutCubic(lin(t, kDoorClose0, kDoorClose1));
+}
 
 Frame frameAt(float t) {
-  if (t > kOnceCut) t = kOnceCut;
+  if (t > kEnd) t = kEnd;
   Frame f;
   f.busFront = busX(t);
   f.door = doorOpen(t);
@@ -44,6 +54,8 @@ Frame frameAt(float t) {
     l.mode = LadyMode::Stand;
     const float hop = sinf(lin(t, kStand, kWalk0) * 3.14159265f) * 3.0f;
     l.yHip = 313.0f - 18.0f - hop;
+  } else if (t > kWalk1 + 0.05f) {
+    l.mode = LadyMode::Hidden;  // eingestiegen
   } else {
     l.mode = LadyMode::Walk;
     const float u = lin(t, kWalk0, kWalk1);
@@ -60,7 +72,7 @@ bool shouldPlay(bool enabled, bool coldStart, bool setupScreen, uint8_t backligh
   return enabled && coldStart && !setupScreen && backlight > 0;
 }
 
-bool finished(float t, bool boardReady) { return t >= kOnceEnd || (boardReady && t >= kEnter1); }
+bool finished(float t, bool boardReady) { return t >= kEnd || (boardReady && t >= kDepart1); }
 
 }  // namespace boot
 }  // namespace abf

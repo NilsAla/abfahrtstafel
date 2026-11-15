@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
   }
   // Bootanimation: Schlüsselbilder je Theme (docs/screens/boot/), Vergleich mit docs/branding/animation
   const struct { DisplayTheme theme; const char *name; } themes[] = {{DisplayTheme::Night, "nacht"}, {DisplayTheme::Day, "tag"}};
-  const float times[] = {0.0f, 1.5f, 2.7f, 3.3f, 4.0f, boot::kOnceEnd};
+  const float times[] = {0.0f, 1.5f, 2.7f, 3.3f, 4.5f, 5.5f, 7.0f, boot::kEnd};
   for (const auto &th : themes) {
     ui::bootBegin(th.theme);
     for (float t : times) {
